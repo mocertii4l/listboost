@@ -899,10 +899,10 @@ async function handleMe(req, res) {
 
 async function handleHealth(req, res) {
   const checks = getLaunchChecks();
-  const ok = !isProduction || checks.productionReady;
-  json(res, ok ? 200 : 503, {
-    ok,
-    status: ok ? "ready" : "configuration_required",
+  json(res, 200, {
+    ok: true,
+    status: "running",
+    productionReady: checks.productionReady,
     checks
   });
 }
