@@ -332,6 +332,12 @@ function publicUser(user) {
   return user ? { id: user.id, email: user.email, emailVerified: Boolean(user.email_verified) } : null;
 }
 
+function getAiProvider() {
+  if (process.env.OPENAI_API_KEY) return "openai";
+  if (process.env.ANTHROPIC_API_KEY) return "anthropic";
+  return "demo";
+}
+
 function getLaunchChecks() {
   const missing = [];
   if (!isProduction) missing.push("NODE_ENV is not 'production'.");
@@ -882,6 +888,7 @@ async function handleMe(req, res) {
         packPricePence: creditPackPricePence
       },
       stripeReady: Boolean(stripe),
+      aiProvider: getAiProvider(),
       emailVerified: false,
       verificationRequired: requireEmailVerification
     }, visitor.headers);
@@ -892,6 +899,7 @@ async function handleMe(req, res) {
     user: publicUser(user),
     credits: getAccountCredits(user),
     stripeReady: Boolean(stripe),
+    aiProvider: getAiProvider(),
     emailVerified: Boolean(user.email_verified),
     verificationRequired: requireEmailVerification
   }, visitor.headers);

@@ -136,6 +136,12 @@ function updateAccount(user) {
   setLoading(false);
 }
 
+function updateProviderStatus(provider) {
+  providerStatus.textContent = provider === "demo"
+    ? "Demo mode"
+    : `${provider} connected`;
+}
+
 function renderList(element, items) {
   element.innerHTML = "";
   const safeItems = Array.isArray(items) && items.length ? items : ["Nothing extra needed."];
@@ -308,6 +314,7 @@ async function loadAccount() {
     };
     updateAccount(data.user);
     updateCredits(data.credits);
+    updateProviderStatus(data.aiProvider || "demo");
     syncVerificationBanner();
     loadHistory();
   } catch {
