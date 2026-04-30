@@ -1891,6 +1891,10 @@ createServer((req, res) => {
   {
     const checkoutMatch = req.url.match(/^\/checkout\/([a-z0-9_-]+)$/i);
     if (checkoutMatch && req.method === "GET") {
+      if (["success", "cancel"].includes(checkoutMatch[1])) {
+        serveStatic(req, res);
+        return;
+      }
       const token = parseCookies(req).lb_session || "";
       if (!getSessionUser(token)) {
         res.writeHead(302, { location: `/login?next=/checkout/${encodeURIComponent(checkoutMatch[1])}` });
