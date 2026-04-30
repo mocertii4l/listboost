@@ -1481,6 +1481,19 @@ async function handleAdminPage(req, res) {
     SELECT id, user_id, actor, delta, reason, created_at
     FROM credit_audit ORDER BY created_at DESC LIMIT 50
   `).all();
+  const summary = db.prepare(`
+    SELECT
+      COUNT(*) AS totalUsers,
+      SUM(CASE WHEN paid_credits > 0 THEN 1 ELSE 0 END) AS paidUsers,
+      SUM(free_credits + paid_credits) AS creditsGranted,
+      SUM(used_credits) AS creditsUsed
+    FROM users
+  `).get();
+  const recentPayments = db.prepare(`
+    SELECT COALESCE(SUM(credits), 0) AS credits
+    FROM payments
+    WHERE processed_at >= datetime('now', '-30 days')
+  `).get();
 
   const userRows = users.map((u) => `
     <tr>
@@ -1520,6 +1533,10 @@ async function handleAdminPage(req, res) {
   body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; margin: 24px; color: #101828; }
   h1 { margin: 0 0 6px; }
   h2 { margin: 28px 0 8px; font-size: 1rem; text-transform: uppercase; color: #475467; letter-spacing: 0.04em; }
+  .summary { display: grid; grid-template-columns: repeat(5, minmax(140px, 1fr)); gap: 12px; margin: 20px 0; }
+  .card { border: 1px solid #d0d5dd; border-radius: 14px; padding: 16px; background: #f9fafb; }
+  .card span { display: block; color: #667085; font-size: 0.78rem; text-transform: uppercase; font-weight: 800; }
+  .card strong { display: block; margin-top: 6px; font-size: 1.5rem; }
   table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
   th, td { border-bottom: 1px solid #e4e7ec; padding: 6px 8px; text-align: left; vertical-align: top; }
   th { background: #f9fafb; font-weight: 700; }
@@ -1531,6 +1548,13 @@ async function handleAdminPage(req, res) {
 <body>
   <h1>ListBoost admin</h1>
   <p>Logged in as <strong>${escapeHtml(adminEmail)}</strong>. Webhook secret: ${stripeWebhookSecret ? "configured" : "<strong style='color:#b42318'>missing</strong>"}.</p>
+  <section class="summary">
+    <div class="card"><span>Total users</span><strong>${summary.totalUsers || 0}</strong></div>
+    <div class="card"><span>Paid users</span><strong>${summary.paidUsers || 0}</strong></div>
+    <div class="card"><span>30d MRR proxy</span><strong>${recentPayments.credits || 0} credits</strong></div>
+    <div class="card"><span>Credits granted</span><strong>${summary.creditsGranted || 0}</strong></div>
+    <div class="card"><span>Credits used</span><strong>${summary.creditsUsed || 0}</strong></div>
+  </section>
   <h2>Users (latest 200)</h2>
   <table><thead><tr><th>id</th><th>email</th><th>verified</th><th>free</th><th>paid</th><th>used</th><th>remaining</th><th>adjust</th></tr></thead>
   <tbody>${userRows}</tbody></table>
