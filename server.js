@@ -1206,8 +1206,8 @@ async function handleCheckout(req, res, forcedPackId = "") {
           quantity: 1
         }
       ],
-      success_url: `${appUrl}/?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${appUrl}/?checkout=cancelled`
+      success_url: `${appUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${appUrl}/checkout/cancel`
     });
 
     json(res, 200, { url: session.url }, visitor.headers);
@@ -1767,8 +1767,14 @@ async function serveStatic(req, res) {
     res.writeHead(200, { "content-type": mimeTypes[extname(filePath)] || "application/octet-stream" });
     res.end(content);
   } catch {
-    res.writeHead(404, { "content-type": "text/plain; charset=utf-8" });
-    res.end("Not found");
+    try {
+      const content = await readFile(join(publicDir, "404.html"));
+      res.writeHead(404, { "content-type": "text/html; charset=utf-8" });
+      res.end(content);
+    } catch {
+      res.writeHead(404, { "content-type": "text/plain; charset=utf-8" });
+      res.end("Not found");
+    }
   }
 }
 

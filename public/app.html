@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>App - ListBoost</title>
+    <link rel="icon" href="/favicon.svg" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="toast-region" id="toastRegion" aria-live="polite"></div>
+    <header class="lb-header">
+      <a class="lb-brand" href="/app"><img src="/logo.svg" alt="" />ListBoost</a>
+      <nav><a href="/app/notes">Notes</a><a href="/app/photo">Photo</a><a href="/app/score">Score</a><a href="/app/replies">Replies</a><a href="/app/history">History</a><a href="/app/billing">Billing</a><button class="theme-toggle" type="button">Dark</button></nav>
+    </header>
+    <main class="page-wrap">
+      <section class="dashboard-grid">
+        <article class="card balance-card"><span class="badge">Balance</span><h1 class="js-credits">Loading credits</h1><p class="muted js-email">Loading account</p><a class="button primary" href="/app/notes">Generate listing</a></article>
+        <a class="card feature-tile" href="/app/notes"><h3>Notes</h3><p>Turn rough item notes into a complete listing.</p></a>
+        <a class="card feature-tile" href="/app/photo"><h3>Photo</h3><p>Upload item photos and generate from visible details.</p></a>
+        <a class="card feature-tile" href="/app/score"><h3>Score</h3><p>Check why an existing listing is not selling.</p></a>
+        <a class="card feature-tile" href="/app/replies"><h3>Replies</h3><p>Write buyer replies for offers and questions.</p></a>
+      </section>
+
+      <section class="tool-layout">
+        <form class="card sticky-form" id="notesForm">
+          <span class="badge">Generator</span>
+          <h2>Generate from notes</h2>
+          <label>Category<select name="category"><option>Clothing</option><option>Shoes</option><option>Bags</option><option>Accessories</option></select></label>
+          <label>Tone<select name="tone"><option value="friendly">Friendly</option><option value="clean">Clean</option><option value="premium">Premium</option><option value="quick-sale">Quick sale</option></select></label>
+          <label>Seller mode<select name="sellerMode"><option value="clearout">Quick clear-out</option><option value="profit">Profit reseller</option><option value="premium">Premium item</option></select></label>
+          <label>Reply style<select name="negotiationGoal"><option value="friendly">Friendly</option><option value="polite-firm">Firm</option><option value="counter">Negotiation</option></select></label>
+          <label>Size<input name="size" placeholder="UK 10, M, EU 39" /></label>
+          <label>Condition<input name="condition" placeholder="Good condition, worn once" /></label>
+          <label>Item notes<textarea name="itemDetails" required placeholder="Brand, item type, colour, size, condition, flaws, postage..."></textarea></label>
+          <label>Buyer message<textarea name="buyerQuestion" placeholder="Optional: paste buyer question"></textarea></label>
+          <button class="button primary" type="submit">Generate listing</button>
+        </form>
+        <section class="output-stack" id="output"><div class="empty-state">Your output appears here with copy buttons for each section.</div></section>
+      </section>
+
+      <section class="card">
+        <h2>Recent generations</h2>
+        <div class="history-list" id="historyList"><p class="muted">Recent listings load after sign-in.</p></div>
+      </section>
+    </main>
+    <script type="module" src="/site.js"></script>
+  </body>
+</html>

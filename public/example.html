@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Example - ListBoost</title>
+    <meta name="description" content="See a live ListBoost Vinted listing example." />
+    <meta property="og:title" content="ListBoost example" />
+    <meta property="og:image" content="/og-image.png" />
+    <link rel="icon" href="/favicon.svg" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="toast-region" id="toastRegion" aria-live="polite"></div>
+    <header class="lb-header"><a class="lb-brand" href="/"><img src="/logo.svg" alt="" />ListBoost</a><nav><a href="/pricing">Pricing</a><a href="/signup">Start free</a><button class="theme-toggle" type="button">Dark</button></nav></header>
+    <main class="page-wrap two-col">
+      <section class="card">
+        <span class="badge">Live demo</span>
+        <h1>Run a real example.</h1>
+        <p>Uses a canned Zara dress input so visitors can see the output shape before signing up.</p>
+        <button class="button primary" id="runDemo" type="button">Run demo</button>
+      </section>
+      <section class="card output-stack" id="demoOutput"><div class="empty-state">Generated output appears here.</div></section>
+    </main>
+    <script type="module" src="/site.js"></script>
+  </body>
+</html>
