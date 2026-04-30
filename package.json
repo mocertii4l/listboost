@@ -7,8 +7,8 @@
     "node": ">=20.0.0"
   },
   "scripts": {
-    "check": "node --check server.js && node --check public/app.js",
-    "test": "node tests/ui-contract.test.js",
+    "check": "node --check server.js && node --check public/app.js && node --check public/site.js && npm test",
+    "test": "node tests/ui-contract.test.js && node tests/system-contract.test.js",
     "dev": "node server.js",
     "start": "node server.js"
   },

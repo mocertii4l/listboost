@@ -10,6 +10,12 @@ test("public pricing shows multiple live credit packs", () => {
   assert.match(indexHtml, /data-pack-id="starter"/);
   assert.match(indexHtml, /data-pack-id="seller"/);
   assert.match(indexHtml, /data-pack-id="reseller"/);
+  assert.match(serverJs, /credits:\s*50/);
+  assert.match(serverJs, /credits:\s*150/);
+  assert.match(serverJs, /credits:\s*400/);
+  assert.match(serverJs, /pricePence:\s*500/);
+  assert.match(serverJs, /pricePence:\s*1200/);
+  assert.match(serverJs, /pricePence:\s*2500/);
   assert.doesNotMatch(indexHtml, /4242 4242 4242 4242/);
   assert.doesNotMatch(indexHtml, /Test card/i);
 });
