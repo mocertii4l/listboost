@@ -40,27 +40,27 @@ function buildCreditPacks() {
     {
       id: "starter",
       name: "Starter",
-      credits: 25,
-      pricePence: 300,
-      label: "Light clear-out",
-      description: "Best for testing ListBoost on a small wardrobe clear-out."
+      credits: 50,
+      pricePence: 500,
+      label: "Try it",
+      description: "A practical first pack for a wardrobe clear-out or first seller test."
     },
     {
       id: "seller",
       name: "Seller",
-      credits: Math.max(75, creditPackSize),
-      pricePence: Math.max(700, creditPackPricePence),
-      label: "Most popular",
-      description: "A strong pack for regular Vinted sellers listing weekly.",
+      credits: 150,
+      pricePence: 1200,
+      label: "Best value",
+      description: "The best value pack for regular Vinted sellers listing every week.",
       featured: true
     },
     {
       id: "reseller",
       name: "Reseller",
-      credits: 200,
-      pricePence: 1500,
-      label: "Best value",
-      description: "For bulk listing sessions, resellers and repeat sellers."
+      credits: 400,
+      pricePence: 2500,
+      label: "Power seller",
+      description: "For bulk listing sessions, serious resellers and repeat sellers."
     }
   ];
 
@@ -1164,7 +1164,7 @@ async function handleRegenerate(req, res, id) {
   }
 }
 
-async function handleCheckout(req, res) {
+async function handleCheckout(req, res, forcedPackId = "") {
   const visitor = getVisitor(req);
   const user = getUserBySession(req);
 
@@ -1179,7 +1179,7 @@ async function handleCheckout(req, res) {
   }
 
   try {
-    const body = JSON.parse(await readBody(req, 20_000) || "{}");
+    const body = forcedPackId ? { packId: forcedPackId } : JSON.parse(await readBody(req, 20_000) || "{}");
     const requestedPackId = String(body.packId || "").trim();
     const pack = creditPacks.find((item) => item.id === requestedPackId)
       || creditPacks.find((item) => item.featured)
@@ -1728,8 +1728,26 @@ async function handleLogout(req, res) {
 
 const prettyRoutes = {
   "/": "/index.html",
+  "/example": "/example.html",
+  "/pricing": "/pricing.html",
+  "/signup": "/auth.html",
+  "/login": "/auth.html",
+  "/verify-email": "/verify-email.html",
+  "/forgot-password": "/forgot-password.html",
+  "/reset-password": "/reset-password.html",
+  "/app": "/app.html",
+  "/app/notes": "/app.html",
+  "/app/photo": "/app.html",
+  "/app/score": "/app.html",
+  "/app/replies": "/app.html",
+  "/app/history": "/app.html",
+  "/app/billing": "/app.html",
+  "/checkout/success": "/checkout-success.html",
+  "/checkout/cancel": "/checkout-cancel.html",
   "/privacy": "/privacy.html",
-  "/terms": "/terms.html"
+  "/terms": "/terms.html",
+  "/robots.txt": "/robots.txt",
+  "/sitemap.xml": "/sitemap.xml"
 };
 
 async function serveStatic(req, res) {
@@ -1755,6 +1773,13 @@ async function serveStatic(req, res) {
 }
 
 createServer((req, res) => {
+  const host = String(req.headers.host || "").toLowerCase();
+  if (host === "listboost.uk" || host.startsWith("listboost.uk:")) {
+    res.writeHead(301, { location: `https://www.listboost.uk${req.url || "/"}` });
+    res.end();
+    return;
+  }
+
   if (req.method === "GET" && req.url === "/health") {
     handleHealth(req, res);
     return;
@@ -1831,6 +1856,20 @@ createServer((req, res) => {
   if (req.method === "POST" && req.url === "/api/create-checkout-session") {
     handleCheckout(req, res);
     return;
+  }
+
+  {
+    const checkoutMatch = req.url.match(/^\/checkout\/([a-z0-9_-]+)$/i);
+    if (checkoutMatch && req.method === "GET") {
+      const token = parseCookies(req).lb_session || "";
+      if (!getSessionUser(token)) {
+        res.writeHead(302, { location: `/login?next=/checkout/${encodeURIComponent(checkoutMatch[1])}` });
+        res.end();
+        return;
+      }
+      handleCheckout(req, res, checkoutMatch[1]);
+      return;
+    }
   }
 
   if (req.method === "GET" && req.url.startsWith("/api/checkout/success")) {
