@@ -24,6 +24,7 @@
           <a href="#how-it-works">How it works</a>
           <a href="#example">Example</a>
           <a href="#pricing">Pricing</a>
+          <a href="#account">Account</a>
           <a href="#workspace">Workspace</a>
         </nav>
 
@@ -69,11 +70,11 @@
             </ul>
           </div>
 
-          <aside class="hero-card" aria-label="Starter pack" id="pricing">
+          <aside class="hero-card" aria-label="ListBoost product snapshot">
             <div class="hero-card-top">
               <div>
-                <p class="panel-label">Starter pack</p>
-                <p class="hero-card-price"><strong>50</strong><span>credits / £5</span></p>
+                <p class="panel-label">Live seller workspace</p>
+                <p class="hero-card-price"><strong>5</strong><span>free credits included</span></p>
               </div>
               <span class="hero-card-tag">One-time</span>
             </div>
@@ -84,9 +85,62 @@
               <li><span aria-hidden="true">&#10003;</span> Price tiers + buyer replies</li>
               <li><span aria-hidden="true">&#10003;</span> Photo checklist + safety check</li>
             </ul>
-            <button type="button" class="cta-primary cta-block" id="upgradeButton">Get 50 credits</button>
-            <p class="hero-card-fineprint">Card processed by Stripe. Test card 4242 4242 4242 4242 works in dev.</p>
+            <button type="button" class="cta-primary cta-block" id="upgradeButton">Choose credit pack</button>
+            <p class="hero-card-fineprint">Secure checkout opens only after sign-in.</p>
+            <div class="hero-card-replacement">
+              <div class="hero-card-top">
+                <div>
+                  <p class="panel-label">Live seller workspace</p>
+                  <p class="hero-card-price"><strong>5</strong><span>free credits included</span></p>
+                </div>
+                <span class="hero-card-tag">No Vinted login</span>
+              </div>
+              <div class="snapshot-list">
+                <div><span>Input</span><strong>Notes or photos</strong></div>
+                <div><span>Output</span><strong>Title, description, price, replies</strong></div>
+                <div><span>Safety</span><strong>Flags uncertain details</strong></div>
+                <div><span>History</span><strong>Saved to your account</strong></div>
+              </div>
+              <a class="cta-primary cta-block" href="#workspace">Open listing studio</a>
+            </div>
           </aside>
+        </div>
+      </section>
+
+      <section class="pricing-section" id="pricing" aria-labelledby="pricing-title">
+        <header class="section-head">
+          <p class="eyebrow">Pricing</p>
+          <h2 id="pricing-title">Credit packs for casual sellers and serious resellers.</h2>
+          <p class="section-sub">Buy only what you need. One credit creates one listing package or buyer-reply workflow.</p>
+        </header>
+
+        <div class="pricing-grid" id="pricingGrid" aria-live="polite">
+          <article class="pricing-card">
+            <span class="pricing-badge">Light clear-out</span>
+            <h3>Starter</h3>
+            <p class="pricing-price"><strong>25</strong><span>credits</span></p>
+            <p class="pricing-meta">GBP 3 one-time</p>
+            <p class="pricing-copy">For testing ListBoost on a handful of wardrobe items.</p>
+            <button type="button" class="pricing-buy" data-pack-id="starter">Buy Starter</button>
+          </article>
+
+          <article class="pricing-card is-featured">
+            <span class="pricing-badge">Most popular</span>
+            <h3>Seller</h3>
+            <p class="pricing-price"><strong>75</strong><span>credits</span></p>
+            <p class="pricing-meta">GBP 7 one-time</p>
+            <p class="pricing-copy">For regular Vinted sellers listing every week.</p>
+            <button type="button" class="pricing-buy" data-pack-id="seller">Buy Seller</button>
+          </article>
+
+          <article class="pricing-card">
+            <span class="pricing-badge">Best value</span>
+            <h3>Reseller</h3>
+            <p class="pricing-price"><strong>200</strong><span>credits</span></p>
+            <p class="pricing-meta">GBP 15 one-time</p>
+            <p class="pricing-copy">For bulk listing sessions and repeat sellers.</p>
+            <button type="button" class="pricing-buy" data-pack-id="reseller">Buy Reseller</button>
+          </article>
         </div>
       </section>
 
@@ -340,13 +394,32 @@
           </div>
 
           <div class="side-stack">
-            <section class="auth-panel panel" aria-labelledby="auth-title">
+            <section class="auth-panel panel" id="account" aria-labelledby="auth-title">
               <div class="panel-header">
                 <div>
                   <p class="section-kicker">Account</p>
-                  <h2 id="auth-title">Sign in to save credits</h2>
+                  <h2 id="auth-title">Your ListBoost account</h2>
                 </div>
                 <button type="button" class="ghost-button hidden" id="logoutButton">Log out</button>
+              </div>
+
+              <div class="account-summary" id="accountSummary">
+                <div class="account-summary-row">
+                  <span>Status</span>
+                  <strong id="accountSummaryStatus">Signed out</strong>
+                </div>
+                <div class="account-summary-row">
+                  <span>Credits</span>
+                  <strong id="accountSummaryCredits">Sign in to load</strong>
+                </div>
+                <div class="account-summary-row">
+                  <span>Live app</span>
+                  <strong><a id="accountSummaryDomain" href="/" target="_blank" rel="noreferrer">Current domain</a></strong>
+                </div>
+                <div class="account-summary-row">
+                  <span>Admin</span>
+                  <strong><a id="accountSummaryAdmin" href="/admin" target="_blank" rel="noreferrer">Open dashboard</a></strong>
+                </div>
               </div>
 
               <form class="auth-form" id="authForm">
@@ -364,7 +437,7 @@
                   <button type="submit" id="loginButton">Sign in</button>
                   <button type="button" class="secondary" id="signupButton">Create account</button>
                 </div>
-                <p class="form-note" id="authNote">Create an account to keep credits across browsers and devices.</p>
+                <p class="form-note" id="authNote">Your credits, generated listings and history are tied to this account.</p>
               </form>
             </section>
 

@@ -60,6 +60,16 @@ DATA_DIR=/data
 
 At least one AI provider key is required. OpenAI is preferred and used first when configured.
 
+### Credit packs
+
+ListBoost ships with three live credit packs:
+
+- Starter: 25 credits for GBP 3
+- Seller: 75 credits for GBP 7
+- Reseller: 200 credits for GBP 15
+
+To override them, set `CREDIT_PACKS_JSON` to an array of pack objects with `id`, `name`, `credits`, `pricePence`, `label`, `description`, and optional `featured`.
+
 ## Stripe Setup
 
 1. Create a live Stripe account.

@@ -19,6 +19,7 @@ const dbPath = join(dataDir, "listboost.db");
 const freeCredits = Number(process.env.FREE_CREDITS || 5);
 const creditPackSize = Number(process.env.CREDIT_PACK_SIZE || 50);
 const creditPackPricePence = Number(process.env.CREDIT_PACK_PRICE_PENCE || 500);
+const creditPacks = buildCreditPacks();
 const appUrl = process.env.APP_URL || `http://localhost:${port}`;
 const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY) : null;
 const stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET || "";
@@ -33,6 +34,71 @@ await mkdir(dataDir, { recursive: true });
 
 const db = new Database(dbPath);
 db.pragma("journal_mode = WAL");
+
+function buildCreditPacks() {
+  const fallback = [
+    {
+      id: "starter",
+      name: "Starter",
+      credits: 25,
+      pricePence: 300,
+      label: "Light clear-out",
+      description: "Best for testing ListBoost on a small wardrobe clear-out."
+    },
+    {
+      id: "seller",
+      name: "Seller",
+      credits: Math.max(75, creditPackSize),
+      pricePence: Math.max(700, creditPackPricePence),
+      label: "Most popular",
+      description: "A strong pack for regular Vinted sellers listing weekly.",
+      featured: true
+    },
+    {
+      id: "reseller",
+      name: "Reseller",
+      credits: 200,
+      pricePence: 1500,
+      label: "Best value",
+      description: "For bulk listing sessions, resellers and repeat sellers."
+    }
+  ];
+
+  if (!process.env.CREDIT_PACKS_JSON) return fallback;
+
+  try {
+    const parsed = JSON.parse(process.env.CREDIT_PACKS_JSON);
+    const packs = Array.isArray(parsed) ? parsed : [];
+    const clean = packs
+      .map((pack) => ({
+        id: String(pack.id || "").trim().toLowerCase().replace(/[^a-z0-9_-]/g, ""),
+        name: String(pack.name || "").trim(),
+        credits: Number(pack.credits),
+        pricePence: Number(pack.pricePence),
+        label: String(pack.label || "").trim(),
+        description: String(pack.description || "").trim(),
+        featured: Boolean(pack.featured)
+      }))
+      .filter((pack) => pack.id && pack.name && Number.isFinite(pack.credits) && pack.credits > 0 && Number.isFinite(pack.pricePence) && pack.pricePence > 0);
+    return clean.length ? clean.slice(0, 6) : fallback;
+  } catch (error) {
+    console.warn("[launch-check] CREDIT_PACKS_JSON is invalid. Using default credit packs.");
+    return fallback;
+  }
+}
+
+function publicCreditPacks() {
+  return creditPacks.map((pack) => ({
+    id: pack.id,
+    name: pack.name,
+    credits: pack.credits,
+    pricePence: pack.pricePence,
+    price: `GBP ${(pack.pricePence / 100).toFixed(2).replace(/\.00$/, "")}`,
+    label: pack.label,
+    description: pack.description,
+    featured: Boolean(pack.featured)
+  }));
+}
 db.exec(`
   CREATE TABLE IF NOT EXISTS users (
     id TEXT PRIMARY KEY,
@@ -889,6 +955,9 @@ async function handleMe(req, res) {
       },
       stripeReady: Boolean(stripe),
       aiProvider: getAiProvider(),
+      appUrl,
+      adminEnabled: Boolean(adminEmail && adminPassword),
+      creditPacks: publicCreditPacks(),
       emailVerified: false,
       verificationRequired: requireEmailVerification
     }, visitor.headers);
@@ -900,6 +969,9 @@ async function handleMe(req, res) {
     credits: getAccountCredits(user),
     stripeReady: Boolean(stripe),
     aiProvider: getAiProvider(),
+    appUrl,
+    adminEnabled: Boolean(adminEmail && adminPassword),
+    creditPacks: publicCreditPacks(),
     emailVerified: Boolean(user.email_verified),
     verificationRequired: requireEmailVerification
   }, visitor.headers);
@@ -1107,21 +1179,29 @@ async function handleCheckout(req, res) {
   }
 
   try {
+    const body = JSON.parse(await readBody(req, 20_000) || "{}");
+    const requestedPackId = String(body.packId || "").trim();
+    const pack = creditPacks.find((item) => item.id === requestedPackId)
+      || creditPacks.find((item) => item.featured)
+      || creditPacks[0];
+
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       client_reference_id: user.id,
       metadata: {
         userId: user.id,
-        credits: String(creditPackSize)
+        credits: String(pack.credits),
+        packId: pack.id
       },
       line_items: [
         {
           price_data: {
             currency: "gbp",
             product_data: {
-              name: `${creditPackSize} Vinted Listing Booster credits`
+              name: `${pack.credits} ListBoost credits`,
+              description: pack.description || "Credits for Vinted listing generation and buyer replies."
             },
-            unit_amount: creditPackPricePence
+            unit_amount: pack.pricePence
           },
           quantity: 1
         }
@@ -1573,6 +1653,10 @@ async function handleSignup(req, res) {
       user: publicUser(user),
       credits: getAccountCredits(user),
       stripeReady: Boolean(stripe),
+      aiProvider: getAiProvider(),
+      appUrl,
+      adminEnabled: Boolean(adminEmail && adminPassword),
+      creditPacks: publicCreditPacks(),
       emailVerified: Boolean(user.email_verified),
       verificationRequired: requireEmailVerification,
       verificationEmailDelivered: verificationDelivery.delivered,
@@ -1621,6 +1705,10 @@ async function handleLogin(req, res) {
       user: publicUser(user),
       credits: getAccountCredits(user),
       stripeReady: Boolean(stripe),
+      aiProvider: getAiProvider(),
+      appUrl,
+      adminEnabled: Boolean(adminEmail && adminPassword),
+      creditPacks: publicCreditPacks(),
       emailVerified: Boolean(user.email_verified),
       verificationRequired: requireEmailVerification
     }, { ...visitor.headers, ...authHeaders(token) });

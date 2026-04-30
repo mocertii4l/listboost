@@ -8,6 +8,7 @@
   },
   "scripts": {
     "check": "node --check server.js && node --check public/app.js",
+    "test": "node tests/ui-contract.test.js",
     "dev": "node server.js",
     "start": "node server.js"
   },
