@@ -573,8 +573,8 @@ function renderTemplates() {
 
 async function buyCredits(packId) {
   if (!currentUser) {
-    formNote.textContent = "Sign in before buying credits.";
-    document.querySelector("#account")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    formNote.textContent = "Create an account or sign in before buying credits.";
+    window.location.href = `/signup?next=${encodeURIComponent("/pricing")}`;
     return;
   }
   document.querySelectorAll(".pricing-buy").forEach((button) => { button.disabled = true; });
@@ -589,6 +589,10 @@ async function buyCredits(packId) {
     });
     const data = await response.json();
     if (!response.ok) {
+      if (data.authUrl) {
+        window.location.href = data.authUrl;
+        return;
+      }
       throw new Error(data.error || "Could not open checkout.");
     }
     window.location.href = data.url;

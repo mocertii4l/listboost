@@ -8,9 +8,52 @@ import Anthropic from "@anthropic-ai/sdk";
 import Stripe from "stripe";
 import Database from "better-sqlite3";
 
+const TRIMMED_ENV_KEYS = [
+  "APP_URL",
+  "OPENAI_API_KEY",
+  "STRIPE_SECRET_KEY",
+  "STRIPE_WEBHOOK_SECRET",
+  "RESEND_API_KEY",
+  "EMAIL_FROM",
+  "SUPPORT_EMAIL",
+  "ADMIN_EMAIL",
+  "ADMIN_PASSWORD",
+  "DATA_DIR",
+  "ANTHROPIC_API_KEY",
+  "OPENAI_MODEL",
+  "OPENAI_VISION_MODEL",
+  "ANTHROPIC_MODEL",
+  "ANTHROPIC_VISION_MODEL",
+  "CREDIT_PACKS_JSON",
+  "NODE_ENV",
+  "REQUIRE_EMAIL_VERIFICATION"
+];
+
+function cleanEnvValue(value) {
+  let next = String(value ?? "").trim();
+  if (
+    next.length >= 2
+    && ((next.startsWith('"') && next.endsWith('"')) || (next.startsWith("'") && next.endsWith("'")))
+  ) {
+    next = next.slice(1, -1).trim();
+  }
+  return next;
+}
+
+function trimConfiguredEnv(env = process.env) {
+  for (const key of TRIMMED_ENV_KEYS) {
+    if (Object.prototype.hasOwnProperty.call(env, key)) {
+      env[key] = cleanEnvValue(env[key]);
+    }
+  }
+  return env;
+}
+
+trimConfiguredEnv();
+
 const port = Number(process.env.PORT || 3000);
 const publicDir = join(process.cwd(), "public");
-const dataDirEnv = String(process.env.DATA_DIR || "").trim();
+const dataDirEnv = process.env.DATA_DIR || "";
 const dataDir = dataDirEnv
   ? (isAbsolute(dataDirEnv) ? dataDirEnv : join(process.cwd(), dataDirEnv))
   : join(process.cwd(), "data");
@@ -20,16 +63,16 @@ const freeCredits = Number(process.env.FREE_CREDITS || 5);
 const creditPackSize = Number(process.env.CREDIT_PACK_SIZE || 50);
 const creditPackPricePence = Number(process.env.CREDIT_PACK_PRICE_PENCE || 500);
 const creditPacks = buildCreditPacks();
-const appUrl = process.env.APP_URL || `http://localhost:${port}`;
+const appUrl = normalizeAppUrl(process.env.APP_URL || `http://localhost:${port}`);
 const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY) : null;
 const stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET || "";
 const isProduction = process.env.NODE_ENV === "production";
 const requireEmailVerification = process.env.REQUIRE_EMAIL_VERIFICATION !== "false";
-const adminEmail = String(process.env.ADMIN_EMAIL || "").trim().toLowerCase();
+const adminEmail = String(process.env.ADMIN_EMAIL || "").toLowerCase();
 const adminPassword = String(process.env.ADMIN_PASSWORD || "");
-const resendApiKey = String(process.env.RESEND_API_KEY || "").trim();
-const emailFrom = String(process.env.EMAIL_FROM || "ListBoost <onboarding@resend.dev>").trim();
-const supportEmail = String(process.env.SUPPORT_EMAIL || "hello@listboost.app").trim();
+const resendApiKey = String(process.env.RESEND_API_KEY || "");
+const emailFrom = String(process.env.EMAIL_FROM || "ListBoost <onboarding@resend.dev>");
+const supportEmail = String(process.env.SUPPORT_EMAIL || "hello@listboost.app");
 await mkdir(dataDir, { recursive: true });
 
 const db = new Database(dbPath);
@@ -87,6 +130,10 @@ function buildCreditPacks() {
   }
 }
 
+function normalizeAppUrl(value) {
+  return cleanEnvValue(value).replace(/\/+$/, "");
+}
+
 function publicCreditPacks() {
   return creditPacks.map((pack) => ({
     id: pack.id,
@@ -98,6 +145,43 @@ function publicCreditPacks() {
     description: pack.description,
     featured: Boolean(pack.featured)
   }));
+}
+
+function findCreditPack(packId) {
+  const requestedPackId = String(packId || "").trim().toLowerCase();
+  if (!requestedPackId) return creditPacks.find((item) => item.featured) || creditPacks[0];
+  return creditPacks.find((item) => item.id === requestedPackId) || null;
+}
+
+async function createCheckoutSession({ user, pack }) {
+  if (process.env.STRIPE_MOCK_CHECKOUT === "true") {
+    return { url: `https://checkout.stripe.test/session/${pack.id}` };
+  }
+
+  return stripe.checkout.sessions.create({
+    mode: "payment",
+    client_reference_id: user.id,
+    metadata: {
+      userId: user.id,
+      credits: String(pack.credits),
+      packId: pack.id
+    },
+    line_items: [
+      {
+        price_data: {
+          currency: "gbp",
+          product_data: {
+            name: `${pack.credits} ListBoost credits`,
+            description: pack.description || "Credits for Vinted listing generation and buyer replies."
+          },
+          unit_amount: pack.pricePence
+        },
+        quantity: 1
+      }
+    ],
+    success_url: `${appUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${appUrl}/checkout/cancel`
+  });
 }
 db.exec(`
   CREATE TABLE IF NOT EXISTS users (
@@ -1167,9 +1251,11 @@ async function handleRegenerate(req, res, id) {
 async function handleCheckout(req, res, forcedPackId = "") {
   const visitor = getVisitor(req);
   const user = getUserBySession(req);
+  const isRouteCheckout = Boolean(forcedPackId);
 
   if (!user) {
-    json(res, 401, { error: "Sign in before buying credits." }, visitor.headers);
+    const next = forcedPackId ? `/checkout/${encodeURIComponent(forcedPackId)}` : "/pricing";
+    json(res, 401, { error: "Create an account or sign in before buying credits.", authUrl: `/signup?next=${encodeURIComponent(next)}` }, visitor.headers);
     return;
   }
 
@@ -1180,37 +1266,20 @@ async function handleCheckout(req, res, forcedPackId = "") {
 
   try {
     const body = forcedPackId ? { packId: forcedPackId } : JSON.parse(await readBody(req, 20_000) || "{}");
-    const requestedPackId = String(body.packId || "").trim();
-    const pack = creditPacks.find((item) => item.id === requestedPackId)
-      || creditPacks.find((item) => item.featured)
-      || creditPacks[0];
+    const requestedPackId = String(body.packId || "").trim().toLowerCase();
+    const pack = findCreditPack(requestedPackId);
+    if (!pack) {
+      json(res, 400, { error: "Unknown credit pack. Please choose Starter, Seller or Reseller." }, visitor.headers);
+      return;
+    }
 
-    const session = await stripe.checkout.sessions.create({
-      mode: "payment",
-      client_reference_id: user.id,
-      metadata: {
-        userId: user.id,
-        credits: String(pack.credits),
-        packId: pack.id
-      },
-      line_items: [
-        {
-          price_data: {
-            currency: "gbp",
-            product_data: {
-              name: `${pack.credits} ListBoost credits`,
-              description: pack.description || "Credits for Vinted listing generation and buyer replies."
-            },
-            unit_amount: pack.pricePence
-          },
-          quantity: 1
-        }
-      ],
-      success_url: `${appUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${appUrl}/checkout/cancel`
-    });
-
-    json(res, 200, { url: session.url }, visitor.headers);
+    const session = await createCheckoutSession({ user, pack });
+    if (isRouteCheckout) {
+      res.writeHead(303, { location: session.url, ...visitor.headers });
+      res.end();
+      return;
+    }
+    json(res, 200, { url: session.url, packId: pack.id }, visitor.headers);
   } catch (error) {
     console.error(error);
     json(res, 500, { error: "Could not start Stripe Checkout." }, visitor.headers);
@@ -1802,7 +1871,7 @@ async function serveStatic(req, res) {
   }
 }
 
-createServer((req, res) => {
+const server = createServer((req, res) => {
   const host = String(req.headers.host || "").toLowerCase();
   if (host === "listboost.uk" || host.startsWith("listboost.uk:")) {
     res.writeHead(301, { location: `https://www.listboost.uk${req.url || "/"}` });
@@ -1895,9 +1964,8 @@ createServer((req, res) => {
         serveStatic(req, res);
         return;
       }
-      const token = parseCookies(req).lb_session || "";
-      if (!getSessionUser(token)) {
-        res.writeHead(302, { location: `/login?next=/checkout/${encodeURIComponent(checkoutMatch[1])}` });
+      if (!getUserBySession(req)) {
+        res.writeHead(302, { location: `/signup?next=${encodeURIComponent(`/checkout/${checkoutMatch[1]}`)}` });
         res.end();
         return;
       }
@@ -1932,7 +2000,20 @@ createServer((req, res) => {
   }
 
   json(res, 405, { error: "Method not allowed." });
-}).listen(port, () => {
-  console.log(`Vinted Listing Booster running at http://localhost:${port}`);
-  logLaunchChecks();
 });
+
+if (process.env.LISTBOOST_NO_LISTEN !== "true") {
+  server.listen(port, () => {
+    console.log(`Vinted Listing Booster running at http://localhost:${port}`);
+    logLaunchChecks();
+  });
+}
+
+export {
+  cleanEnvValue,
+  trimConfiguredEnv,
+  normalizeAppUrl,
+  findCreditPack,
+  publicCreditPacks,
+  server
+};

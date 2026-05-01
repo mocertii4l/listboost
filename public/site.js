@@ -20,7 +20,11 @@ async function api(path, options = {}) {
   const text = await response.text();
   let data = {};
   try { data = text ? JSON.parse(text) : {}; } catch { data = { error: text }; }
-  if (!response.ok) throw new Error(data.error || `Request failed (${response.status})`);
+  if (!response.ok) {
+    const error = new Error(data.error || `Request failed (${response.status})`);
+    Object.assign(error, data);
+    throw error;
+  }
   return data;
 }
 
@@ -58,7 +62,7 @@ function renderPacks(packs) {
       <p class="price"><strong>${pack.credits}</strong><span>credits</span></p>
       <p class="muted">${formatPrice(pack.pricePence)} one-time</p>
       <p>${pack.description}</p>
-      <a class="button ${pack.featured ? "primary" : "secondary"}" href="/checkout/${pack.id}">Buy ${pack.name}</a>
+      <button class="button ${pack.featured ? "primary" : "secondary"}" type="button" data-checkout-pack="${pack.id}">Buy ${pack.name}</button>
     </article>
   `).join("");
 }
@@ -76,6 +80,7 @@ async function bootstrap() {
   }
   installForms();
   installAppTools();
+  installCheckoutButtons();
   installCheckoutSuccess();
   installFaq();
 }
@@ -190,6 +195,31 @@ function installAppTools() {
     if (!copy) return;
     await navigator.clipboard.writeText(copy.dataset.copy || "");
     toast("Copied.", "success");
+  });
+}
+
+function installCheckoutButtons() {
+  document.addEventListener("click", async (event) => {
+    const button = event.target.closest("[data-checkout-pack]");
+    if (!button) return;
+    button.disabled = true;
+    const original = button.textContent;
+    button.textContent = "Opening checkout...";
+    try {
+      const data = await api("/api/create-checkout-session", {
+        method: "POST",
+        body: JSON.stringify({ packId: button.dataset.checkoutPack })
+      });
+      location.href = data.url;
+    } catch (error) {
+      toast(error.message, "error");
+      if (error.authUrl) {
+        location.href = error.authUrl;
+        return;
+      }
+      button.disabled = false;
+      button.textContent = original;
+    }
   });
 }
 
