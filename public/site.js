@@ -128,7 +128,7 @@ function installPublicShell() {
 }
 
 function formatPrice(pence) {
-  return `£${(Number(pence || 0) / 100).toFixed(2)}`;
+  return `GBP ${(Number(pence || 0) / 100).toFixed(2).replace(/\.00$/, "")}`;
 }
 
 function renderPacks(packs) {
@@ -149,6 +149,7 @@ function renderPacks(packs) {
 
 async function bootstrap() {
   installPublicShell();
+  renderAppRoute();
   installTheme();
   installPasswordToggles();
   try {
@@ -160,6 +161,7 @@ async function bootstrap() {
     $$(".low-credit-cta").forEach((node) => node.classList.toggle("hidden", Boolean(me.user) && Number(me.credits?.remaining || 0) >= 10));
     document.body.classList.toggle("signed-in", Boolean(me.user));
     document.body.classList.toggle("signed-out", !me.user);
+    hydrateAppRoute(me);
   } catch {
     toast("Could not load account state.", "error");
   }
@@ -191,8 +193,167 @@ function installAuthMode() {
 
 function installAppNav() {
   $$(".app-nav a").forEach((link) => {
-    link.classList.toggle("is-active", link.pathname === location.pathname || (location.pathname === "/app" && link.pathname === "/app/notes"));
+    const active = link.pathname === location.pathname;
+    link.classList.toggle("is-active", active);
+    if (active) link.setAttribute("aria-current", "page");
+    else link.removeAttribute("aria-current");
   });
+}
+
+function escapeHtml(value) {
+  return String(value == null ? "" : value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function appRouteName() {
+  if (!location.pathname.startsWith("/app")) return "";
+  const name = location.pathname.replace(/^\/app\/?/, "") || "dashboard";
+  return ["dashboard", "notes", "photo", "score", "replies", "history", "billing"].includes(name) ? name : "dashboard";
+}
+
+const appFeatureTiles = [
+  ["notes", "Notes", "Turn rough item notes into a complete listing.", "/app/notes"],
+  ["photo", "Photo", "Upload item photos and generate from visible details.", "/app/photo"],
+  ["score", "Score", "Check why an existing listing is not selling.", "/app/score"],
+  ["replies", "Replies", "Write buyer replies for offers and questions.", "/app/replies"],
+  ["history", "History", "Search and reopen saved listing packages.", "/app/history"],
+  ["billing", "Billing", "View credits, packs and recent transactions.", "/app/billing"]
+];
+
+function renderAppRoute() {
+  const root = $("#appRoute");
+  if (!root) return;
+  const route = appRouteName();
+  const templates = {
+    dashboard: dashboardRouteTemplate,
+    notes: notesRouteTemplate,
+    photo: photoRouteTemplate,
+    score: scoreRouteTemplate,
+    replies: repliesRouteTemplate,
+    history: historyRouteTemplate,
+    billing: billingRouteTemplate
+  };
+  root.innerHTML = templates[route]();
+  document.body.dataset.appRoute = route;
+}
+
+function routeHeader(kicker, title, copy) {
+  return `<header class="route-head"><p class="badge">${kicker}</p><h1>${title}</h1><p class="muted">${copy}</p></header>`;
+}
+
+function dashboardRouteTemplate() {
+  return `
+    <section data-route="dashboard">
+      ${routeHeader("Dashboard", "Your ListBoost workspace", "Choose the workflow you need. Your credits and history stay with your account.")}
+      <div class="dashboard-grid route-grid">
+        <article class="card balance-card"><span class="badge">Balance</span><h2 class="js-credits">Loading credits</h2><p class="muted js-email">Loading account</p><a class="button primary" href="/app/notes">Generate listing</a></article>
+        ${appFeatureTiles.map(([, title, copy, href]) => `<a class="card feature-tile" href="${href}"><h3>${title}</h3><p>${copy}</p></a>`).join("")}
+      </div>
+    </section>
+  `;
+}
+
+function notesRouteTemplate() {
+  return `
+    <section class="tool-layout" data-route="notes">
+      <form class="card sticky-form" id="notesForm">
+        <span class="badge">Generator</span>
+        <h1>Generate from notes</h1>
+        <label>Category<select name="category"><option>Clothing</option><option>Shoes</option><option>Bags</option><option>Accessories</option></select></label>
+        <label>Tone<select name="tone"><option value="friendly">Friendly</option><option value="clean">Clean</option><option value="premium">Premium</option><option value="quick-sale">Quick sale</option></select></label>
+        <label>Seller mode<select name="sellerMode"><option value="clearout">Quick clear-out</option><option value="profit">Profit reseller</option><option value="premium">Premium item</option></select></label>
+        <label>Reply style<select name="negotiationGoal"><option value="friendly">Friendly</option><option value="polite-firm">Firm</option><option value="counter">Negotiation</option></select></label>
+        <label>Size<input name="size" placeholder="UK 10, M, EU 39" /></label>
+        <label>Condition<input name="condition" placeholder="Good condition, worn once" /></label>
+        <label>Item notes<textarea name="itemDetails" required placeholder="Brand, item type, colour, size, condition, flaws, postage..."></textarea></label>
+        <label>Buyer message<textarea name="buyerQuestion" placeholder="Optional: paste buyer question"></textarea></label>
+        <button class="button primary" type="submit">Generate listing</button>
+      </form>
+      <section class="output-stack" id="output"><div class="empty-state">Your listing package appears here with copy buttons.</div></section>
+    </section>
+  `;
+}
+
+function photoRouteTemplate() {
+  return `
+    <section class="tool-layout" data-route="photo">
+      <form class="card sticky-form" id="photoRouteForm">
+        <span class="badge">Photo</span>
+        <h1>Generate from photos</h1>
+        <label>Photos<input name="photos" type="file" accept="image/*" multiple /></label>
+        <label>Category<select name="category"><option>Clothing</option><option>Shoes</option><option>Bags</option><option>Accessories</option></select></label>
+        <label>Size<input name="size" placeholder="UK 10, M, EU 39" /></label>
+        <label>Condition<input name="condition" placeholder="Good condition, worn once" /></label>
+        <label>Notes<textarea name="notes" placeholder="Optional: brand, flaws, postage details..."></textarea></label>
+        <button class="button primary" type="submit">Generate from photos</button>
+      </form>
+      <section class="output-stack" id="photoRouteOutput"><div class="empty-state">Upload up to four photos to generate a listing.</div></section>
+    </section>
+  `;
+}
+
+function scoreRouteTemplate() {
+  return `
+    <section class="tool-layout" data-route="score">
+      <form class="card sticky-form" id="scoreForm">
+        <span class="badge">Score</span>
+        <h1>Check a listing</h1>
+        <label>Current title<input name="title" placeholder="Zara black midi dress UK 10" /></label>
+        <label>Current description<textarea name="description" required placeholder="Paste the current listing description..."></textarea></label>
+        <button class="button primary" type="submit">Score listing</button>
+      </form>
+      <section class="output-stack" id="scoreOutputPanel"><div class="empty-state">Score, fixes and missing details appear here.</div></section>
+    </section>
+  `;
+}
+
+function repliesRouteTemplate() {
+  return `
+    <section class="tool-layout" data-route="replies">
+      <form class="card sticky-form" id="replyForm">
+        <span class="badge">Replies</span>
+        <h1>Buyer reply tools</h1>
+        <label>Item context<textarea name="itemDetails" required placeholder="Item, condition, price, postage options..."></textarea></label>
+        <label>Buyer message<textarea name="buyerQuestion" required placeholder="Paste the buyer's offer or question..."></textarea></label>
+        <button class="button primary" type="submit">Write reply</button>
+      </form>
+      <section class="output-stack" id="replyOutput"><div class="empty-state">A clear buyer reply appears here.</div></section>
+    </section>
+  `;
+}
+
+function historyRouteTemplate() {
+  return `
+    <section data-route="history">
+      ${routeHeader("History", "Saved listing packages", "Search, reopen, copy or regenerate previous outputs.")}
+      <div class="card history-toolbar"><label>Search history<input id="historySearch" type="search" placeholder="Search title or description" /></label></div>
+      <div class="history-list" id="historyList"><div class="skeleton">Loading history...</div></div>
+      <div class="pager" id="historyPager"></div>
+    </section>
+  `;
+}
+
+function billingRouteTemplate() {
+  return `
+    <section data-route="billing">
+      ${routeHeader("Billing", "Credits and transactions", "View your balance, buy more credits and audit recent credit changes.")}
+      <div class="dashboard-grid route-grid">
+        <article class="card balance-card"><span class="badge">Balance</span><h2 class="js-credits">Loading credits</h2><p class="muted">Buy more when your balance drops below 10.</p></article>
+        <article class="card"><h3>Credit packs</h3><div class="billing-packs" id="billingPacks"><div class="skeleton">Loading packs...</div></div></article>
+        <article class="card"><h3>Recent transactions</h3><div id="billingTransactions"><div class="skeleton">Loading transactions...</div></div></article>
+      </div>
+    </section>
+  `;
+}
+
+function hydrateAppRoute(me = accountState) {
+  const route = appRouteName();
+  if (route === "history") loadAppHistory();
+  if (route === "billing") loadBilling(me);
 }
 
 function installPasswordToggles() {
@@ -373,13 +534,22 @@ function installForms() {
 function outputTemplate(data = {}) {
   const price = data.priceOptions || {};
   return `
-    <section class="output-card"><h3>Title</h3><p>${data.title || "Generated title appears here."}</p><button data-copy="${data.title || ""}">Copy title</button></section>
-    <section class="output-card"><h3>Description</h3><pre>${data.description || "Generated description appears here."}</pre><button data-copy="${data.description || ""}">Copy description</button></section>
-    <section class="output-card"><h3>Keywords</h3><p>${(data.tags || data.searchTerms || []).join(", ") || "Keywords appear here."}</p></section>
+    <section class="output-card"><h3>Title</h3><p>${escapeHtml(data.title || "Generated title appears here.")}</p><button type="button" data-copy="${escapeHtml(data.title || "")}">Copy title</button></section>
+    <section class="output-card"><h3>Description</h3><pre>${escapeHtml(data.description || "Generated description appears here.")}</pre><button type="button" data-copy="${escapeHtml(data.description || "")}">Copy description</button></section>
+    <section class="output-card"><h3>Keywords</h3><p>${escapeHtml((data.tags || data.searchTerms || []).join(", ") || "Keywords appear here.")}</p></section>
     <section class="output-card"><h3>Pricing tiers</h3><div class="mini-cards"><span>Fast ${price.fastSale || "-"}</span><span>Fair ${price.fairPrice || "-"}</span><span>Max ${price.maxPrice || "-"}</span></div></section>
-    <section class="output-card"><h3>Photo checklist</h3><ul>${(data.photoChecklist || ["Front", "Back", "Label", "Any flaws"]).map((x) => `<li>${x}</li>`).join("")}</ul></section>
-    <section class="output-card safety-block"><h3>Safety check</h3><ul>${(data.missingDetails || ["Review the final listing before posting."]).map((x) => `<li>${x}</li>`).join("")}</ul></section>
+    <section class="output-card"><h3>Photo checklist</h3><ul>${(data.photoChecklist || ["Front", "Back", "Label", "Any flaws"]).map((x) => `<li>${escapeHtml(x)}</li>`).join("")}</ul></section>
+    <section class="output-card safety-block"><h3>Safety check</h3><ul>${(data.missingDetails || ["Review the final listing before posting."]).map((x) => `<li>${escapeHtml(x)}</li>`).join("")}</ul></section>
   `;
+}
+
+function fileToDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 }
 
 function installAppTools() {
@@ -397,6 +567,104 @@ function installAppTools() {
         out.innerHTML = "";
         toast(error.message, "error");
       }
+    });
+  }
+
+  const photoRouteForm = $("#photoRouteForm");
+  if (photoRouteForm) {
+    photoRouteForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const out = $("#photoRouteOutput");
+      out.innerHTML = "<div class='skeleton'>Reading photos...</div>";
+      try {
+        const formData = new FormData(photoRouteForm);
+        const files = Array.from(photoRouteForm.elements.photos.files || []).slice(0, 4);
+        if (!files.length) throw new Error("Add at least one photo first.");
+        const photos = await Promise.all(files.map(fileToDataUrl));
+        const data = await api("/api/generate-from-photos", {
+          method: "POST",
+          body: JSON.stringify({
+            photos,
+            category: formData.get("category") || "",
+            size: formData.get("size") || "",
+            condition: formData.get("condition") || "",
+            notes: formData.get("notes") || "",
+            tone: "clean",
+            sellerMode: "clearout",
+            negotiationGoal: "friendly"
+          })
+        });
+        out.innerHTML = outputTemplate(data);
+        toast("Generated from photos.", "success");
+      } catch (error) {
+        out.innerHTML = `<p class="error">${escapeHtml(error.message)}</p>`;
+        toast(error.message, "error");
+      }
+    });
+  }
+
+  const scoreForm = $("#scoreForm");
+  if (scoreForm) {
+    scoreForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const out = $("#scoreOutputPanel");
+      out.innerHTML = "<div class='skeleton'>Scoring listing...</div>";
+      try {
+        const formData = new FormData(scoreForm);
+        const data = await api("/api/generate", {
+          method: "POST",
+          body: JSON.stringify({
+            category: "Clothing",
+            itemDetails: `${formData.get("title") || ""}\n${formData.get("description") || ""}`,
+            tone: "clean",
+            sellerMode: "clearout",
+            negotiationGoal: "friendly"
+          })
+        });
+        out.innerHTML = outputTemplate(data);
+        toast("Scored listing.", "success");
+      } catch (error) {
+        out.innerHTML = `<p class="error">${escapeHtml(error.message)}</p>`;
+        toast(error.message, "error");
+      }
+    });
+  }
+
+  const replyForm = $("#replyForm");
+  if (replyForm) {
+    replyForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const out = $("#replyOutput");
+      out.innerHTML = "<div class='skeleton'>Writing reply...</div>";
+      try {
+        const formData = new FormData(replyForm);
+        const data = await api("/api/generate", {
+          method: "POST",
+          body: JSON.stringify({
+            category: "Clothing",
+            itemDetails: formData.get("itemDetails"),
+            buyerQuestion: formData.get("buyerQuestion"),
+            tone: "friendly",
+            sellerMode: "clearout",
+            negotiationGoal: "friendly"
+          })
+        });
+        const reply = data.buyerQuestionReply || (data.buyerReplies || [])[0] || "Reply generated.";
+        out.innerHTML = `<section class="output-card reply-block"><h3>Suggested reply</h3><p>${escapeHtml(reply)}</p><button type="button" data-copy="${escapeHtml(reply)}">Copy reply</button></section>`;
+        toast("Reply generated.", "success");
+      } catch (error) {
+        out.innerHTML = `<p class="error">${escapeHtml(error.message)}</p>`;
+        toast(error.message, "error");
+      }
+    });
+  }
+
+  const historySearch = $("#historySearch");
+  if (historySearch) {
+    let timer;
+    historySearch.addEventListener("input", () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => loadAppHistory(1), 250);
     });
   }
 
@@ -421,8 +689,92 @@ function installAppTools() {
     const copy = event.target.closest("[data-copy]");
     if (!copy) return;
     await navigator.clipboard.writeText(copy.dataset.copy || "");
+    const original = copy.textContent;
+    copy.textContent = "Copied!";
+    copy.setAttribute("aria-live", "polite");
     toast("Copied.", "success");
+    setTimeout(() => {
+      copy.textContent = original;
+      copy.removeAttribute("aria-live");
+    }, 2000);
   });
+}
+
+async function loadAppHistory(page = 1) {
+  const list = $("#historyList");
+  const pager = $("#historyPager");
+  if (!list) return;
+  if (!accountState.user) {
+    list.innerHTML = '<div class="empty-state">Sign in to see saved listings.</div>';
+    if (pager) pager.innerHTML = "";
+    return;
+  }
+  const query = $("#historySearch")?.value || "";
+  list.innerHTML = "<div class='skeleton'>Loading history...</div>";
+  try {
+    const data = await api(`/api/history?page=${page}&pageSize=20&q=${encodeURIComponent(query)}`);
+    if (!data.history?.length) {
+      list.innerHTML = '<div class="empty-state">No saved listings yet. Generate a listing to build your history.</div>';
+    } else {
+      list.innerHTML = data.history.map((item) => `
+        <article class="history-card" data-history-id="${escapeHtml(item.id)}">
+          <strong>${escapeHtml(item.title || "Untitled listing")}</strong>
+          <span>${Number(item.score || 0)}/100</span>
+          <p>${escapeHtml((item.description || "No description saved.").slice(0, 180))}</p>
+          <div class="history-meta">${escapeHtml(item.source === "photos" ? "from photos" : "from notes")}</div>
+          <div class="history-actions">
+            <button type="button" class="history-button" data-copy="${escapeHtml(item.title || "")}">Copy title</button>
+            <button type="button" class="history-button" data-copy="${escapeHtml(item.description || "")}">Copy description</button>
+          </div>
+        </article>
+      `).join("");
+    }
+    const pagination = data.pagination || { page: 1, totalPages: 1 };
+    if (pager) {
+      pager.innerHTML = `
+        <button type="button" ${pagination.page <= 1 ? "disabled" : ""} data-history-page="${pagination.page - 1}">Previous</button>
+        <span>Page ${pagination.page} of ${pagination.totalPages}</span>
+        <button type="button" ${pagination.page >= pagination.totalPages ? "disabled" : ""} data-history-page="${pagination.page + 1}">Next</button>
+      `;
+      $$("[data-history-page]", pager).forEach((button) => {
+        button.addEventListener("click", () => loadAppHistory(Number(button.dataset.historyPage)));
+      });
+    }
+  } catch (error) {
+    list.innerHTML = `<div class="empty-state">${escapeHtml(error.message)}</div>`;
+  }
+}
+
+async function loadBilling(me = accountState) {
+  const packs = $("#billingPacks");
+  const transactions = $("#billingTransactions");
+  if (!packs || !transactions) return;
+  if (!me.user) {
+    packs.innerHTML = '<div class="empty-state">Sign in to buy credits.</div>';
+    transactions.innerHTML = '<div class="empty-state">Transactions appear after your first credit purchase.</div>';
+    return;
+  }
+  try {
+    const data = await api("/api/billing");
+    packs.innerHTML = (data.creditPacks || []).map((pack) => `
+      <div class="billing-pack ${pack.featured ? "is-featured" : ""}">
+        <strong>${escapeHtml(pack.name)}</strong>
+        <span>${Number(pack.credits || 0)} credits · ${escapeHtml(formatPrice(pack.pricePence))}</span>
+        <button type="button" class="pricing-buy" data-checkout-pack="${escapeHtml(pack.id)}">Buy ${escapeHtml(pack.name)}</button>
+      </div>
+    `).join("");
+    const rows = [
+      ...(data.payments || []).map((item) => ({ label: `Payment ${item.reference}`, amount: `+${item.credits} credits`, date: item.createdAt })),
+      ...(data.audit || []).map((item) => ({ label: item.reason, amount: `${item.delta > 0 ? "+" : ""}${item.delta}`, date: item.createdAt }))
+    ].slice(0, 20);
+    transactions.innerHTML = rows.length ? `
+      <div class="transaction-list">
+        ${rows.map((row) => `<div><span>${escapeHtml(row.label)}</span><strong>${escapeHtml(row.amount)}</strong><time>${escapeHtml(row.date)}</time></div>`).join("")}
+      </div>
+    ` : '<div class="empty-state">No transactions yet. Credit purchases and adjustments appear here.</div>';
+  } catch (error) {
+    transactions.innerHTML = `<div class="empty-state">${escapeHtml(error.message)}</div>`;
+  }
 }
 
 function installCheckoutButtons() {

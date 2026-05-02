@@ -21,10 +21,29 @@ test("new app surfaces include required modules", () => {
   for (const path of ["/app/notes", "/app/photo", "/app/score", "/app/replies", "/app/history", "/app/billing"]) {
     assert.match(serverJs, new RegExp(path.replace(/\//g, "\\/")));
   }
-  assert.match(appHtml, /Generate from notes/);
-  assert.match(appHtml, /Recent generations/);
+  assert.match(appHtml, /id="appRoute"/);
+  assert.match(siteJs, /function notesRouteTemplate/);
+  assert.match(siteJs, /Generate from notes/);
+  assert.match(siteJs, /function repliesRouteTemplate/);
+  assert.match(siteJs, /Buyer reply tools/);
+  assert.match(siteJs, /function billingRouteTemplate/);
+  assert.match(siteJs, /Recent transactions/);
   assert.match(siteJs, /installCheckoutSuccess/);
   assert.match(siteJs, /theme-toggle/);
+});
+
+test("app route templates isolate feature content and expose active nav", () => {
+  assert.match(siteJs, /data-route="dashboard"/);
+  assert.match(siteJs, /data-route="notes"/);
+  assert.match(siteJs, /data-route="photo"/);
+  assert.match(siteJs, /data-route="score"/);
+  assert.match(siteJs, /data-route="replies"/);
+  assert.match(siteJs, /data-route="history"/);
+  assert.match(siteJs, /data-route="billing"/);
+  assert.match(siteJs, /aria-current", "page"/);
+  assert.match(siteJs, /loadAppHistory/);
+  assert.match(serverJs, /pagination/);
+  assert.match(serverJs, /handleBilling/);
 });
 
 test("password toggles and public header states are wired", () => {

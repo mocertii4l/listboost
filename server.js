@@ -1187,13 +1187,23 @@ async function handleHistory(req, res) {
     return;
   }
 
+  const url = new URL(req.url, `http://${req.headers.host}`);
+  const page = Math.max(1, Number.parseInt(url.searchParams.get("page") || "1", 10) || 1);
+  const pageSize = Math.min(20, Math.max(1, Number.parseInt(url.searchParams.get("pageSize") || "20", 10) || 20));
+  const search = String(url.searchParams.get("q") || "").trim();
+  const offset = (page - 1) * pageSize;
+  const where = search
+    ? "WHERE user_id = ? AND (title LIKE ? OR result_json LIKE ?)"
+    : "WHERE user_id = ?";
+  const args = search ? [user.id, `%${search}%`, `%${search}%`] : [user.id];
+  const total = db.prepare(`SELECT COUNT(*) AS count FROM generations ${where}`).get(...args);
   const rows = db.prepare(`
     SELECT id, title, score, result_json, created_at
     FROM generations
-    WHERE user_id = ?
+    ${where}
     ORDER BY created_at DESC
-    LIMIT 12
-  `).all(user.id);
+    LIMIT ? OFFSET ?
+  `).all(...args, pageSize, offset);
 
   const history = rows.map((row) => {
     const result = safeParseResultJson(row.result_json);
@@ -1209,7 +1219,57 @@ async function handleHistory(req, res) {
     };
   });
 
-  json(res, 200, { history }, visitor.headers);
+  json(res, 200, {
+    history,
+    pagination: {
+      page,
+      pageSize,
+      total: Number(total?.count || 0),
+      totalPages: Math.max(1, Math.ceil(Number(total?.count || 0) / pageSize))
+    }
+  }, visitor.headers);
+}
+
+async function handleBilling(req, res) {
+  const visitor = getVisitor(req);
+  const user = getUserBySession(req);
+  if (!user) {
+    json(res, 401, { error: "Sign in to view billing." }, visitor.headers);
+    return;
+  }
+
+  const payments = db.prepare(`
+    SELECT stripe_session_id, credits, processed_at
+    FROM payments
+    WHERE user_id = ?
+    ORDER BY processed_at DESC
+    LIMIT 20
+  `).all(user.id).map((row) => ({
+    type: "payment",
+    reference: row.stripe_session_id,
+    credits: row.credits,
+    createdAt: row.processed_at
+  }));
+  const audit = db.prepare(`
+    SELECT actor, delta, reason, created_at
+    FROM credit_audit
+    WHERE user_id = ?
+    ORDER BY created_at DESC
+    LIMIT 50
+  `).all(user.id).map((row) => ({
+    type: "credit-audit",
+    actor: row.actor,
+    delta: row.delta,
+    reason: row.reason,
+    createdAt: row.created_at
+  }));
+
+  json(res, 200, {
+    credits: getAccountCredits(user),
+    creditPacks: publicCreditPacks(),
+    payments,
+    audit
+  }, visitor.headers);
 }
 
 async function handleHistoryGet(req, res, id) {
@@ -2214,8 +2274,13 @@ const server = createServer((req, res) => {
     return;
   }
 
-  if (req.method === "GET" && req.url === "/api/history") {
+  if (req.method === "GET" && (req.url === "/api/history" || req.url.startsWith("/api/history?"))) {
     handleHistory(req, res);
+    return;
+  }
+
+  if (req.method === "GET" && req.url === "/api/billing") {
+    handleBilling(req, res);
     return;
   }
 
