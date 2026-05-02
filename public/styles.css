@@ -1821,6 +1821,25 @@ ul li + li { margin-top: 4px; }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #071412;
+    --bg-2: #0a1b18;
+    --panel: #0d1d1a;
+    --ink: #f4fffc;
+    --ink-soft: #e4f6f2;
+    --muted: #b8d0cb;
+    --soft: #8fa9a4;
+    --line: #223c38;
+    --line-strong: #31544f;
+    --green-50: #0f302b;
+    --green-100: #20534c;
+    --green-700: #7ee7d8;
+    --amber-50: #30240e;
+    --amber-200: #6c541a;
+    --amber-700: #f9d77a;
+    --red-50: #351313;
+    --red-200: #7a2828;
+    --red-700: #ffb4b4;
     --color-bg: #071412;
     --color-surface: #0d1d1a;
     --color-fg: #f4fffc;
@@ -1830,6 +1849,25 @@ ul li + li { margin-top: 4px; }
 }
 
 :root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #071412;
+  --bg-2: #0a1b18;
+  --panel: #0d1d1a;
+  --ink: #f4fffc;
+  --ink-soft: #e4f6f2;
+  --muted: #b8d0cb;
+  --soft: #8fa9a4;
+  --line: #223c38;
+  --line-strong: #31544f;
+  --green-50: #0f302b;
+  --green-100: #20534c;
+  --green-700: #7ee7d8;
+  --amber-50: #30240e;
+  --amber-200: #6c541a;
+  --amber-700: #f9d77a;
+  --red-50: #351313;
+  --red-200: #7a2828;
+  --red-700: #ffb4b4;
   --color-bg: #071412;
   --color-surface: #0d1d1a;
   --color-fg: #f4fffc;
@@ -1922,9 +1960,31 @@ body:not(.signed-in) .signed-in-only {
 }
 
 .page-wrap {
-  width: min(1160px, calc(100% - 28px));
+  width: min(1240px, calc(100% - 28px));
   margin: 0 auto;
   padding: 54px 0;
+}
+
+.app-route-shell {
+  display: grid;
+  gap: 24px;
+}
+
+.route-head {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 24px;
+  max-width: 780px;
+}
+
+.route-head h1,
+.sticky-form h1 {
+  font-size: clamp(2rem, 4vw, 3.2rem);
+  color: var(--color-fg);
+}
+
+.route-grid {
+  align-items: stretch;
 }
 
 .page-hero {
@@ -2048,15 +2108,38 @@ body:not(.signed-in) .signed-in-only {
 }
 
 .auth-card {
-  width: min(460px, 100%);
+  width: min(420px, 100%);
   display: grid;
   gap: 14px;
+}
+
+.auth-card h1 {
+  font-size: clamp(2rem, 4vw, 3rem);
+  line-height: 1.1;
 }
 
 form label {
   display: grid;
   gap: 6px;
   margin-bottom: 12px;
+}
+
+input,
+textarea,
+select {
+  width: 100%;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-surface);
+  color: var(--color-fg);
+  padding: 10px 12px;
+}
+
+textarea { min-height: 140px; resize: vertical; }
+
+input::placeholder,
+textarea::placeholder {
+  color: color-mix(in srgb, var(--color-muted) 78%, transparent);
 }
 
 .password-field {
@@ -2165,6 +2248,128 @@ form label {
   border-radius: 18px;
   padding: 24px;
   color: var(--color-muted);
+}
+
+.history-toolbar {
+  margin-bottom: 16px;
+}
+
+.pager {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 18px;
+  color: var(--color-muted);
+}
+
+.billing-packs,
+.transaction-list {
+  display: grid;
+  gap: 10px;
+}
+
+.billing-pack,
+.transaction-list div {
+  display: grid;
+  gap: 5px;
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  padding: 12px;
+  background: color-mix(in srgb, var(--color-surface) 94%, var(--color-accent) 6%);
+}
+
+.billing-pack span,
+.transaction-list time {
+  color: var(--color-muted);
+  font-size: 0.9rem;
+}
+
+.transaction-list strong {
+  color: var(--color-fg);
+}
+
+:root[data-theme="dark"] .pricing-card,
+:root[data-theme="dark"] .output-card,
+:root[data-theme="dark"] .faq-item,
+:root[data-theme="dark"] .history-card,
+:root[data-theme="dark"] .template-card,
+:root[data-theme="dark"] .result-block,
+:root[data-theme="dark"] .price-row,
+:root[data-theme="dark"] .account-summary,
+:root[data-theme="dark"] .legal-panel,
+:root[data-theme="dark"] .snapshot-list div,
+:root[data-theme="dark"] .safety-block ul li,
+:root[data-theme="dark"] .extracted-grid div {
+  background: var(--color-surface);
+  color: var(--color-fg);
+  border-color: var(--color-border);
+}
+
+:root[data-theme="dark"] .pricing-card h3,
+:root[data-theme="dark"] .pricing-price strong,
+:root[data-theme="dark"] .history-card strong,
+:root[data-theme="dark"] .price-row strong,
+:root[data-theme="dark"] .legal-panel h1,
+:root[data-theme="dark"] .legal-panel h2,
+:root[data-theme="dark"] .balance-card h2,
+:root[data-theme="dark"] .js-credits {
+  color: var(--color-fg);
+}
+
+:root[data-theme="dark"] .status-pill {
+  background: #0f302b;
+  border-color: #20534c;
+  color: #7ee7d8;
+}
+
+:root[data-theme="dark"] .status-pill.muted {
+  background: #112522;
+  border-color: var(--color-border);
+  color: var(--color-muted);
+}
+
+:root[data-theme="dark"] .badge,
+:root[data-theme="dark"] .pricing-badge,
+:root[data-theme="dark"] .tag {
+  background: #113532;
+  border-color: #1f6860;
+  color: #7ee7d8;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .pricing-card,
+  :root:not([data-theme="light"]) .output-card,
+  :root:not([data-theme="light"]) .faq-item,
+  :root:not([data-theme="light"]) .history-card,
+  :root:not([data-theme="light"]) .template-card,
+  :root:not([data-theme="light"]) .result-block,
+  :root:not([data-theme="light"]) .price-row,
+  :root:not([data-theme="light"]) .account-summary,
+  :root:not([data-theme="light"]) .legal-panel,
+  :root:not([data-theme="light"]) .snapshot-list div,
+  :root:not([data-theme="light"]) .safety-block ul li,
+  :root:not([data-theme="light"]) .extracted-grid div {
+    background: var(--color-surface);
+    color: var(--color-fg);
+    border-color: var(--color-border);
+  }
+  :root:not([data-theme="light"]) .pricing-card h3,
+  :root:not([data-theme="light"]) .pricing-price strong,
+  :root:not([data-theme="light"]) .history-card strong,
+  :root:not([data-theme="light"]) .price-row strong,
+  :root:not([data-theme="light"]) .legal-panel h1,
+  :root:not([data-theme="light"]) .legal-panel h2,
+  :root:not([data-theme="light"]) .balance-card h2,
+  :root:not([data-theme="light"]) .js-credits {
+    color: var(--color-fg);
+  }
+}
+
+@media (min-width: 900px) {
+  .page-wrap > .pricing-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 
 body.confetti::after {

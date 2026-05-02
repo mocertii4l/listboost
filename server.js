@@ -186,6 +186,15 @@ function findCreditPack(packId) {
   return creditPacks.find((item) => item.id === requestedPackId) || null;
 }
 
+function pricePenceForCredits(credits) {
+  const pack = creditPacks.find((item) => Number(item.credits) === Number(credits));
+  return Number(pack?.pricePence || 0);
+}
+
+function formatPence(pence) {
+  return `GBP ${(Number(pence || 0) / 100).toFixed(2).replace(/\.00$/, "")}`;
+}
+
 async function createCheckoutSession({ user, pack }) {
   if (process.env.STRIPE_MOCK_CHECKOUT === "true") {
     return { url: `https://checkout.stripe.test/session/${pack.id}` };
@@ -1884,13 +1893,14 @@ async function handleAdminPage(req, res) {
     FROM users
   `).get();
   const recentPayments = db.prepare(`
-    SELECT COALESCE(SUM(credits), 0) AS credits
+    SELECT credits
     FROM payments
     WHERE processed_at >= datetime('now', '-30 days')
-  `).get();
+  `).all();
+  const recentRevenuePence = recentPayments.reduce((sum, row) => sum + pricePenceForCredits(row.credits), 0);
 
   const userRows = users.map((u) => `
-    <tr>
+    <tr data-user-row>
       <td><code>${escapeHtml(u.id.slice(0, 8))}</code></td>
       <td>${escapeHtml(u.email)}</td>
       <td>${u.email_verified ? "yes" : "no"}</td>
@@ -1910,7 +1920,7 @@ async function handleAdminPage(req, res) {
   `).join("");
 
   const paymentRows = payments.map((p) => `
-    <tr><td><code>${escapeHtml(p.stripe_session_id)}</code></td><td><code>${escapeHtml(p.user_id.slice(0, 8))}</code></td><td>${p.credits}</td><td>${escapeHtml(p.processed_at)}</td></tr>
+    <tr><td><a href="https://dashboard.stripe.com/test/checkout/sessions/${escapeHtml(p.stripe_session_id)}" rel="noreferrer"><code>${escapeHtml(p.stripe_session_id)}</code></a></td><td><code>${escapeHtml(p.user_id.slice(0, 8))}</code></td><td>${p.credits}</td><td>${escapeHtml(p.processed_at)}</td></tr>
   `).join("");
 
   const genRows = generations.map((g) => `
@@ -1922,35 +1932,47 @@ async function handleAdminPage(req, res) {
   `).join("");
 
   const html = `<!doctype html>
-<html><head><meta charset="utf-8" /><title>ListBoost admin</title>
+<html><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><title>ListBoost admin</title>
 <style>
-  body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; margin: 24px; color: #101828; }
+  :root { color-scheme: light; --bg:#f9fafb; --panel:#fff; --fg:#101828; --muted:#475467; --line:#d0d5dd; --accent:#00b3a4; }
+  :root[data-theme="dark"] { color-scheme: dark; --bg:#071412; --panel:#0d1d1a; --fg:#f4fffc; --muted:#b8d0cb; --line:#223c38; --accent:#7ee7d8; }
+  body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; margin: 24px; color: var(--fg); background: var(--bg); }
   h1 { margin: 0 0 6px; }
-  h2 { margin: 28px 0 8px; font-size: 1rem; text-transform: uppercase; color: #475467; letter-spacing: 0.04em; }
+  h2 { margin: 28px 0 8px; font-size: 1rem; text-transform: uppercase; color: var(--muted); letter-spacing: 0.04em; }
+  a { color: var(--accent); }
+  .skip-link { position:absolute; left:12px; top:12px; transform:translateY(-200%); background:var(--fg); color:var(--bg); padding:8px 12px; border-radius:8px; }
+  .skip-link:focus { transform:translateY(0); }
+  .admin-top { display:flex; justify-content:space-between; align-items:center; gap:12px; }
   .summary { display: grid; grid-template-columns: repeat(5, minmax(140px, 1fr)); gap: 12px; margin: 20px 0; }
-  .card { border: 1px solid #d0d5dd; border-radius: 14px; padding: 16px; background: #f9fafb; }
-  .card span { display: block; color: #667085; font-size: 0.78rem; text-transform: uppercase; font-weight: 800; }
+  .card { border: 1px solid var(--line); border-radius: 14px; padding: 16px; background: var(--panel); }
+  .card span { display: block; color: var(--muted); font-size: 0.78rem; text-transform: uppercase; font-weight: 800; }
   .card strong { display: block; margin-top: 6px; font-size: 1.5rem; }
+  .table-tools { display:flex; justify-content:space-between; gap:12px; align-items:center; margin: 10px 0; flex-wrap:wrap; }
   table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
-  th, td { border-bottom: 1px solid #e4e7ec; padding: 6px 8px; text-align: left; vertical-align: top; }
-  th { background: #f9fafb; font-weight: 700; }
+  th, td { border-bottom: 1px solid var(--line); padding: 6px 8px; text-align: left; vertical-align: top; }
+  th { background: color-mix(in srgb, var(--panel) 88%, var(--accent) 12%); font-weight: 700; }
   code { font-size: 0.85rem; }
   form { display: inline-flex; gap: 6px; }
-  input, button { font: inherit; padding: 4px 6px; border: 1px solid #d0d5dd; border-radius: 4px; background: #fff; }
-  button { background: #101828; color: #fff; cursor: pointer; }
+  input, button { font: inherit; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); color: var(--fg); }
+  button { background: var(--fg); color: var(--bg); cursor: pointer; }
+  .toast { position: fixed; right: 18px; bottom: 18px; border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; background: var(--panel); box-shadow: 0 18px 40px rgba(0,0,0,.18); }
+  @media (max-width: 900px) { .summary { grid-template-columns: 1fr 1fr; } table { display:block; overflow-x:auto; } }
 </style></head>
-<body>
-  <h1>ListBoost admin</h1>
+<body><a class="skip-link" href="#main">Skip to content</a>
+  <div class="admin-top"><div><h1>ListBoost admin</h1>
   <p>Logged in as <strong>${escapeHtml(adminEmail)}</strong>. Webhook secret: ${stripeWebhookSecret ? "configured" : "<strong style='color:#b42318'>missing</strong>"}.</p>
+  </div><button type="button" id="themeToggle">Dark</button></div>
+  <main id="main">
   <section class="summary">
     <div class="card"><span>Total users</span><strong>${summary.totalUsers || 0}</strong></div>
     <div class="card"><span>Paid users</span><strong>${summary.paidUsers || 0}</strong></div>
-    <div class="card"><span>30d MRR proxy</span><strong>${recentPayments.credits || 0} credits</strong></div>
+    <div class="card"><span>Last-30d revenue</span><strong>${formatPence(recentRevenuePence)}</strong></div>
     <div class="card"><span>Credits granted</span><strong>${summary.creditsGranted || 0}</strong></div>
     <div class="card"><span>Credits used</span><strong>${summary.creditsUsed || 0}</strong></div>
   </section>
   <h2>Users (latest 200)</h2>
-  <table><thead><tr><th>id</th><th>email</th><th>verified</th><th>free</th><th>paid</th><th>used</th><th>remaining</th><th>adjust</th></tr></thead>
+  <div class="table-tools"><label>Search users <input id="userSearch" type="search" placeholder="email" /></label><div id="userPager"></div></div>
+  <table id="usersTable"><thead><tr><th>id</th><th>email</th><th>verified</th><th>free</th><th>paid</th><th>used</th><th>remaining</th><th>adjust</th></tr></thead>
   <tbody>${userRows}</tbody></table>
   <h2>Payments (latest 50)</h2>
   <table><thead><tr><th>session</th><th>user</th><th>credits</th><th>at</th></tr></thead><tbody>${paymentRows}</tbody></table>
@@ -1958,6 +1980,47 @@ async function handleAdminPage(req, res) {
   <table><thead><tr><th>at</th><th>user</th><th>title</th><th>score</th></tr></thead><tbody>${genRows}</tbody></table>
   <h2>Credit audit (latest 50)</h2>
   <table><thead><tr><th>at</th><th>user</th><th>actor</th><th>delta</th><th>reason</th></tr></thead><tbody>${auditRows}</tbody></table>
+  </main>
+  <script>
+    const root = document.documentElement;
+    const saved = localStorage.getItem("lb_theme") || "system";
+    if (saved !== "system") root.dataset.theme = saved;
+    themeToggle.textContent = root.dataset.theme === "dark" ? "Light" : "Dark";
+    themeToggle.addEventListener("click", () => {
+      const next = root.dataset.theme === "dark" ? "light" : "dark";
+      root.dataset.theme = next;
+      localStorage.setItem("lb_theme", next);
+      themeToggle.textContent = next === "dark" ? "Light" : "Dark";
+    });
+    document.querySelectorAll('form[action="/admin/credits"]').forEach((form) => {
+      form.addEventListener("submit", (event) => {
+        if (!confirm("Adjust this user's credits?")) event.preventDefault();
+      });
+    });
+    const rows = Array.from(document.querySelectorAll("[data-user-row]"));
+    let page = 1;
+    const pageSize = 25;
+    function renderUsers() {
+      const q = userSearch.value.toLowerCase().trim();
+      const visible = rows.filter((row) => row.textContent.toLowerCase().includes(q));
+      rows.forEach((row) => row.style.display = "none");
+      visible.slice((page - 1) * pageSize, page * pageSize).forEach((row) => row.style.display = "");
+      const pages = Math.max(1, Math.ceil(visible.length / pageSize));
+      if (page > pages) page = pages;
+      userPager.innerHTML = '<button type="button" id="prevUsers" ' + (page <= 1 ? "disabled" : "") + '>Previous</button> <span>Page ' + page + ' of ' + pages + '</span> <button type="button" id="nextUsers" ' + (page >= pages ? "disabled" : "") + '>Next</button>';
+      prevUsers.onclick = () => { page -= 1; renderUsers(); };
+      nextUsers.onclick = () => { page += 1; renderUsers(); };
+    }
+    userSearch.addEventListener("input", () => { page = 1; renderUsers(); });
+    renderUsers();
+    if (new URLSearchParams(location.search).get("adjusted")) {
+      const toast = document.createElement("div");
+      toast.className = "toast";
+      toast.textContent = "Credits adjusted.";
+      document.body.append(toast);
+      setTimeout(() => toast.remove(), 3500);
+    }
+  </script>
 </body></html>`;
   res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
   res.end(html);
@@ -2001,7 +2064,7 @@ async function handleAdminCreditsAdjust(req, res) {
   }
   recordAudit(userId, `admin:${adminEmail}`, delta, reason);
 
-  res.writeHead(303, { location: "/admin" });
+  res.writeHead(303, { location: "/admin?adjusted=1" });
   res.end();
 }
 
@@ -2329,7 +2392,7 @@ const server = createServer((req, res) => {
     return;
   }
 
-  if (req.method === "GET" && req.url === "/admin") {
+  if (req.method === "GET" && (req.url === "/admin" || req.url.startsWith("/admin?"))) {
     handleAdminPage(req, res);
     return;
   }

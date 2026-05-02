@@ -1,3 +1,5 @@
+import { eyeIcon, togglePasswordVisibility } from "./auth-utils.js";
+
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
 
@@ -158,7 +160,7 @@ async function bootstrap() {
     renderPacks(me.creditPacks || []);
     $$(".js-email").forEach((node) => { node.textContent = me.user?.email || "Signed out"; });
     $$(".js-credits").forEach((node) => { node.textContent = `${me.credits?.remaining || 0} credits`; });
-    $$(".low-credit-cta").forEach((node) => node.classList.toggle("hidden", Boolean(me.user) && Number(me.credits?.remaining || 0) >= 10));
+    $$(".low-credit-cta").forEach((node) => node.classList.toggle("hidden", !me.user || Number(me.credits?.remaining || 0) >= 10));
     document.body.classList.toggle("signed-in", Boolean(me.user));
     document.body.classList.toggle("signed-out", !me.user);
     hydrateAppRoute(me);
@@ -367,15 +369,8 @@ function installPasswordToggles() {
     button.type = "button";
     button.className = "password-toggle";
     button.setAttribute("aria-label", "Show password");
-    button.innerHTML = '<svg aria-hidden="true" viewBox="0 0 24 24"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>';
-    button.addEventListener("click", () => {
-      const showing = input.type === "text";
-      input.type = showing ? "password" : "text";
-      button.setAttribute("aria-label", showing ? "Show password" : "Hide password");
-      button.innerHTML = showing
-        ? '<svg aria-hidden="true" viewBox="0 0 24 24"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>'
-        : '<svg aria-hidden="true" viewBox="0 0 24 24"><path d="m3 3 18 18"/><path d="M10.6 10.6a2 2 0 0 0 2.8 2.8"/><path d="M9.5 5.4A10.8 10.8 0 0 1 12 5c6.5 0 10 7 10 7a16.4 16.4 0 0 1-3.1 4.1"/><path d="M6.6 6.6C3.6 8.5 2 12 2 12s3.5 7 10 7c1.4 0 2.7-.3 3.8-.8"/></svg>';
-    });
+    button.innerHTML = eyeIcon;
+    button.addEventListener("click", () => togglePasswordVisibility(input, button));
     wrapper.append(button);
   });
 }
@@ -818,17 +813,22 @@ function installLogout() {
 function installCheckoutSuccess() {
   const status = $("#checkoutStatus");
   if (!status) return;
+  const sessionId = new URLSearchParams(location.search).get("session_id");
+  if (!sessionId) {
+    status.innerHTML = "<strong>Missing checkout session.</strong><span>Email support@listboost.uk if you completed payment.</span>";
+    return;
+  }
   let attempts = 0;
+  const startingCredits = Number(accountState.credits?.remaining || 0);
   const timer = setInterval(async () => {
     attempts += 1;
     try {
-      const me = await api("/api/me");
-      $(".js-credits").textContent = `${me.credits.remaining} credits`;
-      if (!accountState.credits) accountState.credits = me.credits;
-      const delta = Math.max(0, Number(me.credits.remaining || 0) - Number(accountState.credits.remaining || 0));
-      if (!me.pending || delta > 0 || attempts >= 15) {
+      const data = await api(`/api/checkout/success?session_id=${encodeURIComponent(sessionId)}`);
+      $(".js-credits").textContent = `${data.credits.remaining} credits`;
+      const delta = Math.max(0, Number(data.credits.remaining || 0) - startingCredits);
+      if (!data.pending || delta > 0 || attempts >= 15) {
         clearInterval(timer);
-        if (delta > 0 || !me.pending) {
+        if (delta > 0 || !data.pending) {
           status.innerHTML = `<strong>Credits added.</strong><span>+${delta || 50} credits. Your balance is updated.</span>`;
           document.body.classList.add("confetti");
         } else {

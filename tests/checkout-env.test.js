@@ -122,9 +122,10 @@ test("DATA_DIR resolution does not silently fall back", () => {
 });
 
 test("checkout success and cancel URLs are fixed from APP_URL", () => {
+  const checkoutBlock = serverJs.match(/async function createCheckoutSession[\s\S]*?\n}\n/)?.[0] || "";
   assert.match(serverJs, /success_url:\s*`\$\{appUrl\}\/checkout\/success\?session_id=\{CHECKOUT_SESSION_ID\}`/);
   assert.match(serverJs, /cancel_url:\s*`\$\{appUrl\}\/checkout\/cancel`/);
-  assert.doesNotMatch(serverJs, /referer|referrer/i);
+  assert.doesNotMatch(checkoutBlock, /referer|referrer/i);
 });
 
 test("checkout creates a Stripe URL for a valid pack and rejects invalid packs", async () => {

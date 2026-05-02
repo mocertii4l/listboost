@@ -8,6 +8,11 @@ const appHtml = readFileSync(new URL("../public/app.html", import.meta.url), "ut
 const pricingHtml = readFileSync(new URL("../public/pricing.html", import.meta.url), "utf8");
 const authHtml = readFileSync(new URL("../public/auth.html", import.meta.url), "utf8");
 const exampleHtml = readFileSync(new URL("../public/example.html", import.meta.url), "utf8");
+const stylesCss = readFileSync(new URL("../public/styles.css", import.meta.url), "utf8");
+const authUtilsJs = readFileSync(new URL("../public/auth-utils.js", import.meta.url), "utf8");
+const indexHtml = readFileSync(new URL("../public/index.html", import.meta.url), "utf8");
+const privacyHtml = readFileSync(new URL("../public/privacy.html", import.meta.url), "utf8");
+const termsHtml = readFileSync(new URL("../public/terms.html", import.meta.url), "utf8");
 
 test("canonical domain and checkout routes are present", () => {
   assert.match(serverJs, /listboost\.uk/);
@@ -50,12 +55,29 @@ test("password toggles and public header states are wired", () => {
   assert.match(authHtml, /type="password"/);
   assert.match(siteJs, /installPasswordToggles/);
   assert.match(siteJs, /Show password/);
-  assert.match(siteJs, /Hide password/);
-  assert.match(siteJs, /input\.type = showing \? "password" : "text"/);
+  assert.match(authUtilsJs, /Hide password/);
+  assert.match(siteJs, /togglePasswordVisibility/);
   assert.match(siteJs, /Log in/);
   assert.match(siteJs, /Start free/);
   assert.match(siteJs, /js-email/);
   assert.match(siteJs, /Log out/);
+});
+
+test("auth routes get correct labels and shared public shell", () => {
+  assert.match(authHtml, /<h1 id="authHeading">Sign in<\/h1>/);
+  assert.match(authHtml, /<button class="button primary" type="submit">Sign in<\/button>/);
+  assert.match(siteJs, /location\.pathname === "\/signup"/);
+  assert.match(siteJs, /heading\) heading\.textContent = isSignup \? "Create account" : "Sign in"/);
+  for (const route of ["/signup", "/login", "/verify-email", "/forgot-password", "/reset-password"]) {
+    assert.match(siteJs, new RegExp(route.replace(/\//g, "\\/")));
+  }
+});
+
+test("dark mode contrast keeps app credits readable", () => {
+  assert.match(stylesCss, /:root\[data-theme="dark"\][\s\S]*--color-fg: #f4fffc/);
+  assert.match(stylesCss, /:root\[data-theme="dark"\] \.balance-card h2/);
+  assert.match(stylesCss, /:root\[data-theme="dark"\] \.js-credits/);
+  assert.match(stylesCss, /color: var\(--color-fg\)/);
 });
 
 test("pricing page renders three buyable packs", () => {
@@ -75,4 +97,16 @@ test("example demo uses anonymous live generation endpoint", () => {
   assert.match(serverJs, /\/api\/demo-generate/);
   assert.match(siteJs, /\/api\/demo-generate/);
   assert.doesNotMatch(siteJs, /Generated output appears here[\s\S]*api\/generate/);
+});
+
+test("public pages include social metadata and legal pages use shared shell", () => {
+  for (const html of [indexHtml, pricingHtml, exampleHtml, privacyHtml, termsHtml]) {
+    assert.match(html, /og:title/);
+    assert.match(html, /og:description/);
+    assert.match(html, /og:image/);
+    assert.match(html, /twitter:card/);
+  }
+  assert.match(privacyHtml, /id="main"/);
+  assert.match(termsHtml, /id="main"/);
+  assert.match(stylesCss, /\.page-wrap[\s\S]*width: min\(1240px/);
 });
