@@ -92,7 +92,9 @@ function installPublicShell() {
   let header = $(".lb-header") || $(".site-nav");
   if (!header) {
     header = document.createElement("header");
-    document.body.prepend(header);
+    const skip = $(".skip-link");
+    if (skip) skip.insertAdjacentElement("afterend", header);
+    else document.body.prepend(header);
   }
   header.className = "lb-header";
   header.setAttribute("role", "banner");
