@@ -8,22 +8,32 @@
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
+    <a class="skip-link" href="#main">Skip to content</a>
     <div class="toast-region" id="toastRegion" aria-live="polite"></div>
-    <main class="auth-shell">
+    <main class="auth-shell" id="main">
       <a class="lb-brand" href="/"><img src="/logo.svg" alt="" />ListBoost</a>
       <section class="card auth-card">
         <span class="badge">Account</span>
         <h1 id="authHeading">Sign in</h1>
         <p>Your credits, history and listings stay with this account.</p>
         <form id="authForm" data-mode="login">
-          <label>Email<input name="email" type="email" autocomplete="email" required /></label>
-          <label>Password<input name="password" type="password" autocomplete="current-password" minlength="8" required /></label>
+          <label>Email<input name="email" type="email" autocomplete="email" required /><p class="field-error" aria-live="polite"></p></label>
+          <label>Password<input name="password" type="password" autocomplete="current-password" minlength="8" required /><p class="field-error" aria-live="polite"></p></label>
           <button class="button primary" type="submit">Sign in</button>
         </form>
-        <p><a href="/signup">Create account</a> · <a href="/forgot-password">Forgot password?</a></p>
+        <p id="authLinks"><a href="/signup">Create account</a> | <a href="/forgot-password">Forgot password?</a></p>
       </section>
     </main>
-    <script>if(location.pathname.includes("signup")){document.addEventListener("DOMContentLoaded",()=>{authForm.dataset.mode="signup";authHeading.textContent="Create account";authForm.querySelector("button").textContent="Create account";});}</script>
+    <script>
+      if (location.pathname.includes("signup")) {
+        document.addEventListener("DOMContentLoaded", () => {
+          authForm.dataset.mode = "signup";
+          authHeading.textContent = "Create account";
+          authForm.querySelector("button").textContent = "Create account";
+          authLinks.innerHTML = '<a href="/login">Already have an account? Log in</a>';
+        });
+      }
+    </script>
     <script type="module" src="/site.js"></script>
   </body>
 </html>

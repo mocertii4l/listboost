@@ -13,17 +13,42 @@
   </head>
   <body>
     <div class="toast-region" id="toastRegion" aria-live="polite"></div>
-    <header class="lb-header">
-      <a class="lb-brand" href="/"><img src="/logo.svg" alt="" />ListBoost</a>
-      <nav><a href="/example">Example</a><a href="/pricing">Pricing</a><a href="/login">Login</a><button class="theme-toggle" type="button">Dark</button></nav>
-    </header>
-    <main class="page-wrap">
+    <header class="lb-header"></header>
+    <main class="page-wrap" id="main">
       <section class="page-hero narrow">
         <span class="badge">Free 5 credits on signup</span>
         <h1>Simple credit packs. No subscription trap.</h1>
         <p>Buy credits when you need them. One credit creates one listing package or buyer-reply workflow.</p>
       </section>
-      <section class="pricing-grid" id="packGrid"></section>
+      <section class="pricing-grid" id="packGrid" aria-label="Credit packs">
+        <article class="pricing-card" id="starter">
+          <span class="badge">Try it</span>
+          <h3>Starter</h3>
+          <p class="pricing-price"><strong>50</strong><span>credits</span></p>
+          <p class="pricing-meta">£5.00 one-time</p>
+          <p class="pricing-copy">A practical first pack for a wardrobe clear-out or first seller test.</p>
+          <ul class="pricing-compare"><li>One credit per generated listing</li><li>Saved history and copy tools</li><li>Buyer replies and pricing guidance</li></ul>
+          <button class="pricing-buy" type="button" data-checkout-pack="starter">Buy Starter</button>
+        </article>
+        <article class="pricing-card is-featured featured" id="seller">
+          <span class="badge">Best value</span>
+          <h3>Seller</h3>
+          <p class="pricing-price"><strong>150</strong><span>credits</span></p>
+          <p class="pricing-meta">£12.00 one-time</p>
+          <p class="pricing-copy">The best value pack for regular Vinted sellers listing every week.</p>
+          <ul class="pricing-compare"><li>Lowest price per credit</li><li>Saved history and copy tools</li><li>Buyer replies and pricing guidance</li></ul>
+          <button class="pricing-buy" type="button" data-checkout-pack="seller">Buy Seller</button>
+        </article>
+        <article class="pricing-card" id="reseller">
+          <span class="badge">Power seller</span>
+          <h3>Reseller</h3>
+          <p class="pricing-price"><strong>400</strong><span>credits</span></p>
+          <p class="pricing-meta">£25.00 one-time</p>
+          <p class="pricing-copy">For bulk listing sessions, serious resellers and repeat sellers.</p>
+          <ul class="pricing-compare"><li>One credit per generated listing</li><li>Saved history and copy tools</li><li>Buyer replies and pricing guidance</li></ul>
+          <button class="pricing-buy" type="button" data-checkout-pack="reseller">Buy Reseller</button>
+        </article>
+      </section>
       <section class="faq">
         <h2>Pricing questions</h2>
         <article class="faq-item"><button aria-expanded="false">Do credits expire?</button><p>No. Credits stay on your account while it is active.</p></article>

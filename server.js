@@ -2,6 +2,7 @@ import "dotenv/config";
 import { createServer } from "node:http";
 import { pbkdf2Sync, randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdirSync } from "node:fs";
 import { extname, isAbsolute, join, normalize } from "node:path";
 import OpenAI from "openai";
 import Anthropic from "@anthropic-ai/sdk";
@@ -73,7 +74,10 @@ const adminPassword = String(process.env.ADMIN_PASSWORD || "");
 const resendApiKey = String(process.env.RESEND_API_KEY || "");
 const emailFrom = String(process.env.EMAIL_FROM || "ListBoost <onboarding@resend.dev>");
 const supportEmail = String(process.env.SUPPORT_EMAIL || "hello@listboost.app");
-await mkdir(dataDir, { recursive: true });
+if (isProduction && !dataDirEnv) {
+  console.warn("[launch-check] DATA_DIR is unset in production. Using local ./data; configure persistent storage to avoid losing SQLite data.");
+}
+mkdirSync(dataDir, { recursive: true });
 
 const db = new Database(dbPath);
 db.pragma("journal_mode = WAL");
@@ -1021,6 +1025,51 @@ async function handleGenerate(req, res) {
   }
 }
 
+async function handleDemoGenerate(req, res) {
+  const visitor = getVisitor(req);
+  const ip = getClientIp(req);
+  const limit = rateLimit(`demo:${ip}`, { max: 10, windowMs: 60_000 });
+  if (!limit.ok) {
+    tooManyRequests(res, visitor, limit.retryAfterSec, "The demo is busy. Try again in a moment.");
+    return;
+  }
+
+  const input = {
+    category: "Clothing",
+    tone: "friendly",
+    sellerMode: "clearout",
+    negotiationGoal: "friendly",
+    size: "UK 10",
+    condition: "Good condition",
+    itemDetails: "Zara black midi dress size 10 good condition. Worn once, no obvious flaws, suitable for work or evening.",
+    buyerQuestion: ""
+  };
+
+  try {
+    let result;
+    let provider = "demo";
+    if (process.env.OPENAI_API_KEY) {
+      result = await generateWithOpenAI(input);
+      provider = "openai";
+    } else if (process.env.ANTHROPIC_API_KEY) {
+      result = await generateWithAnthropic(input);
+      provider = "anthropic";
+    } else {
+      result = sampleResult(input);
+    }
+
+    if (!looksLikeListing(result)) {
+      json(res, 502, { error: "The demo returned an unexpected response. Try again." }, visitor.headers);
+      return;
+    }
+
+    json(res, 200, { ...result, provider, demo: true }, visitor.headers);
+  } catch (error) {
+    console.error(error);
+    json(res, 502, { error: "Could not run the live demo. Try again shortly." }, visitor.headers);
+  }
+}
+
 async function handleMe(req, res) {
   const visitor = getVisitor(req);
   const user = getUserBySession(req);
@@ -1916,6 +1965,11 @@ const server = createServer((req, res) => {
 
   if (req.method === "POST" && req.url === "/api/generate") {
     handleGenerate(req, res);
+    return;
+  }
+
+  if (req.method === "POST" && req.url === "/api/demo-generate") {
+    handleDemoGenerate(req, res);
     return;
   }
 

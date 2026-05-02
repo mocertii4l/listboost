@@ -1,10 +1,11 @@
-import { mkdtempSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import assert from "node:assert/strict";
 
-const tempDir = mkdtempSync(join(tmpdir(), "listboost-checkout-"));
+const tempRoot = mkdtempSync(join(tmpdir(), "listboost-checkout-"));
+const tempDir = join(tempRoot, "missing-data-dir");
 
 process.env.LISTBOOST_NO_LISTEN = "true";
 process.env.STRIPE_MOCK_CHECKOUT = "true";
@@ -28,6 +29,7 @@ process.env.CREDIT_PACKS_JSON = JSON.stringify([
 
 const moduleUnderTest = await import("../server.js");
 const { server, trimConfiguredEnv, normalizeAppUrl } = moduleUnderTest;
+const serverJs = readFileSync(new URL("../server.js", import.meta.url), "utf8");
 
 function listen() {
   return new Promise((resolve) => {
@@ -86,6 +88,21 @@ test("env loader trims URL and secret variables", () => {
   assert.equal(env.EMAIL_FROM, "ListBoost <verify@example.com>");
   assert.equal(env.DATA_DIR, "./data");
   assert.equal(normalizeAppUrl(" https://example.com/\n"), "https://example.com");
+});
+
+test("DATA_DIR is created and used when it does not exist", async () => {
+  assert.equal(existsSync(tempDir), true);
+  const port = await listen();
+  const health = await request(port, "/health");
+  assert.equal(health.response.status, 200);
+  assert.equal(health.body.checks.dataDir, tempDir);
+  await close();
+});
+
+test("checkout success and cancel URLs are fixed from APP_URL", () => {
+  assert.match(serverJs, /success_url:\s*`\$\{appUrl\}\/checkout\/success\?session_id=\{CHECKOUT_SESSION_ID\}`/);
+  assert.match(serverJs, /cancel_url:\s*`\$\{appUrl\}\/checkout\/cancel`/);
+  assert.doesNotMatch(serverJs, /referer|referrer/i);
 });
 
 test("checkout creates a Stripe URL for a valid pack and rejects invalid packs", async () => {

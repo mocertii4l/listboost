@@ -115,7 +115,7 @@ function updateCredits(credits) {
   if (!credits) return;
   latestCredits = credits;
   creditStatus.textContent = `${credits.remaining} credits left`;
-  accountSummaryCredits.textContent = `${credits.remaining} left (${credits.freeCredits || 0} free, ${credits.paidCredits || 0} paid, ${credits.used || 0} used)`;
+  if (accountSummaryCredits) accountSummaryCredits.textContent = `${credits.remaining} left (${credits.freeCredits || 0} free, ${credits.paidCredits || 0} paid, ${credits.used || 0} used)`;
   generateButton.disabled = !currentUser || credits.remaining <= 0;
   if (upgradeButton) upgradeButton.disabled = !currentUser;
   if (!currentUser) {
@@ -129,13 +129,13 @@ function updateCredits(credits) {
 function updateAccount(user) {
   currentUser = user || null;
   accountStatus.textContent = currentUser ? currentUser.email : "Not signed in";
-  accountSummaryStatus.textContent = currentUser ? currentUser.email : "Signed out";
-  logoutButton.classList.toggle("hidden", !currentUser);
-  authForm.classList.toggle("signed-in", Boolean(currentUser));
+  if (accountSummaryStatus) accountSummaryStatus.textContent = currentUser ? currentUser.email : "Signed out";
+  if (logoutButton) logoutButton.classList.toggle("hidden", !currentUser);
+  if (authForm) authForm.classList.toggle("signed-in", Boolean(currentUser));
   if (currentUser) {
-    authNote.textContent = "Signed in. Your credits are saved to this account.";
+    if (authNote) authNote.textContent = "Signed in. Your credits are saved to this account.";
   } else {
-    accountSummaryCredits.textContent = "Sign in to load";
+    if (accountSummaryCredits) accountSummaryCredits.textContent = "Sign in to load";
   }
   setLoading(false);
 }
@@ -153,6 +153,7 @@ function formatPrice(pence) {
 
 function updateEnvironmentLinks(data = {}) {
   const liveUrl = data.appUrl || window.location.origin;
+  if (!accountSummaryDomain || !accountSummaryAdmin) return;
   accountSummaryDomain.href = liveUrl;
   accountSummaryDomain.textContent = liveUrl.replace(/^https?:\/\//, "");
   accountSummaryAdmin.href = `${liveUrl.replace(/\/$/, "")}/admin`;
@@ -879,12 +880,12 @@ async function copyOutput(event) {
 
 form.addEventListener("submit", generateListing);
 photoForm.addEventListener("submit", generateFromPhotos);
-authForm.addEventListener("submit", (event) => {
+if (authForm) authForm.addEventListener("submit", (event) => {
   event.preventDefault();
   submitAuth("login");
 });
-signupButton.addEventListener("click", () => submitAuth("signup"));
-logoutButton.addEventListener("click", logout);
+if (signupButton) signupButton.addEventListener("click", () => submitAuth("signup"));
+if (logoutButton) logoutButton.addEventListener("click", logout);
 exampleButton.addEventListener("click", loadExample);
 if (upgradeButton) upgradeButton.addEventListener("click", () => buyCredits("seller"));
 if (pricingGrid) {
