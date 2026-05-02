@@ -1,8 +1,8 @@
 import "dotenv/config";
 import { createServer } from "node:http";
-import { pbkdf2Sync, randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
+import { createHash, pbkdf2Sync, randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { mkdirSync } from "node:fs";
+import { accessSync, constants as fsConstants, existsSync, mkdirSync, statSync } from "node:fs";
 import { extname, isAbsolute, join, normalize } from "node:path";
 import OpenAI from "openai";
 import Anthropic from "@anthropic-ai/sdk";
@@ -30,6 +30,8 @@ const TRIMMED_ENV_KEYS = [
   "REQUIRE_EMAIL_VERIFICATION"
 ];
 
+const rawDataDirEnv = process.env.DATA_DIR ?? "";
+
 function cleanEnvValue(value) {
   let next = String(value ?? "").trim();
   if (
@@ -52,12 +54,40 @@ function trimConfiguredEnv(env = process.env) {
 
 trimConfiguredEnv();
 
+function resolveDataDir(rawValue = process.env.DATA_DIR, cwd = process.cwd()) {
+  const raw = rawValue == null ? "" : String(rawValue);
+  const trimmed = cleanEnvValue(raw);
+  const explicit = trimmed.length > 0;
+  const resolved = explicit
+    ? (isAbsolute(trimmed) ? trimmed : join(cwd, trimmed))
+    : join(cwd, "data");
+  return { raw, trimmed, explicit, dataDir: resolved };
+}
+
+function ensureDataDir(resolution) {
+  try {
+    mkdirSync(resolution.dataDir, { recursive: true });
+    const stat = statSync(resolution.dataDir);
+    if (!stat.isDirectory()) {
+      throw new Error("resolved path is not a directory");
+    }
+    accessSync(resolution.dataDir, fsConstants.W_OK);
+    return {
+      ...resolution,
+      exists: existsSync(resolution.dataDir),
+      writable: true
+    };
+  } catch (error) {
+    const source = resolution.explicit ? "DATA_DIR" : "local ./data fallback";
+    throw new Error(`[launch-check] ${source} cannot be created or written at "${resolution.dataDir}": ${error.message}`);
+  }
+}
+
 const port = Number(process.env.PORT || 3000);
 const publicDir = join(process.cwd(), "public");
-const dataDirEnv = process.env.DATA_DIR || "";
-const dataDir = dataDirEnv
-  ? (isAbsolute(dataDirEnv) ? dataDirEnv : join(process.cwd(), dataDirEnv))
-  : join(process.cwd(), "data");
+const dataDirDiagnostics = ensureDataDir(resolveDataDir(rawDataDirEnv));
+const dataDirEnv = dataDirDiagnostics.trimmed;
+const dataDir = dataDirDiagnostics.dataDir;
 const usagePath = join(dataDir, "usage.json");
 const dbPath = join(dataDir, "listboost.db");
 const freeCredits = Number(process.env.FREE_CREDITS || 5);
@@ -74,10 +104,9 @@ const adminPassword = String(process.env.ADMIN_PASSWORD || "");
 const resendApiKey = String(process.env.RESEND_API_KEY || "");
 const emailFrom = String(process.env.EMAIL_FROM || "ListBoost <onboarding@resend.dev>");
 const supportEmail = String(process.env.SUPPORT_EMAIL || "hello@listboost.app");
-if (isProduction && !dataDirEnv) {
+if (isProduction && !dataDirDiagnostics.explicit) {
   console.warn("[launch-check] DATA_DIR is unset in production. Using local ./data; configure persistent storage to avoid losing SQLite data.");
 }
-mkdirSync(dataDir, { recursive: true });
 
 const db = new Database(dbPath);
 db.pragma("journal_mode = WAL");
@@ -225,6 +254,15 @@ db.exec(`
 
   CREATE TABLE IF NOT EXISTS email_verifications (
     token TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    expires_at TEXT NOT NULL,
+    used_at TEXT,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  );
+
+  CREATE TABLE IF NOT EXISTS password_resets (
+    token_hash TEXT PRIMARY KEY,
     user_id TEXT NOT NULL,
     created_at TEXT NOT NULL,
     expires_at TEXT NOT NULL,
@@ -508,6 +546,11 @@ function getLaunchChecks() {
     nodeEnv: process.env.NODE_ENV || "development",
     appUrl,
     dataDir,
+    dataDirRaw: dataDirDiagnostics.raw,
+    dataDirTrimmed: dataDirDiagnostics.trimmed,
+    dataDirExplicit: dataDirDiagnostics.explicit,
+    dataDirExists: dataDirDiagnostics.exists,
+    dataDirWritable: dataDirDiagnostics.writable,
     openaiConfigured: Boolean(process.env.OPENAI_API_KEY),
     anthropicConfigured: Boolean(process.env.ANTHROPIC_API_KEY),
     stripeConfigured: Boolean(stripe),
@@ -524,6 +567,7 @@ function getLaunchChecks() {
 function logLaunchChecks() {
   const checks = getLaunchChecks();
   const warnings = [];
+  console.log(`[launch-check] DATA_DIR raw=${JSON.stringify(dataDirDiagnostics.raw)} trimmed=${JSON.stringify(dataDirDiagnostics.trimmed)} resolved=${dataDirDiagnostics.dataDir} exists=${dataDirDiagnostics.exists} writable=${dataDirDiagnostics.writable}`);
   if (isProduction && !appUrl.startsWith("https://")) warnings.push("APP_URL should be an https:// production URL.");
   if (!checks.openaiConfigured && !checks.anthropicConfigured) warnings.push("No AI API key configured. App will run in demo mode.");
   if (stripe && !stripeWebhookSecret) warnings.push("STRIPE_WEBHOOK_SECRET is missing. Paid credits will remain pending until the webhook is configured.");
@@ -1373,6 +1417,98 @@ function grantCreditsFromPayment({ sessionId, userId, credits, source }) {
   return true;
 }
 
+function hashToken(token) {
+  return createHash("sha256").update(String(token || "")).digest("hex");
+}
+
+function createPasswordResetToken(userId) {
+  const token = randomBytes(32).toString("base64url");
+  const now = new Date();
+  const expires = new Date(now.getTime() + 1000 * 60 * 30);
+  db.prepare(
+    "INSERT INTO password_resets (token_hash, user_id, created_at, expires_at) VALUES (?, ?, ?, ?)"
+  ).run(hashToken(token), userId, now.toISOString(), expires.toISOString());
+  return token;
+}
+
+function getPasswordResetCountForUser(userId) {
+  const row = db.prepare("SELECT COUNT(*) AS count FROM password_resets WHERE user_id = ?").get(userId);
+  return Number(row?.count || 0);
+}
+
+function getValidPasswordReset(token) {
+  const tokenHash = hashToken(token);
+  if (!token || !/^[A-Za-z0-9_-]{24,}$/.test(String(token))) return null;
+  return db.prepare(`
+    SELECT password_resets.*, users.email
+    FROM password_resets
+    JOIN users ON users.id = password_resets.user_id
+    WHERE token_hash = ? AND expires_at > ? AND used_at IS NULL
+  `).get(tokenHash, new Date().toISOString()) || null;
+}
+
+async function sendPasswordResetEmail(user, token) {
+  const link = `${appUrl}/reset-password?token=${encodeURIComponent(token)}`;
+  const subject = "Reset your ListBoost password";
+  const text = [
+    "Reset your ListBoost password",
+    "",
+    "Use this secure link within 30 minutes:",
+    link,
+    "",
+    "If you did not request this, you can ignore this email.",
+    "ListBoost is independent and is not affiliated with Vinted."
+  ].join("\n");
+
+  const html = `
+    <div style="margin:0;background:#fbfffd;padding:28px;font-family:Inter,Arial,sans-serif;color:#10201e">
+      <div style="max-width:520px;margin:0 auto;border:1px solid #dbe8e5;border-radius:18px;background:#ffffff;padding:28px">
+        <p style="margin:0 0 12px;color:#00b3a4;font-weight:800;letter-spacing:.08em;text-transform:uppercase">ListBoost</p>
+        <h1 style="margin:0 0 12px;font-size:24px;line-height:1.2">Reset your password</h1>
+        <p style="margin:0 0 18px;color:#5c716e;line-height:1.6">Use the secure link below within 30 minutes to choose a new password.</p>
+        <p style="margin:0 0 18px"><a href="${link}" style="display:inline-block;background:#00b3a4;color:#ffffff;text-decoration:none;padding:12px 18px;border-radius:10px;font-weight:800">Reset password</a></p>
+        <p style="margin:0 0 8px;color:#5c716e">If the button does not work, copy this link:</p>
+        <p style="word-break:break-all"><a href="${link}" style="color:#007f75">${link}</a></p>
+        <p style="margin:18px 0 0;color:#5c716e;font-size:13px">If you did not request this, you can ignore this email. ListBoost is independent and is not affiliated with Vinted.</p>
+      </div>
+    </div>
+  `;
+
+  if (process.env.RESEND_MOCK_EMAIL === "true") {
+    return { delivered: false, link };
+  }
+
+  if (!resendApiKey) {
+    console.log("=================================================================");
+    console.log(`[reset] Password reset link for ${user.email}:`);
+    console.log(`        ${link}`);
+    console.log("=================================================================");
+    return { delivered: false, link };
+  }
+
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      authorization: `Bearer ${resendApiKey}`,
+      "content-type": "application/json"
+    },
+    body: JSON.stringify({
+      from: emailFrom,
+      to: [user.email],
+      subject,
+      html,
+      text
+    })
+  });
+
+  if (!response.ok) {
+    const body = await response.text().catch(() => "");
+    throw new Error(`Resend password reset failed: ${response.status} ${body.slice(0, 200)}`);
+  }
+
+  return { delivered: true };
+}
+
 async function handleStripeWebhook(req, res) {
   if (!stripe) {
     res.writeHead(503, { "content-type": "application/json; charset=utf-8" });
@@ -1463,13 +1599,16 @@ async function sendVerificationEmail(user, token) {
       to: [user.email],
       subject: "Verify your ListBoost email",
       html: `
-        <div style="font-family:Arial,sans-serif;line-height:1.5;color:#101828">
-          <h1 style="font-size:22px">Verify your email</h1>
-          <p>Thanks for creating a ListBoost account. Click the button below to start generating Vinted listings.</p>
-          <p><a href="${link}" style="display:inline-block;background:#1570ef;color:#fff;text-decoration:none;padding:12px 16px;border-radius:8px;font-weight:700">Verify email</a></p>
-          <p>If the button does not work, copy this link:</p>
-          <p><a href="${link}">${link}</a></p>
-          <p style="color:#667085;font-size:13px">ListBoost is independent and is not affiliated with Vinted.</p>
+        <div style="margin:0;background:#fbfffd;padding:28px;font-family:Inter,Arial,sans-serif;color:#10201e">
+          <div style="max-width:520px;margin:0 auto;border:1px solid #dbe8e5;border-radius:18px;background:#ffffff;padding:28px">
+            <p style="margin:0 0 12px;color:#00b3a4;font-weight:800;letter-spacing:.08em;text-transform:uppercase">ListBoost</p>
+            <h1 style="margin:0 0 12px;font-size:24px;line-height:1.2">Verify your email</h1>
+            <p style="margin:0 0 18px;color:#5c716e;line-height:1.6">Thanks for creating a ListBoost account. Verify your email to start generating Vinted listings.</p>
+            <p style="margin:0 0 18px"><a href="${link}" style="display:inline-block;background:#00b3a4;color:#fff;text-decoration:none;padding:12px 18px;border-radius:10px;font-weight:800">Verify email</a></p>
+            <p style="margin:0 0 8px;color:#5c716e">If the button does not work, copy this link:</p>
+            <p style="word-break:break-all"><a href="${link}" style="color:#007f75">${link}</a></p>
+            <p style="margin:18px 0 0;color:#5c716e;font-size:13px">ListBoost is independent and is not affiliated with Vinted.</p>
+          </div>
         </div>
       `,
       text: `Verify your ListBoost email: ${link}`
@@ -1537,6 +1676,83 @@ async function handleResendVerification(req, res) {
   } catch (error) {
     console.error(error);
     json(res, 502, { error: "Could not send verification email. Try again in a moment." }, visitor.headers);
+  }
+}
+
+async function handleForgotPassword(req, res) {
+  const visitor = getVisitor(req);
+  const ip = getClientIp(req);
+  const limit = rateLimit(`forgot:${ip}`, { max: 6, windowMs: 15 * 60_000 });
+  if (!limit.ok) {
+    tooManyRequests(res, visitor, limit.retryAfterSec, "Too many reset requests. Try again later.");
+    return;
+  }
+
+  try {
+    const body = JSON.parse(await readBody(req, 20_000) || "{}");
+    const email = normalizeEmail(body.email);
+    if (isValidEmail(email)) {
+      const user = db.prepare("SELECT * FROM users WHERE email = ?").get(email);
+      if (user) {
+        const token = createPasswordResetToken(user.id);
+        try {
+          await sendPasswordResetEmail(user, token);
+        } catch (error) {
+          console.error(error);
+        }
+      }
+    }
+    json(res, 200, { ok: true, message: "If an account exists for that email, we'll send reset instructions." }, visitor.headers);
+  } catch (error) {
+    console.error(error);
+    json(res, 200, { ok: true, message: "If an account exists for that email, we'll send reset instructions." }, visitor.headers);
+  }
+}
+
+async function handleResetPasswordValidate(req, res) {
+  const visitor = getVisitor(req);
+  const url = new URL(req.url, `http://${req.headers.host}`);
+  const token = url.searchParams.get("token") || "";
+  const row = getValidPasswordReset(token);
+  if (!row) {
+    json(res, 400, { valid: false, error: "Reset link is invalid or expired." }, visitor.headers);
+    return;
+  }
+  json(res, 200, { valid: true, email: row.email }, visitor.headers);
+}
+
+async function handleResetPassword(req, res) {
+  const visitor = getVisitor(req);
+  const ip = getClientIp(req);
+  const limit = rateLimit(`reset:${ip}`, { max: 10, windowMs: 15 * 60_000 });
+  if (!limit.ok) {
+    tooManyRequests(res, visitor, limit.retryAfterSec, "Too many reset attempts. Try again later.");
+    return;
+  }
+
+  try {
+    const body = JSON.parse(await readBody(req, 20_000) || "{}");
+    const token = String(body.token || "");
+    const password = String(body.password || "");
+    const row = getValidPasswordReset(token);
+    if (!row) {
+      json(res, 400, { error: "Reset link is invalid or expired." }, visitor.headers);
+      return;
+    }
+    if (password.length < 8) {
+      json(res, 400, { error: "Password must be at least 8 characters." }, visitor.headers);
+      return;
+    }
+
+    const now = new Date().toISOString();
+    db.prepare("UPDATE users SET password_hash = ?, updated_at = ? WHERE id = ?").run(hashPassword(password), now, row.user_id);
+    db.prepare("UPDATE password_resets SET used_at = ? WHERE token_hash = ?").run(now, row.token_hash);
+    db.prepare("DELETE FROM sessions WHERE user_id = ?").run(row.user_id);
+    recordAudit(row.user_id, "system:password-reset", 0, "Password reset completed");
+    json(res, 200, { ok: true }, visitor.headers);
+  } catch (error) {
+    console.error(error);
+    json(res, 500, { error: "Could not reset password. Try again." }, visitor.headers);
   }
 }
 
@@ -1958,6 +2174,21 @@ const server = createServer((req, res) => {
     return;
   }
 
+  if (req.method === "POST" && req.url === "/api/forgot-password") {
+    handleForgotPassword(req, res);
+    return;
+  }
+
+  if (req.method === "GET" && req.url.startsWith("/api/reset-password/validate")) {
+    handleResetPasswordValidate(req, res);
+    return;
+  }
+
+  if (req.method === "POST" && req.url === "/api/reset-password") {
+    handleResetPassword(req, res);
+    return;
+  }
+
   if (req.method === "GET" && req.url.startsWith("/verify")) {
     handleVerifyEmail(req, res);
     return;
@@ -2066,8 +2297,12 @@ if (process.env.LISTBOOST_NO_LISTEN !== "true") {
 export {
   cleanEnvValue,
   trimConfiguredEnv,
+  resolveDataDir,
+  ensureDataDir,
   normalizeAppUrl,
   findCreditPack,
+  createPasswordResetToken,
+  getPasswordResetCountForUser,
   publicCreditPacks,
   server
 };

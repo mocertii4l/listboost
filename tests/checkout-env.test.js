@@ -1,4 +1,4 @@
-import { existsSync, mkdtempSync, readFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -16,6 +16,7 @@ process.env.STRIPE_SECRET_KEY = " sk_test_preview\n";
 process.env.STRIPE_WEBHOOK_SECRET = " whsec_preview\n";
 process.env.OPENAI_API_KEY = " sk-test-openai\n";
 process.env.RESEND_API_KEY = " re_test\n";
+process.env.RESEND_MOCK_EMAIL = "true";
 process.env.EMAIL_FROM = ' "ListBoost <support@listboost.uk>" ';
 process.env.SUPPORT_EMAIL = " support@listboost.uk\n";
 process.env.ADMIN_EMAIL = " admin@listboost.uk\n";
@@ -28,7 +29,15 @@ process.env.CREDIT_PACKS_JSON = JSON.stringify([
 ]);
 
 const moduleUnderTest = await import("../server.js");
-const { server, trimConfiguredEnv, normalizeAppUrl } = moduleUnderTest;
+const {
+  server,
+  trimConfiguredEnv,
+  normalizeAppUrl,
+  resolveDataDir,
+  ensureDataDir,
+  createPasswordResetToken,
+  getPasswordResetCountForUser
+} = moduleUnderTest;
 const serverJs = readFileSync(new URL("../server.js", import.meta.url), "utf8");
 
 function listen() {
@@ -99,6 +108,19 @@ test("DATA_DIR is created and used when it does not exist", async () => {
   await close();
 });
 
+test("DATA_DIR resolution does not silently fall back", () => {
+  assert.equal(resolveDataDir("/data").dataDir, "/data");
+  const fallback = resolveDataDir("", tempRoot);
+  assert.equal(fallback.dataDir, join(tempRoot, "data"));
+
+  const filePath = join(tempRoot, "not-a-directory");
+  writeFileSync(filePath, "x");
+  assert.throws(
+    () => ensureDataDir(resolveDataDir(filePath, tempRoot)),
+    /DATA_DIR cannot be created or written/
+  );
+});
+
 test("checkout success and cancel URLs are fixed from APP_URL", () => {
   assert.match(serverJs, /success_url:\s*`\$\{appUrl\}\/checkout\/success\?session_id=\{CHECKOUT_SESSION_ID\}`/);
   assert.match(serverJs, /cancel_url:\s*`\$\{appUrl\}\/checkout\/cancel`/);
@@ -139,4 +161,54 @@ test("checkout creates a Stripe URL for a valid pack and rejects invalid packs",
   });
   assert.equal(invalid.response.status, 400);
   assert.match(invalid.body.error, /Unknown credit pack/);
+  await close();
+});
+
+test("forgot and reset password flow is token based and single use", async () => {
+  const port = await listen();
+  const signup = await request(port, "/api/signup", {
+    method: "POST",
+    body: JSON.stringify({ email: "reset@example.com", password: "oldpass123" })
+  });
+  assert.equal(signup.response.status, 200);
+  const userId = signup.body.user.id;
+
+  const before = getPasswordResetCountForUser(userId);
+  const forgot = await request(port, "/api/forgot-password", {
+    method: "POST",
+    body: JSON.stringify({ email: "reset@example.com" })
+  });
+  assert.equal(forgot.response.status, 200);
+  assert.match(forgot.body.message, /If an account exists/);
+  assert.equal(getPasswordResetCountForUser(userId), before + 1);
+
+  const invalid = await request(port, "/api/reset-password", {
+    method: "POST",
+    body: JSON.stringify({ token: "not-valid", password: "newpass123" })
+  });
+  assert.equal(invalid.response.status, 400);
+
+  const token = createPasswordResetToken(userId);
+  const valid = await request(port, `/api/reset-password/validate?token=${encodeURIComponent(token)}`);
+  assert.equal(valid.response.status, 200);
+  assert.equal(valid.body.valid, true);
+
+  const reset = await request(port, "/api/reset-password", {
+    method: "POST",
+    body: JSON.stringify({ token, password: "newpass123" })
+  });
+  assert.equal(reset.response.status, 200);
+
+  const reuse = await request(port, "/api/reset-password", {
+    method: "POST",
+    body: JSON.stringify({ token, password: "another123" })
+  });
+  assert.equal(reuse.response.status, 400);
+
+  const login = await request(port, "/api/login", {
+    method: "POST",
+    body: JSON.stringify({ email: "reset@example.com", password: "newpass123" })
+  });
+  assert.equal(login.response.status, 200);
+  await close();
 });

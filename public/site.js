@@ -69,7 +69,20 @@ function publicHeaderTemplate() {
 }
 
 function installPublicShell() {
-  const isPublic = ["/", "/pricing", "/example", "/privacy", "/terms"].includes(location.pathname);
+  const isPublic = [
+    "/",
+    "/pricing",
+    "/example",
+    "/privacy",
+    "/terms",
+    "/signup",
+    "/login",
+    "/verify-email",
+    "/forgot-password",
+    "/reset-password",
+    "/checkout/success",
+    "/checkout/cancel"
+  ].includes(location.pathname);
   if (!isPublic) return;
   if (!$(".skip-link")) {
     document.body.insertAdjacentHTML("afterbegin", '<a class="skip-link" href="#main">Skip to content</a>');
@@ -105,6 +118,12 @@ function installPublicShell() {
     const open = toggle.getAttribute("aria-expanded") === "true";
     toggle.setAttribute("aria-expanded", open ? "false" : "true");
     nav?.classList.toggle("is-open", !open);
+  });
+  $$(".public-nav a", header).forEach((link) => {
+    link.addEventListener("click", () => {
+      toggle?.setAttribute("aria-expanded", "false");
+      nav?.classList.remove("is-open");
+    });
   });
 }
 
@@ -151,6 +170,23 @@ async function bootstrap() {
   installFaq();
   installLogout();
   installAppNav();
+}
+
+function installAuthMode() {
+  const authForm = $("#authForm");
+  if (!authForm) return;
+  const isSignup = location.pathname === "/signup";
+  const heading = $("#authHeading");
+  const button = authForm.querySelector("button[type=submit]");
+  const links = $("#authLinks");
+  authForm.dataset.mode = isSignup ? "signup" : "login";
+  if (heading) heading.textContent = isSignup ? "Create account" : "Sign in";
+  if (button) button.textContent = isSignup ? "Create account" : "Sign in";
+  if (links) {
+    links.innerHTML = isSignup
+      ? '<a href="/login">Already have an account? Log in</a>'
+      : '<a href="/signup">Create account</a> | <a href="/forgot-password">Forgot password?</a>';
+  }
 }
 
 function installAppNav() {
@@ -210,6 +246,7 @@ function installFaq() {
 }
 
 function installForms() {
+  installAuthMode();
   const authForm = $("#authForm");
   if (authForm) {
     authForm.addEventListener("submit", async (event) => {
@@ -264,15 +301,23 @@ function installForms() {
 
   const forgot = $("#forgotPasswordForm");
   if (forgot) {
-    forgot.addEventListener("submit", (event) => {
+    forgot.addEventListener("submit", async (event) => {
       event.preventDefault();
       const button = forgot.querySelector("button[type=submit]");
       button.disabled = true;
       button.textContent = "Sending...";
-      setTimeout(() => {
+      try {
+        await api("/api/forgot-password", {
+          method: "POST",
+          body: JSON.stringify(Object.fromEntries(new FormData(forgot)))
+        });
         forgot.classList.add("hidden");
         $("#forgotSuccess")?.classList.remove("hidden");
-      }, 350);
+        toast("If an account exists for that email, reset instructions are on the way.", "success");
+      } catch {
+        forgot.classList.add("hidden");
+        $("#forgotSuccess")?.classList.remove("hidden");
+      }
     });
   }
 
@@ -280,19 +325,47 @@ function installForms() {
   if (reset) {
     const params = new URLSearchParams(location.search);
     const token = params.get("token") || "";
-    if (token) reset.elements.token.value = token;
+    const card = $("#resetCard");
+    const error = $("#resetError");
+    const intro = $("#resetIntro");
+    reset.classList.add("hidden");
+    if (!token) {
+      card?.classList.add("hidden");
+      error?.classList.remove("hidden");
+    } else {
+      reset.elements.token.value = token;
+      api(`/api/reset-password/validate?token=${encodeURIComponent(token)}`)
+        .then((data) => {
+          if (intro) intro.textContent = `Choose a new password for ${data.email}.`;
+          reset.classList.remove("hidden");
+        })
+        .catch(() => {
+          card?.classList.add("hidden");
+          error?.classList.remove("hidden");
+        });
+    }
     if (location.search && !token) {
       $("#resetCard")?.classList.add("hidden");
       $("#resetError")?.classList.remove("hidden");
     }
-    reset.addEventListener("submit", (event) => {
+    reset.addEventListener("submit", async (event) => {
       event.preventDefault();
       const button = reset.querySelector("button[type=submit]");
       button.disabled = true;
       button.textContent = "Updating...";
-      setFieldError(reset, "token", "Password reset links are not active for this preview. Request a fresh support reset.");
-      button.disabled = false;
-      button.textContent = "Update password";
+      clearFieldErrors(reset);
+      try {
+        await api("/api/reset-password", {
+          method: "POST",
+          body: JSON.stringify(Object.fromEntries(new FormData(reset)))
+        });
+        toast("Password updated. You can sign in now.", "success");
+        location.href = "/login";
+      } catch (err) {
+        setFieldError(reset, /password/i.test(err.message) ? "password" : "token", err.message);
+        button.disabled = false;
+        button.textContent = "Update password";
+      }
     });
   }
 }
