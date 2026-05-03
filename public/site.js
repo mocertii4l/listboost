@@ -5,6 +5,8 @@ const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selec
 
 const toastRegion = $("#toastRegion");
 let accountState = { user: null, credits: null };
+let globalCopyHandlerInstalled = false;
+let appNavigationInstalled = false;
 
 function toast(message, type = "info") {
   if (!toastRegion) return;
@@ -25,7 +27,7 @@ async function api(path, options = {}) {
   try { data = text ? JSON.parse(text) : {}; } catch { data = { error: text }; }
   if (!response.ok) {
     const error = new Error(data.error || `Request failed (${response.status})`);
-    Object.assign(error, data);
+    Object.assign(error, data, { status: response.status });
     throw error;
   }
   return data;
@@ -135,6 +137,44 @@ function formatPrice(pence) {
   return `GBP ${(Number(pence || 0) / 100).toFixed(2).replace(/\.00$/, "")}`;
 }
 
+function fallbackCreditPacks() {
+  return [
+    { id: "starter", name: "Starter", credits: 50, pricePence: 500, label: "Try it" },
+    { id: "seller", name: "Seller", credits: 150, pricePence: 1200, label: "Best value", featured: true },
+    { id: "reseller", name: "Reseller", credits: 400, pricePence: 2500, label: "Power seller" }
+  ];
+}
+
+function getCreditPacks() {
+  return Array.isArray(accountState.creditPacks) && accountState.creditPacks.length
+    ? accountState.creditPacks
+    : fallbackCreditPacks();
+}
+
+function updateAccountChrome(me = accountState) {
+  accountState = { ...accountState, ...me };
+  const remaining = Number(accountState.credits?.remaining || 0);
+  $$(".js-email").forEach((node) => { node.textContent = accountState.user?.email || "Signed out"; });
+  $$(".js-credits").forEach((node) => { node.textContent = `${remaining} credits remaining`; });
+  $$(".low-credit-cta").forEach((node) => {
+    const show = Boolean(accountState.user) && remaining < 10;
+    node.classList.toggle("hidden", !show);
+    node.textContent = remaining <= 0 ? "Buy credits" : `Only ${remaining} credits left - top up`;
+    node.href = "/app/billing";
+  });
+  document.body.classList.toggle("signed-in", Boolean(accountState.user));
+  document.body.classList.toggle("signed-out", !accountState.user);
+}
+
+function updateCreditsFromResponse(data = {}) {
+  if (!data.credits && !data.user) return;
+  updateAccountChrome({
+    user: data.user || accountState.user,
+    credits: data.credits || accountState.credits,
+    creditPacks: accountState.creditPacks
+  });
+}
+
 function renderPacks(packs) {
   const grid = $("#packGrid");
   if (!grid || !Array.isArray(packs)) return;
@@ -156,15 +196,12 @@ async function bootstrap() {
   renderAppRoute();
   installTheme();
   installPasswordToggles();
+  installAppNavigation();
   try {
     const me = await api("/api/me");
     accountState = me;
     renderPacks(me.creditPacks || []);
-    $$(".js-email").forEach((node) => { node.textContent = me.user?.email || "Signed out"; });
-    $$(".js-credits").forEach((node) => { node.textContent = `${me.credits?.remaining || 0} credits`; });
-    $$(".low-credit-cta").forEach((node) => node.classList.toggle("hidden", !me.user || Number(me.credits?.remaining || 0) >= 10));
-    document.body.classList.toggle("signed-in", Boolean(me.user));
-    document.body.classList.toggle("signed-out", !me.user);
+    updateAccountChrome(me);
     hydrateAppRoute(me);
   } catch {
     toast("Could not load account state.", "error");
@@ -202,6 +239,33 @@ function installAppNav() {
     if (active) link.setAttribute("aria-current", "page");
     else link.removeAttribute("aria-current");
   });
+}
+
+function navigateApp(path, push = true) {
+  if (!path.startsWith("/app")) return;
+  if (push && `${location.pathname}${location.search}${location.hash}` !== path) {
+    history.pushState({}, "", path);
+  }
+  renderAppRoute();
+  installAppNav();
+  installAppTools();
+  hydrateAppRoute(accountState);
+  updateAccountChrome(accountState);
+  $("#main")?.scrollIntoView({ block: "start" });
+}
+
+function installAppNavigation() {
+  if (appNavigationInstalled) return;
+  appNavigationInstalled = true;
+  document.addEventListener("click", (event) => {
+    const link = event.target.closest("a[href^='/app']");
+    if (!link || event.defaultPrevented || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    const url = new URL(link.href, location.origin);
+    if (url.origin !== location.origin || !url.pathname.startsWith("/app")) return;
+    event.preventDefault();
+    navigateApp(`${url.pathname}${url.search}${url.hash}`);
+  });
+  window.addEventListener("popstate", () => navigateApp(`${location.pathname}${location.search}${location.hash}`, false));
 }
 
 function escapeHtml(value) {
@@ -249,10 +313,21 @@ function routeHeader(kicker, title, copy) {
   return `<header class="route-head"><p class="badge">${kicker}</p><h1>${title}</h1><p class="muted">${copy}</p></header>`;
 }
 
+function appTrustStrip() {
+  return `
+    <ul class="trust-strip" aria-label="ListBoost trust points">
+      <li>No Vinted login required</li>
+      <li>Copy and paste manually</li>
+      <li>Your data is private</li>
+    </ul>
+  `;
+}
+
 function dashboardRouteTemplate() {
   return `
     <section data-route="dashboard">
       ${routeHeader("Dashboard", "Your ListBoost workspace", "Choose the workflow you need. Your credits and history stay with your account.")}
+      ${appTrustStrip()}
       <div class="dashboard-grid route-grid">
         <article class="card balance-card"><span class="badge">Balance</span><h2 class="js-credits">Loading credits</h2><p class="muted js-email">Loading account</p><a class="button primary" href="/app/notes">Generate listing</a></article>
         ${appFeatureTiles.map(([, title, copy, href]) => `<a class="card feature-tile" href="${href}"><h3>${title}</h3><p>${copy}</p></a>`).join("")}
@@ -263,21 +338,28 @@ function dashboardRouteTemplate() {
 
 function notesRouteTemplate() {
   return `
-    <section class="tool-layout" data-route="notes">
-      <form class="card sticky-form" id="notesForm">
-        <span class="badge">Generator</span>
-        <h1>Generate from notes</h1>
-        <label>Category<select name="category"><option>Clothing</option><option>Shoes</option><option>Bags</option><option>Accessories</option></select></label>
-        <label>Tone<select name="tone"><option value="friendly">Friendly</option><option value="clean">Clean</option><option value="premium">Premium</option><option value="quick-sale">Quick sale</option></select></label>
-        <label>Seller mode<select name="sellerMode"><option value="clearout">Quick clear-out</option><option value="profit">Profit reseller</option><option value="premium">Premium item</option></select></label>
-        <label>Reply style<select name="negotiationGoal"><option value="friendly">Friendly</option><option value="polite-firm">Firm</option><option value="counter">Negotiation</option></select></label>
-        <label>Size<input name="size" placeholder="UK 10, M, EU 39" /></label>
-        <label>Condition<input name="condition" placeholder="Good condition, worn once" /></label>
-        <label>Item notes<textarea name="itemDetails" required placeholder="Brand, item type, colour, size, condition, flaws, postage..."></textarea></label>
-        <label>Buyer message<textarea name="buyerQuestion" placeholder="Optional: paste buyer question"></textarea></label>
-        <button class="button primary" type="submit">Generate listing</button>
+    <section class="generator-route" data-route="notes">
+      <form class="card generator-card" id="notesForm">
+        <div class="generator-step">
+          <span class="badge">Step 1</span>
+          <h1>Paste your item details</h1>
+          <p class="muted">Add the rough facts you already have. ListBoost turns them into a polished Vinted listing.</p>
+        </div>
+        <input type="hidden" name="category" value="Clothing" />
+        <input type="hidden" name="tone" value="clean" />
+        <input type="hidden" name="sellerMode" value="clearout" />
+        <input type="hidden" name="negotiationGoal" value="friendly" />
+        <label class="generator-input-label">
+          Paste your item details
+          <textarea name="itemDetails" required placeholder="Black Zara dress, size 10, worn twice, good condition"></textarea>
+        </label>
+        <div class="generator-actions">
+          <span class="badge">Step 2</span>
+          <button class="button primary generator-cta" type="submit">Generate listing</button>
+        </div>
+        ${appTrustStrip()}
       </form>
-      <section class="output-stack" id="output"><div class="empty-state">Your listing package appears here with copy buttons.</div></section>
+      <section class="output-stack results-stack" id="output" aria-live="polite" hidden></section>
     </section>
   `;
 }
@@ -321,11 +403,12 @@ function repliesRouteTemplate() {
       <form class="card sticky-form" id="replyForm">
         <span class="badge">Replies</span>
         <h1>Buyer reply tools</h1>
+        <p class="muted">Generate replies from your listings.</p>
         <label>Item context<textarea name="itemDetails" required placeholder="Item, condition, price, postage options..."></textarea></label>
         <label>Buyer message<textarea name="buyerQuestion" required placeholder="Paste the buyer's offer or question..."></textarea></label>
         <button class="button primary" type="submit">Write reply</button>
       </form>
-      <section class="output-stack" id="replyOutput"><div class="empty-state">A clear buyer reply appears here.</div></section>
+      <section class="output-stack" id="replyOutput"><div class="empty-state">Generate replies from your listings</div></section>
     </section>
   `;
 }
@@ -528,15 +611,132 @@ function installForms() {
   }
 }
 
-function outputTemplate(data = {}) {
-  const price = data.priceOptions || {};
+function uniqueItems(items = []) {
+  return Array.from(new Set(items.map((item) => String(item || "").trim()).filter(Boolean)));
+}
+
+function linesFromText(text) {
+  return String(text || "")
+    .split(/\r?\n/)
+    .map((line) => line.replace(/^[-*]\s*/, "").trim())
+    .filter(Boolean);
+}
+
+function listHtml(items = []) {
+  return `<ul>${items.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`;
+}
+
+function descriptionHtml(description) {
+  const lines = linesFromText(description);
+  if (!lines.length) return "<p>Add description details before posting.</p>";
+  const [intro, ...bullets] = lines;
   return `
-    <section class="output-card"><h3>Title</h3><p>${escapeHtml(data.title || "Generated title appears here.")}</p><button type="button" data-copy="${escapeHtml(data.title || "")}">Copy title</button></section>
-    <section class="output-card"><h3>Description</h3><pre>${escapeHtml(data.description || "Generated description appears here.")}</pre><button type="button" data-copy="${escapeHtml(data.description || "")}">Copy description</button></section>
-    <section class="output-card"><h3>Keywords</h3><p>${escapeHtml((data.tags || data.searchTerms || []).join(", ") || "Keywords appear here.")}</p></section>
-    <section class="output-card"><h3>Pricing tiers</h3><div class="mini-cards"><span>Fast ${price.fastSale || "-"}</span><span>Fair ${price.fairPrice || "-"}</span><span>Max ${price.maxPrice || "-"}</span></div></section>
-    <section class="output-card"><h3>Photo checklist</h3><ul>${(data.photoChecklist || ["Front", "Back", "Label", "Any flaws"]).map((x) => `<li>${escapeHtml(x)}</li>`).join("")}</ul></section>
-    <section class="output-card safety-block"><h3>Safety check</h3><ul>${(data.missingDetails || ["Review the final listing before posting."]).map((x) => `<li>${escapeHtml(x)}</li>`).join("")}</ul></section>
+    <p>${escapeHtml(intro)}</p>
+    ${bullets.length ? listHtml(bullets) : ""}
+  `;
+}
+
+function priceGuidanceText(data = {}) {
+  const price = data.priceOptions || {};
+  const lines = [
+    `Fast sale: ${price.fastSale || "-"}`,
+    `Fair price: ${price.fairPrice || "-"}`,
+    `Max price: ${price.maxPrice || "-"}`,
+    price.lowestOffer ? `Lowest offer: ${price.lowestOffer}` : "",
+    price.startPrice ? `Start at: ${price.startPrice}` : "",
+    data.priceGuidance || "Check similar sold Vinted items before posting."
+  ].filter(Boolean);
+  return lines.join("\n");
+}
+
+function buyerReplyText(data = {}) {
+  return data.buyerQuestionReply
+    || (Array.isArray(data.buyerReplies) ? data.buyerReplies[0] : "")
+    || "Hi, thanks for your message. This is still available and ready to post. Let me know if you would like any extra photos.";
+}
+
+function listingCopyText(data = {}) {
+  const keywords = uniqueItems([...(data.tags || []), ...(data.searchTerms || [])]).join(", ");
+  const photoChecklist = (data.photoChecklist || []).join("\n");
+  return [
+    "TITLE",
+    data.title || "",
+    "",
+    "DESCRIPTION",
+    data.description || "",
+    "",
+    "KEYWORDS",
+    keywords,
+    "",
+    "PRICE GUIDANCE",
+    priceGuidanceText(data),
+    "",
+    "PHOTO CHECKLIST",
+    photoChecklist,
+    "",
+    "BUYER REPLY",
+    buyerReplyText(data)
+  ].join("\n").trim();
+}
+
+function copyButton(label, text) {
+  return `<button type="button" class="copy-button" data-copy="${escapeHtml(text || "")}">${label}</button>`;
+}
+
+function outputSection(title, html, copyText, copyLabel) {
+  return `
+    <section class="output-card result-card">
+      <div class="result-card-head">
+        <h3>${title}</h3>
+        ${copyButton(copyLabel, copyText)}
+      </div>
+      <div class="result-body">${html}</div>
+    </section>
+  `;
+}
+
+function outputTemplate(data = {}, options = {}) {
+  const keywords = uniqueItems([...(data.tags || []), ...(data.searchTerms || [])]).join(", ");
+  const price = data.priceOptions || {};
+  const priceText = priceGuidanceText(data);
+  const photoItems = data.photoChecklist?.length ? data.photoChecklist : ["Front photo in natural light", "Label or size close-up", "Any flaws shown clearly", "Back view"];
+  const reply = buyerReplyText(data);
+  const allCopy = listingCopyText({ ...data, photoChecklist: photoItems });
+  const creditNote = options.creditUsed ? `<p class="credit-feedback">${options.creditUsed} credit used</p>` : "";
+
+  return `
+    <section class="result-set">
+      <div class="card result-summary">
+        <div>
+          <span class="badge">Step 3</span>
+          <h2>Your listing is ready</h2>
+          ${creditNote}
+        </div>
+        ${copyButton("Copy all", allCopy)}
+      </div>
+      ${outputSection("Title", `<p class="result-title">${escapeHtml(data.title || "Vinted-ready listing title")}</p>`, data.title || "", "Copy title")}
+      ${outputSection("Description", descriptionHtml(data.description), data.description || "", "Copy description")}
+      ${outputSection("Keywords", `<p>${escapeHtml(keywords || "vinted, preloved, wardrobe clearout")}</p>`, keywords, "Copy keywords")}
+      ${outputSection("Price guidance", `
+        <div class="mini-cards">
+          <span><strong>Fast</strong>${escapeHtml(price.fastSale || "-")}</span>
+          <span><strong>Fair</strong>${escapeHtml(price.fairPrice || "-")}</span>
+          <span><strong>Max</strong>${escapeHtml(price.maxPrice || "-")}</span>
+        </div>
+        <p>${escapeHtml(data.priceGuidance || "Check similar sold Vinted items before posting.")}</p>
+      `, priceText, "Copy price")}
+      ${outputSection("Photo checklist", listHtml(photoItems), photoItems.join("\n"), "Copy checklist")}
+      ${outputSection("Buyer reply", `<p>${escapeHtml(reply)}</p>`, reply, "Copy reply")}
+    </section>
+  `;
+}
+
+function loadingTemplate(message) {
+  return `
+    <div class="loading-card">
+      <div class="spinner" aria-hidden="true"></div>
+      <strong>${escapeHtml(message)}</strong>
+    </div>
   `;
 }
 
@@ -549,20 +749,73 @@ function fileToDataUrl(file) {
   });
 }
 
+function installCopyFeedback() {
+  if (globalCopyHandlerInstalled) return;
+  globalCopyHandlerInstalled = true;
+  document.addEventListener("click", async (event) => {
+    const copy = event.target.closest("[data-copy]");
+    if (!copy) return;
+    await navigator.clipboard.writeText(copy.dataset.copy || "");
+    const original = copy.textContent;
+    copy.textContent = "Copied!";
+    copy.setAttribute("aria-live", "polite");
+    toast("Copied.", "success");
+    setTimeout(() => {
+      copy.textContent = original;
+      copy.removeAttribute("aria-live");
+    }, 2000);
+  });
+}
+
+function showPaywallModal() {
+  $(".paywall-backdrop")?.remove();
+  const packs = getCreditPacks();
+  document.body.insertAdjacentHTML("beforeend", `
+    <div class="paywall-backdrop" role="presentation">
+      <section class="paywall-modal" role="dialog" aria-modal="true" aria-labelledby="paywallTitle">
+        <button class="paywall-close" type="button" data-close-paywall aria-label="Close">x</button>
+        <p class="badge">Credits</p>
+        <h2 id="paywallTitle">You're out of credits</h2>
+        <p class="muted">Top up once and keep generating polished listings, replies and price guidance.</p>
+        <div class="paywall-packs">
+          ${packs.map((pack) => `
+            <article class="paywall-pack ${pack.featured ? "is-featured" : ""}">
+              <span>${escapeHtml(pack.label || "")}</span>
+              <strong>${Number(pack.credits || 0)} credits</strong>
+              <p>${escapeHtml(formatPrice(pack.pricePence))}</p>
+              <button type="button" class="pricing-buy" data-checkout-pack="${escapeHtml(pack.id)}">Buy credits</button>
+            </article>
+          `).join("")}
+        </div>
+      </section>
+    </div>
+  `);
+  $(".paywall-modal button")?.focus();
+}
+
+function handleGenerationError(error) {
+  if (error?.status === 402 || Number(error?.credits?.remaining) <= 0) {
+    showPaywallModal();
+  }
+  toast(error.message, "error");
+}
+
 function installAppTools() {
   const notesForm = $("#notesForm");
   if (notesForm) {
     notesForm.addEventListener("submit", async (event) => {
       event.preventDefault();
       const out = $("#output");
-      out.innerHTML = "<div class='skeleton'>Generating listing...</div>";
+      out.hidden = false;
+      out.innerHTML = loadingTemplate("Generating your listing...");
       try {
         const data = await api("/api/generate", { method: "POST", body: JSON.stringify(Object.fromEntries(new FormData(notesForm))) });
-        out.innerHTML = outputTemplate(data);
-        toast("Listing generated and saved.", "success");
+        updateCreditsFromResponse(data);
+        out.innerHTML = outputTemplate(data, { creditUsed: 1 });
+        toast("Generated. 1 credit used.", "success");
       } catch (error) {
-        out.innerHTML = "";
-        toast(error.message, "error");
+        out.hidden = true;
+        handleGenerationError(error);
       }
     });
   }
@@ -572,7 +825,7 @@ function installAppTools() {
     photoRouteForm.addEventListener("submit", async (event) => {
       event.preventDefault();
       const out = $("#photoRouteOutput");
-      out.innerHTML = "<div class='skeleton'>Reading photos...</div>";
+      out.innerHTML = loadingTemplate("Reading photos...");
       try {
         const formData = new FormData(photoRouteForm);
         const files = Array.from(photoRouteForm.elements.photos.files || []).slice(0, 4);
@@ -591,11 +844,12 @@ function installAppTools() {
             negotiationGoal: "friendly"
           })
         });
-        out.innerHTML = outputTemplate(data);
-        toast("Generated from photos.", "success");
+        updateCreditsFromResponse(data);
+        out.innerHTML = outputTemplate(data, { creditUsed: 1 });
+        toast("Generated from photos. 1 credit used.", "success");
       } catch (error) {
         out.innerHTML = `<p class="error">${escapeHtml(error.message)}</p>`;
-        toast(error.message, "error");
+        handleGenerationError(error);
       }
     });
   }
@@ -605,7 +859,7 @@ function installAppTools() {
     scoreForm.addEventListener("submit", async (event) => {
       event.preventDefault();
       const out = $("#scoreOutputPanel");
-      out.innerHTML = "<div class='skeleton'>Scoring listing...</div>";
+      out.innerHTML = loadingTemplate("Scoring listing...");
       try {
         const formData = new FormData(scoreForm);
         const data = await api("/api/generate", {
@@ -618,11 +872,12 @@ function installAppTools() {
             negotiationGoal: "friendly"
           })
         });
-        out.innerHTML = outputTemplate(data);
-        toast("Scored listing.", "success");
+        updateCreditsFromResponse(data);
+        out.innerHTML = outputTemplate(data, { creditUsed: 1 });
+        toast("Scored listing. 1 credit used.", "success");
       } catch (error) {
         out.innerHTML = `<p class="error">${escapeHtml(error.message)}</p>`;
-        toast(error.message, "error");
+        handleGenerationError(error);
       }
     });
   }
@@ -632,7 +887,7 @@ function installAppTools() {
     replyForm.addEventListener("submit", async (event) => {
       event.preventDefault();
       const out = $("#replyOutput");
-      out.innerHTML = "<div class='skeleton'>Writing reply...</div>";
+      out.innerHTML = loadingTemplate("Writing reply...");
       try {
         const formData = new FormData(replyForm);
         const data = await api("/api/generate", {
@@ -647,11 +902,12 @@ function installAppTools() {
           })
         });
         const reply = data.buyerQuestionReply || (data.buyerReplies || [])[0] || "Reply generated.";
+        updateCreditsFromResponse(data);
         out.innerHTML = `<section class="output-card reply-block"><h3>Suggested reply</h3><p>${escapeHtml(reply)}</p><button type="button" data-copy="${escapeHtml(reply)}">Copy reply</button></section>`;
-        toast("Reply generated.", "success");
+        toast("Reply generated. 1 credit used.", "success");
       } catch (error) {
         out.innerHTML = `<p class="error">${escapeHtml(error.message)}</p>`;
-        toast(error.message, "error");
+        handleGenerationError(error);
       }
     });
   }
@@ -682,19 +938,7 @@ function installAppTools() {
     });
   }
 
-  document.addEventListener("click", async (event) => {
-    const copy = event.target.closest("[data-copy]");
-    if (!copy) return;
-    await navigator.clipboard.writeText(copy.dataset.copy || "");
-    const original = copy.textContent;
-    copy.textContent = "Copied!";
-    copy.setAttribute("aria-live", "polite");
-    toast("Copied.", "success");
-    setTimeout(() => {
-      copy.textContent = original;
-      copy.removeAttribute("aria-live");
-    }, 2000);
-  });
+  installCopyFeedback();
 }
 
 async function loadAppHistory(page = 1) {
@@ -711,7 +955,7 @@ async function loadAppHistory(page = 1) {
   try {
     const data = await api(`/api/history?page=${page}&pageSize=20&q=${encodeURIComponent(query)}`);
     if (!data.history?.length) {
-      list.innerHTML = '<div class="empty-state">No saved listings yet. Generate a listing to build your history.</div>';
+      list.innerHTML = '<div class="empty-state">Your generated listings will appear here</div>';
     } else {
       list.innerHTML = data.history.map((item) => `
         <article class="history-card" data-history-id="${escapeHtml(item.id)}">
@@ -756,7 +1000,7 @@ async function loadBilling(me = accountState) {
     packs.innerHTML = (data.creditPacks || []).map((pack) => `
       <div class="billing-pack ${pack.featured ? "is-featured" : ""}">
         <strong>${escapeHtml(pack.name)}</strong>
-        <span>${Number(pack.credits || 0)} credits · ${escapeHtml(formatPrice(pack.pricePence))}</span>
+        <span>${Number(pack.credits || 0)} credits - ${escapeHtml(formatPrice(pack.pricePence))}</span>
         <button type="button" class="pricing-buy" data-checkout-pack="${escapeHtml(pack.id)}">Buy ${escapeHtml(pack.name)}</button>
       </div>
     `).join("");
@@ -776,6 +1020,10 @@ async function loadBilling(me = accountState) {
 
 function installCheckoutButtons() {
   document.addEventListener("click", async (event) => {
+    if (event.target.closest("[data-close-paywall]") || event.target.classList.contains("paywall-backdrop")) {
+      $(".paywall-backdrop")?.remove();
+      return;
+    }
     const button = event.target.closest("[data-checkout-pack]");
     if (!button) return;
     if (!accountState.user) {
@@ -826,7 +1074,7 @@ function installCheckoutSuccess() {
     attempts += 1;
     try {
       const data = await api(`/api/checkout/success?session_id=${encodeURIComponent(sessionId)}`);
-      $(".js-credits").textContent = `${data.credits.remaining} credits`;
+      updateCreditsFromResponse(data);
       const delta = Math.max(0, Number(data.credits.remaining || 0) - startingCredits);
       if (!data.pending || delta > 0 || attempts >= 15) {
         clearInterval(timer);

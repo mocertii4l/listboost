@@ -1729,6 +1729,15 @@ ul li + li { margin-top: 4px; }
 
   .tool-grid, .auth-actions, .split-results { grid-template-columns: 1fr; }
 
+  .tool-layout,
+  .paywall-packs {
+    grid-template-columns: 1fr;
+  }
+
+  .sticky-form {
+    position: static;
+  }
+
   .workspace-head { flex-direction: column; align-items: flex-start; }
   .workflow-bar { width: 100%; }
 
@@ -1955,8 +1964,15 @@ body:not(.signed-in) .signed-in-only {
 
 .app-nav a.is-active {
   color: var(--color-accent);
-  text-decoration: underline;
-  text-underline-offset: 6px;
+  background: color-mix(in srgb, var(--color-accent) 12%, transparent);
+  border-color: color-mix(in srgb, var(--color-accent) 42%, var(--color-border));
+}
+
+.app-nav a {
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 8px 10px;
+  transition: color 140ms ease, background 140ms ease, border-color 140ms ease;
 }
 
 .page-wrap {
@@ -1968,6 +1984,7 @@ body:not(.signed-in) .signed-in-only {
 .app-route-shell {
   display: grid;
   gap: 24px;
+  min-height: calc(100vh - 132px);
 }
 
 .route-head {
@@ -2099,6 +2116,75 @@ body:not(.signed-in) .signed-in-only {
   align-items: start;
 }
 
+.generator-route {
+  display: grid;
+  gap: 22px;
+}
+
+.generator-card {
+  display: grid;
+  gap: 18px;
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+.generator-step {
+  display: grid;
+  gap: 10px;
+  max-width: 720px;
+}
+
+.generator-step h1 {
+  font-size: clamp(2.4rem, 6vw, 4.3rem);
+  color: var(--color-fg);
+}
+
+.generator-input-label {
+  font-size: 1rem;
+  font-weight: 900;
+}
+
+.generator-input-label textarea {
+  min-height: 210px;
+  font-size: 1.08rem;
+  line-height: 1.55;
+}
+
+.generator-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.generator-cta {
+  flex: 1 1 280px;
+  min-height: 60px;
+  font-size: 1.08rem;
+  border-radius: 18px;
+  box-shadow: 0 18px 34px rgba(0, 179, 164, 0.2);
+}
+
+.trust-strip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 0 0 18px;
+  padding: 0;
+  list-style: none;
+  color: var(--color-muted);
+  font-size: 0.88rem;
+  font-weight: 800;
+}
+
+.trust-strip li {
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  padding: 7px 10px;
+  background: color-mix(in srgb, var(--color-surface) 86%, var(--color-accent) 14%);
+}
+
 .auth-shell {
   min-height: 100vh;
   display: grid;
@@ -2208,6 +2294,76 @@ textarea::placeholder {
   background: var(--color-surface);
 }
 
+.results-stack {
+  max-width: 960px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.result-set {
+  display: grid;
+  gap: 14px;
+}
+
+.result-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  border-color: color-mix(in srgb, var(--color-accent) 52%, var(--color-border));
+}
+
+.result-summary h2 {
+  margin-top: 8px;
+  color: var(--color-fg);
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.credit-feedback {
+  margin: 8px 0 0;
+  color: var(--color-accent);
+  font-weight: 900;
+}
+
+.result-card {
+  display: grid;
+  gap: 14px;
+  box-shadow: 0 16px 38px rgba(0, 52, 46, 0.07);
+}
+
+.result-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.result-card h3 {
+  color: var(--color-fg);
+}
+
+.result-body {
+  color: var(--color-fg);
+  line-height: 1.65;
+}
+
+.result-body p,
+.result-body ul {
+  margin: 0;
+}
+
+.result-body ul {
+  padding-left: 20px;
+}
+
+.result-title {
+  font-size: 1.22rem;
+  font-weight: 900;
+}
+
 .mini-cards {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -2215,9 +2371,108 @@ textarea::placeholder {
 }
 
 .mini-cards span {
+  display: grid;
+  gap: 4px;
   padding: 12px;
   border-radius: 14px;
   background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+}
+
+.loading-card {
+  min-height: 220px;
+  display: grid;
+  place-items: center;
+  gap: 12px;
+  border: 1px dashed var(--color-border);
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--color-surface) 92%, var(--color-accent) 8%);
+  color: var(--color-fg);
+}
+
+.spinner {
+  width: 34px;
+  height: 34px;
+  border: 3px solid color-mix(in srgb, var(--color-accent) 18%, transparent);
+  border-top-color: var(--color-accent);
+  border-radius: 999px;
+  animation: spin 900ms linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.paywall-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(6, 18, 16, 0.58);
+}
+
+.paywall-modal {
+  position: relative;
+  width: min(760px, 100%);
+  display: grid;
+  gap: 16px;
+  border: 1px solid var(--color-border);
+  border-radius: 24px;
+  padding: clamp(22px, 4vw, 34px);
+  background: var(--color-surface);
+  color: var(--color-fg);
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.24);
+}
+
+.paywall-modal h2 {
+  color: var(--color-fg);
+  font-size: clamp(2rem, 5vw, 3rem);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.paywall-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 38px;
+  min-height: 38px;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  color: var(--color-fg);
+  background: transparent;
+}
+
+.paywall-packs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.paywall-pack {
+  display: grid;
+  gap: 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 18px;
+  padding: 16px;
+  background: color-mix(in srgb, var(--color-surface) 94%, var(--color-accent) 6%);
+}
+
+.paywall-pack.is-featured {
+  border-color: var(--color-accent);
+  transform: translateY(-4px);
+}
+
+.paywall-pack span {
+  color: var(--color-accent);
+  font-size: 0.8rem;
+  font-weight: 900;
+}
+
+.paywall-pack strong {
+  font-size: 1.35rem;
 }
 
 .toast-region {
@@ -2291,6 +2546,10 @@ textarea::placeholder {
 
 :root[data-theme="dark"] .pricing-card,
 :root[data-theme="dark"] .output-card,
+:root[data-theme="dark"] .loading-card,
+:root[data-theme="dark"] .paywall-modal,
+:root[data-theme="dark"] .paywall-pack,
+:root[data-theme="dark"] .trust-strip li,
 :root[data-theme="dark"] .faq-item,
 :root[data-theme="dark"] .history-card,
 :root[data-theme="dark"] .template-card,
@@ -2340,6 +2599,10 @@ textarea::placeholder {
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) .pricing-card,
   :root:not([data-theme="light"]) .output-card,
+  :root:not([data-theme="light"]) .loading-card,
+  :root:not([data-theme="light"]) .paywall-modal,
+  :root:not([data-theme="light"]) .paywall-pack,
+  :root:not([data-theme="light"]) .trust-strip li,
   :root:not([data-theme="light"]) .faq-item,
   :root:not([data-theme="light"]) .history-card,
   :root:not([data-theme="light"]) .template-card,
@@ -2416,6 +2679,16 @@ body.confetti::after {
   .feature-grid,
   .two-col,
   .tool-layout,
-  .mini-cards { grid-template-columns: 1fr; }
+  .mini-cards,
+  .paywall-packs { grid-template-columns: 1fr; }
   .sticky-form { position: static; }
+  .generator-actions,
+  .result-card-head {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .generator-cta,
+  .result-card-head .copy-button {
+    width: 100%;
+  }
 }

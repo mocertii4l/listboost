@@ -590,7 +590,8 @@ function buildPrompt({ tone, itemDetails, category, size, condition, buyerQuesti
     "You are Vinted Listing Booster, a conversion-focused resale listing assistant for Vinted sellers.",
     "Rewrite rough seller notes into a listing that is accurate, searchable, buyer-friendly, safe, and easy to trust.",
     "The title should be under 80 characters and should naturally include brand, item type, size, color, or condition when provided.",
-    "Write in authentic UK Vinted style. Avoid robotic phrases like 'elevate your wardrobe' unless the premium mode truly needs it.",
+    "The description must be copy-paste ready: one short opening line, then concise bullet-style lines for size, condition, colour/material, flaws, postage, and fit only when the seller gave those facts.",
+    "Write in authentic UK Vinted style. Avoid robotic phrases like 'elevate your wardrobe', hype, emojis, or vague filler.",
     "Use UK spelling, GBP pricing, and practical postage wording like 'can post tomorrow' when provided by the seller.",
     "Include Vinted-friendly search terms as plain keywords, not hashtags.",
     "Give a listing score out of 100 and explain what would improve it before posting.",
@@ -675,47 +676,50 @@ async function callWithJsonRetry(fn) {
 function sampleResult({ tone, itemDetails, category, size, condition, buyerQuestion }) {
   const firstLine = itemDetails.split(/\r?\n/).find(Boolean) || "your item";
   const concise = firstLine.replace(/[^\w\s.'&-]/g, "").trim().slice(0, 64) || "Quality Item";
-  const detailLine = [category, size, condition].filter(Boolean).join(" | ");
+  const titleCore = /zara|dress|size|black/i.test(concise)
+    ? "Black Zara Midi Dress UK 10"
+    : `${concise} UK ${size || ""}`.replace(/\s+/g, " ").trim();
 
   return {
-    title: `${concise} - Vinted Ready`,
+    title: titleCore,
     description: [
-      `Selling ${concise}.`,
-      detailLine ? detailLine : "Add size, condition, and brand before posting.",
-      "",
-      `Rewritten in a ${tone.replace("-", " ")} tone for a clear Vinted listing.`,
-      "Happy to answer questions or send extra photos if needed."
+      `Lovely ${titleCore.toLowerCase()} in a clean, easy-to-style look.`,
+      `Size: ${size || "please confirm before posting"}`,
+      `Condition: ${condition || "good preloved condition"}`,
+      "Colour: black",
+      "Great for evenings, workwear or a simple capsule wardrobe outfit.",
+      "Happy to answer questions or send extra photos before you buy."
     ].join("\n"),
-    tags: ["vinted", "preloved", "clean condition", "fast dispatch", "wardrobe clearout"],
-    searchTerms: ["white trainers", "nike trainers", "air force 1", "casual shoes", "streetwear"],
+    tags: ["zara dress", "black midi dress", "uk 10", "preloved", "minimal style"],
+    searchTerms: ["zara black dress", "black midi dress", "size 10 dress", "vinted uk", "capsule wardrobe"],
     listingScore: {
-      score: 76,
-      summary: "Strong start, but it needs clearer photos and more condition detail before posting.",
-      improvements: ["Add a size label photo", "Mention any marks clearly", "Add a close-up of soles or wear"]
+      score: 88,
+      summary: "Clear, searchable and ready to paste after a quick final check.",
+      improvements: ["Add a label photo", "Show the full length on a hanger", "Photograph any wear in natural light"]
     },
     priceOptions: {
-      fastSale: "GBP 24",
-      fairPrice: "GBP 30",
-      maxPrice: "GBP 36",
-      lowestOffer: "GBP 26",
-      startPrice: "GBP 34",
-      autoCounterOffer: "GBP 30",
-      bundleDiscount: "10-15%"
+      fastSale: "GBP 8",
+      fairPrice: "GBP 12",
+      maxPrice: "GBP 15",
+      lowestOffer: "GBP 9",
+      startPrice: "GBP 14",
+      autoCounterOffer: "GBP 11",
+      bundleDiscount: "10%"
     },
-    priceGuidance: "Check 3-5 similar sold Vinted items. Price slightly below the average for a quick sale.",
+    priceGuidance: "Start around GBP 14 and expect serious buyers near GBP 10-12. Price lower if you want a same-week sale.",
     photoChecklist: [
-      "Front photo in natural light",
-      "Close-up of label, size, or model number",
-      "Any marks or wear shown clearly",
-      "Photo of packaging or accessories if included"
+      "Full front photo in natural light",
+      "Back view showing the length and shape",
+      "Close-up of Zara label and size tag",
+      "Any marks or fabric wear shown clearly"
     ],
     buyerQuestionReply: buyerQuestion
-      ? "Hi, yes it is still available. The condition is shown in the photos, and I can post quickly after payment. Let me know if you want any extra close-up photos."
+      ? "Hi, yes it is still available. It is in good condition and I am happy to send an extra close-up if helpful."
       : "",
     buyerReplies: [
-      "Yes, this is still available. I can post it quickly after payment.",
-      "The condition is shown in the photos, but I can send another close-up if helpful.",
-      "I can accept a reasonable offer if you are ready to buy today."
+      "Hi, yes it is still available. I can post after payment and I am happy to send another photo if helpful.",
+      "Thanks for the offer. I could meet you at GBP 11 if you are ready to buy today.",
+      "It has only light signs of wear from normal use, but please check the photos before buying."
     ],
     missingDetails: ["Exact size or dimensions", "Brand/model", "Condition details", "Shipping or collection options"],
     provider: "demo"

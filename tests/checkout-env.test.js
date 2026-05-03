@@ -165,6 +165,52 @@ test("checkout creates a Stripe URL for a valid pack and rejects invalid packs",
   await close();
 });
 
+test("generation consumes credits and returns a paywall response at zero", async () => {
+  const port = await listen();
+  const oldOpenAi = process.env.OPENAI_API_KEY;
+  const oldAnthropic = process.env.ANTHROPIC_API_KEY;
+  delete process.env.OPENAI_API_KEY;
+  delete process.env.ANTHROPIC_API_KEY;
+
+  try {
+    const signup = await request(port, "/api/signup", {
+      method: "POST",
+      body: JSON.stringify({ email: "credit-use@example.com", password: "password123" })
+    });
+    assert.equal(signup.response.status, 200);
+    const cookie = signup.response.headers.get("set-cookie");
+
+    for (let index = 0; index < 5; index += 1) {
+      const generated = await request(port, "/api/generate", {
+        method: "POST",
+        headers: { cookie },
+        body: JSON.stringify({
+          itemDetails: `Black Zara dress size 10 worn twice good condition ${index}`,
+          tone: "clean",
+          sellerMode: "clearout",
+          negotiationGoal: "friendly"
+        })
+      });
+      assert.equal(generated.response.status, 200);
+      assert.equal(generated.body.credits.remaining, 4 - index);
+      assert.match(generated.body.title, /Zara|dress|Vinted|Black/i);
+    }
+
+    const blocked = await request(port, "/api/generate", {
+      method: "POST",
+      headers: { cookie },
+      body: JSON.stringify({ itemDetails: "Black Zara dress size 10 good condition" })
+    });
+    assert.equal(blocked.response.status, 402);
+    assert.equal(blocked.body.credits.remaining, 0);
+  } finally {
+    process.env.OPENAI_API_KEY = oldOpenAi;
+    if (oldAnthropic) process.env.ANTHROPIC_API_KEY = oldAnthropic;
+    else delete process.env.ANTHROPIC_API_KEY;
+    await close();
+  }
+});
+
 test("forgot and reset password flow is token based and single use", async () => {
   const port = await listen();
   const signup = await request(port, "/api/signup", {

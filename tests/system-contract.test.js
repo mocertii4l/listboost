@@ -28,7 +28,7 @@ test("new app surfaces include required modules", () => {
   }
   assert.match(appHtml, /id="appRoute"/);
   assert.match(siteJs, /function notesRouteTemplate/);
-  assert.match(siteJs, /Generate from notes/);
+  assert.match(siteJs, /Paste your item details/);
   assert.match(siteJs, /function repliesRouteTemplate/);
   assert.match(siteJs, /Buyer reply tools/);
   assert.match(siteJs, /function billingRouteTemplate/);
@@ -49,6 +49,27 @@ test("app route templates isolate feature content and expose active nav", () => 
   assert.match(siteJs, /loadAppHistory/);
   assert.match(serverJs, /pagination/);
   assert.match(serverJs, /handleBilling/);
+});
+
+test("app generator flow is guided, copyable and credit aware", () => {
+  assert.match(siteJs, /class="generator-route"/);
+  assert.match(siteJs, /Black Zara dress, size 10, worn twice, good condition/);
+  assert.match(siteJs, /hidden><\/section>|hidden/);
+  assert.match(siteJs, /Generating your listing/);
+  assert.match(siteJs, /Copy all/);
+  assert.match(siteJs, /credit used/);
+  assert.match(siteJs, /You're out of credits/);
+  assert.match(siteJs, /showPaywallModal/);
+  assert.match(siteJs, /No Vinted login required/);
+  assert.match(siteJs, /Copy and paste manually/);
+  assert.match(siteJs, /Your data is private/);
+});
+
+test("app navigation switches routes client-side", () => {
+  assert.match(siteJs, /function navigateApp/);
+  assert.match(siteJs, /history\.pushState/);
+  assert.match(siteJs, /window\.addEventListener\("popstate"/);
+  assert.match(stylesCss, /\.app-nav a\.is-active[\s\S]*background/);
 });
 
 test("password toggles and public header states are wired", () => {
