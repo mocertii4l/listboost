@@ -801,17 +801,19 @@ function installCopyFeedback() {
 function showPaywallModal() {
   $(".paywall-backdrop")?.remove();
   const packs = getCreditPacks();
+  const createdCount = Number(accountState.credits?.used || 0);
   document.body.insertAdjacentHTML("beforeend", `
     <div class="paywall-backdrop" role="presentation">
       <section class="paywall-modal" role="dialog" aria-modal="true" aria-labelledby="paywallTitle">
         <button class="paywall-close" type="button" data-close-paywall aria-label="Close">x</button>
         <p class="badge">Credits</p>
         <h2 id="paywallTitle">You're out of credits</h2>
-        <p class="muted">Top up once and keep generating polished listings, replies and price guidance.</p>
+        <p class="paywall-proof">You've created ${createdCount} ${createdCount === 1 ? "listing" : "listings"} already.</p>
+        <p class="muted">Most sellers upgrade to keep listing faster.</p>
         <div class="paywall-packs">
           ${packs.map((pack) => `
-            <article class="paywall-pack ${pack.featured ? "is-featured" : ""}">
-              <span>${escapeHtml(pack.label || "")}</span>
+            <article class="paywall-pack ${pack.featured || Number(pack.credits) === 150 ? "is-featured is-dominant" : ""}">
+              <span>${escapeHtml(Number(pack.credits) === 150 ? "Best value" : pack.label || "")}</span>
               <strong>${Number(pack.credits || 0)} credits</strong>
               <p>${escapeHtml(formatPrice(pack.pricePence))}</p>
               <button type="button" class="pricing-buy" data-checkout-pack="${escapeHtml(pack.id)}">Buy credits</button>
@@ -826,6 +828,7 @@ function showPaywallModal() {
 
 function handleGenerationError(error) {
   if (error?.status === 402 || Number(error?.credits?.remaining) <= 0) {
+    updateCreditsFromResponse(error);
     showPaywallModal();
   }
   toast(error.message, "error");

@@ -2487,6 +2487,13 @@ textarea::placeholder {
   text-transform: none;
 }
 
+.paywall-proof {
+  margin: 0;
+  color: var(--color-fg);
+  font-size: 1.05rem;
+  font-weight: 900;
+}
+
 .paywall-close {
   position: absolute;
   top: 12px;
@@ -2518,6 +2525,16 @@ textarea::placeholder {
 .paywall-pack.is-featured {
   border-color: var(--color-accent);
   transform: translateY(-4px);
+}
+
+.paywall-pack.is-dominant {
+  position: relative;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--color-accent) 18%, var(--color-surface)), var(--color-surface));
+  box-shadow: 0 24px 58px rgba(0, 179, 164, 0.22);
+}
+
+.paywall-pack.is-dominant .pricing-buy {
+  min-height: 52px;
 }
 
 .paywall-pack span {

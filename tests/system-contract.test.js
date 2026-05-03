@@ -85,6 +85,15 @@ test("copy feedback nudges users toward listing", () => {
   assert.match(siteJs, /You're ready to list this item/);
 });
 
+test("zero-credit paywall shows upgrade psychology", () => {
+  assert.match(siteJs, /You've created/);
+  assert.match(siteJs, /Most sellers upgrade to keep listing faster/);
+  assert.match(siteJs, /Number\(pack\.credits\) === 150/);
+  assert.match(siteJs, /is-dominant/);
+  assert.match(stylesCss, /\.paywall-pack\.is-dominant/);
+  assert.match(stylesCss, /\.paywall-proof/);
+});
+
 test("app navigation switches routes client-side", () => {
   assert.match(siteJs, /function navigateApp/);
   assert.match(siteJs, /history\.pushState/);
