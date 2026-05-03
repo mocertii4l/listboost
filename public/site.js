@@ -683,14 +683,37 @@ function copyButton(label, text) {
   return `<button type="button" class="copy-button" data-copy="${escapeHtml(text || "")}">${label}</button>`;
 }
 
-function outputSection(title, html, copyText, copyLabel) {
+function outputSection(title, html, copyText, copyLabel, valueLabel = "") {
   return `
     <section class="output-card result-card">
       <div class="result-card-head">
-        <h3>${title}</h3>
+        <div>
+          <h3>${title}</h3>
+          ${valueLabel ? `<p class="value-label">${escapeHtml(valueLabel)}</p>` : ""}
+        </div>
         ${copyButton(copyLabel, copyText)}
       </div>
       <div class="result-body">${html}</div>
+    </section>
+  `;
+}
+
+function transformationTemplate(inputText, data = {}) {
+  if (!inputText) return "";
+  const generated = [data.title, ...linesFromText(data.description).slice(0, 3)].filter(Boolean).join("\n");
+  return `
+    <section class="output-card transformation-card">
+      <h3>Your input vs generated listing</h3>
+      <div class="before-after-grid">
+        <div>
+          <span>Input</span>
+          <p>${escapeHtml(inputText)}</p>
+        </div>
+        <div>
+          <span>Generated</span>
+          <p>${escapeHtml(generated || data.title || "Generated listing")}</p>
+        </div>
+      </div>
     </section>
   `;
 }
@@ -704,6 +727,7 @@ function outputTemplate(data = {}, options = {}) {
   const allCopy = listingCopyText({ ...data, photoChecklist: photoItems });
   const creditNote = options.creditUsed ? `<p class="credit-feedback">${options.creditUsed} credit used</p>` : "";
   const demoCta = options.demo ? '<a class="button primary result-cta" href="/signup">Create free account to generate your own listings</a>' : "";
+  const inputText = options.inputText || data.input?.itemDetails || "";
 
   return `
     <section class="result-set">
@@ -718,9 +742,10 @@ function outputTemplate(data = {}, options = {}) {
           ${demoCta}
         </div>
       </div>
-      ${outputSection("Title", `<p class="result-title">${escapeHtml(data.title || "Vinted-ready listing title")}</p>`, data.title || "", "Copy title")}
-      ${outputSection("Description", descriptionHtml(data.description), data.description || "", "Copy description")}
-      ${outputSection("Keywords", `<p>${escapeHtml(keywords || "vinted, preloved, wardrobe clearout")}</p>`, keywords, "Copy keywords")}
+      ${transformationTemplate(inputText, data)}
+      ${outputSection("Title", `<p class="result-title">${escapeHtml(data.title || "Vinted-ready listing title")}</p>`, data.title || "", "Copy title", "Optimised for Vinted search")}
+      ${outputSection("Description", descriptionHtml(data.description), data.description || "", "Copy description", "High-conversion description")}
+      ${outputSection("Keywords", `<p>${escapeHtml(keywords || "vinted, preloved, wardrobe clearout")}</p>`, keywords, "Copy keywords", "Search terms ready")}
       ${outputSection("Price guidance", `
         <div class="mini-cards">
           <span><strong>Fast</strong>${escapeHtml(price.fastSale || "-")}</span>
@@ -728,9 +753,9 @@ function outputTemplate(data = {}, options = {}) {
           <span><strong>Max</strong>${escapeHtml(price.maxPrice || "-")}</span>
         </div>
         <p>${escapeHtml(data.priceGuidance || "Check similar sold Vinted items before posting.")}</p>
-      `, priceText, "Copy price")}
-      ${outputSection("Photo checklist", listHtml(photoItems), photoItems.join("\n"), "Copy checklist")}
-      ${outputSection("Buyer reply", `<p>${escapeHtml(reply)}</p>`, reply, "Copy reply")}
+      `, priceText, "Copy price", "Suggested competitive pricing")}
+      ${outputSection("Photo checklist", listHtml(photoItems), photoItems.join("\n"), "Copy checklist", "Listing-photo checklist")}
+      ${outputSection("Buyer reply", `<p>${escapeHtml(reply)}</p>`, reply, "Copy reply", "Natural seller reply")}
     </section>
   `;
 }
@@ -813,9 +838,10 @@ function installAppTools() {
       out.hidden = false;
       out.innerHTML = loadingTemplate("Generating your listing...");
       try {
-        const data = await api("/api/generate", { method: "POST", body: JSON.stringify(Object.fromEntries(new FormData(notesForm))) });
+        const formPayload = Object.fromEntries(new FormData(notesForm));
+        const data = await api("/api/generate", { method: "POST", body: JSON.stringify(formPayload) });
         updateCreditsFromResponse(data);
-        out.innerHTML = outputTemplate(data, { creditUsed: 1 });
+        out.innerHTML = outputTemplate(data, { creditUsed: 1, inputText: formPayload.itemDetails });
         toast("Generated. 1 credit used.", "success");
       } catch (error) {
         out.hidden = true;
@@ -849,7 +875,7 @@ function installAppTools() {
           })
         });
         updateCreditsFromResponse(data);
-        out.innerHTML = outputTemplate(data, { creditUsed: 1 });
+        out.innerHTML = outputTemplate(data, { creditUsed: 1, inputText: formData.get("notes") || "Photo upload" });
         toast("Generated from photos. 1 credit used.", "success");
       } catch (error) {
         out.innerHTML = `<p class="error">${escapeHtml(error.message)}</p>`;
@@ -877,7 +903,7 @@ function installAppTools() {
           })
         });
         updateCreditsFromResponse(data);
-        out.innerHTML = outputTemplate(data, { creditUsed: 1 });
+        out.innerHTML = outputTemplate(data, { creditUsed: 1, inputText: `${formData.get("title") || ""}\n${formData.get("description") || ""}`.trim() });
         toast("Scored listing. 1 credit used.", "success");
       } catch (error) {
         out.innerHTML = `<p class="error">${escapeHtml(error.message)}</p>`;

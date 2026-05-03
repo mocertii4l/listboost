@@ -65,6 +65,20 @@ test("app generator flow is guided, copyable and credit aware", () => {
   assert.match(siteJs, /Your data is private/);
 });
 
+test("generated output shows value signals and before-after transformation", () => {
+  assert.match(serverJs, /TITLE: write a short Vinted-style title/);
+  assert.match(serverJs, /DESCRIPTION: use clean bullet-style lines/);
+  assert.match(serverJs, /PRICE: use realistic UK resale pricing/);
+  assert.match(serverJs, /KEYWORDS: include strong plain search terms/);
+  assert.match(serverJs, /BUYER REPLY: write in a natural UK seller tone/);
+  assert.match(siteJs, /Your input vs generated listing/);
+  assert.match(siteJs, /Optimised for Vinted search/);
+  assert.match(siteJs, /High-conversion description/);
+  assert.match(siteJs, /Suggested competitive pricing/);
+  assert.match(stylesCss, /\.before-after-grid/);
+  assert.match(stylesCss, /\.value-label/);
+});
+
 test("app navigation switches routes client-side", () => {
   assert.match(siteJs, /function navigateApp/);
   assert.match(siteJs, /history\.pushState/);

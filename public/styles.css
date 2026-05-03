@@ -2367,6 +2367,13 @@ textarea::placeholder {
   color: var(--color-fg);
 }
 
+.value-label {
+  margin: 4px 0 0;
+  color: var(--color-accent);
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
 .result-body {
   color: var(--color-fg);
   line-height: 1.65;
@@ -2384,6 +2391,32 @@ textarea::placeholder {
 .result-title {
   font-size: 1.22rem;
   font-weight: 900;
+}
+
+.transformation-card {
+  background: color-mix(in srgb, var(--color-surface) 90%, var(--color-accent) 10%);
+}
+
+.before-after-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.before-after-grid div {
+  display: grid;
+  gap: 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  padding: 14px;
+  background: var(--color-surface);
+}
+
+.before-after-grid span {
+  color: var(--color-muted);
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
 }
 
 .mini-cards {
@@ -2572,6 +2605,7 @@ textarea::placeholder {
 :root[data-theme="dark"] .paywall-modal,
 :root[data-theme="dark"] .paywall-pack,
 :root[data-theme="dark"] .trust-strip li,
+:root[data-theme="dark"] .before-after-grid div,
 :root[data-theme="dark"] .faq-item,
 :root[data-theme="dark"] .history-card,
 :root[data-theme="dark"] .template-card,
@@ -2625,6 +2659,7 @@ textarea::placeholder {
   :root:not([data-theme="light"]) .paywall-modal,
   :root:not([data-theme="light"]) .paywall-pack,
   :root:not([data-theme="light"]) .trust-strip li,
+  :root:not([data-theme="light"]) .before-after-grid div,
   :root:not([data-theme="light"]) .faq-item,
   :root:not([data-theme="light"]) .history-card,
   :root:not([data-theme="light"]) .template-card,
@@ -2701,6 +2736,7 @@ body.confetti::after {
   .feature-grid,
   .two-col,
   .tool-layout,
+  .before-after-grid,
   .mini-cards,
   .paywall-packs { grid-template-columns: 1fr; }
   .sticky-form { position: static; }
