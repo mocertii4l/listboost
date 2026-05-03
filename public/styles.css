@@ -2350,6 +2350,12 @@ textarea::placeholder {
   font-weight: 900;
 }
 
+.momentum-feedback {
+  margin: 6px 0 0;
+  color: var(--color-fg);
+  font-weight: 900;
+}
+
 .result-card {
   display: grid;
   gap: 14px;

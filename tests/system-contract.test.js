@@ -94,6 +94,15 @@ test("zero-credit paywall shows upgrade psychology", () => {
   assert.match(stylesCss, /\.paywall-proof/);
 });
 
+test("generation success shows usage momentum", () => {
+  assert.match(siteJs, /recordGenerationMomentum/);
+  assert.match(siteJs, /lb_generated_/);
+  assert.match(siteJs, /You've generated 1 listing today/);
+  assert.match(siteJs, /You're on a roll - keep going/);
+  assert.match(siteJs, /momentum-feedback/);
+  assert.match(stylesCss, /\.momentum-feedback/);
+});
+
 test("app navigation switches routes client-side", () => {
   assert.match(siteJs, /function navigateApp/);
   assert.match(siteJs, /history\.pushState/);

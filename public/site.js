@@ -176,6 +176,21 @@ function updateCreditsFromResponse(data = {}) {
   });
 }
 
+function generationMomentumKey() {
+  return `lb_generated_${new Date().toISOString().slice(0, 10)}`;
+}
+
+function recordGenerationMomentum() {
+  const key = generationMomentumKey();
+  const next = Math.max(0, Number(localStorage.getItem(key) || 0)) + 1;
+  localStorage.setItem(key, String(next));
+  return next;
+}
+
+function momentumMessage(count) {
+  return count <= 1 ? "You've generated 1 listing today" : "You're on a roll - keep going";
+}
+
 function renderPacks(packs) {
   const grid = $("#packGrid");
   if (!grid || !Array.isArray(packs)) return;
@@ -729,6 +744,7 @@ function outputTemplate(data = {}, options = {}) {
   const creditNote = options.creditUsed ? `<p class="credit-feedback">${options.creditUsed} credit used</p>` : "";
   const demoCta = options.demo ? '<a class="button primary result-cta" href="/signup">Create free account to generate your own listings</a>' : "";
   const inputText = options.inputText || data.input?.itemDetails || "";
+  const momentumNote = options.momentumCount ? `<p class="momentum-feedback">${escapeHtml(momentumMessage(options.momentumCount))}</p>` : "";
 
   return `
     <section class="result-set">
@@ -737,6 +753,7 @@ function outputTemplate(data = {}, options = {}) {
           <span class="badge">Step 3</span>
           <h2>Your listing is ready</h2>
           ${creditNote}
+          ${momentumNote}
         </div>
         <div class="result-summary-actions">
           ${copyButton("Copy all", allCopy)}
@@ -846,7 +863,8 @@ function installAppTools() {
         const formPayload = Object.fromEntries(new FormData(notesForm));
         const data = await api("/api/generate", { method: "POST", body: JSON.stringify(formPayload) });
         updateCreditsFromResponse(data);
-        out.innerHTML = outputTemplate(data, { creditUsed: 1, inputText: formPayload.itemDetails });
+        const momentumCount = recordGenerationMomentum();
+        out.innerHTML = outputTemplate(data, { creditUsed: 1, inputText: formPayload.itemDetails, momentumCount });
         toast("Generated. 1 credit used.", "success");
       } catch (error) {
         out.hidden = true;
@@ -880,7 +898,8 @@ function installAppTools() {
           })
         });
         updateCreditsFromResponse(data);
-        out.innerHTML = outputTemplate(data, { creditUsed: 1, inputText: formData.get("notes") || "Photo upload" });
+        const momentumCount = recordGenerationMomentum();
+        out.innerHTML = outputTemplate(data, { creditUsed: 1, inputText: formData.get("notes") || "Photo upload", momentumCount });
         toast("Generated from photos. 1 credit used.", "success");
       } catch (error) {
         out.innerHTML = `<p class="error">${escapeHtml(error.message)}</p>`;
@@ -908,7 +927,8 @@ function installAppTools() {
           })
         });
         updateCreditsFromResponse(data);
-        out.innerHTML = outputTemplate(data, { creditUsed: 1, inputText: `${formData.get("title") || ""}\n${formData.get("description") || ""}`.trim() });
+        const momentumCount = recordGenerationMomentum();
+        out.innerHTML = outputTemplate(data, { creditUsed: 1, inputText: `${formData.get("title") || ""}\n${formData.get("description") || ""}`.trim(), momentumCount });
         toast("Scored listing. 1 credit used.", "success");
       } catch (error) {
         out.innerHTML = `<p class="error">${escapeHtml(error.message)}</p>`;
