@@ -129,5 +129,11 @@ test("public pages include social metadata and legal pages use shared shell", ()
   }
   assert.match(privacyHtml, /id="main"/);
   assert.match(termsHtml, /id="main"/);
+  assert.match(privacyHtml, /support@listboost\.uk/);
+  assert.match(termsHtml, /support@listboost\.uk/);
+  assert.match(privacyHtml, /class="legal-links"/);
+  assert.match(termsHtml, /class="legal-links"/);
+  assert.doesNotMatch(privacyHtml, /hello@listboost\.app/);
+  assert.doesNotMatch(termsHtml, /hello@listboost\.app/);
   assert.match(stylesCss, /\.page-wrap[\s\S]*width: min\(1240px/);
 });
