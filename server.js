@@ -1091,18 +1091,20 @@ async function handleDemoGenerate(req, res) {
     return;
   }
 
-  const input = {
-    category: "Clothing",
-    tone: "friendly",
-    sellerMode: "clearout",
-    negotiationGoal: "friendly",
-    size: "UK 10",
-    condition: "Good condition",
-    itemDetails: "Zara black midi dress size 10 good condition. Worn once, no obvious flaws, suitable for work or evening.",
-    buyerQuestion: ""
-  };
-
   try {
+    const raw = await readBody(req);
+    const body = JSON.parse(raw || "{}");
+    const itemDetails = String(body.itemDetails || "Black Zara dress size 10 worn twice good condition").trim().slice(0, 600);
+    const input = {
+      category: "Clothing",
+      tone: "friendly",
+      sellerMode: "clearout",
+      negotiationGoal: "friendly",
+      size: "UK 10",
+      condition: "Good condition",
+      itemDetails: itemDetails.length >= 8 ? itemDetails : "Black Zara dress size 10 worn twice good condition",
+      buyerQuestion: ""
+    };
     let result;
     let provider = "demo";
     if (process.env.OPENAI_API_KEY) {
@@ -1120,7 +1122,7 @@ async function handleDemoGenerate(req, res) {
       return;
     }
 
-    json(res, 200, { ...result, provider, demo: true }, visitor.headers);
+    json(res, 200, { ...result, provider, demo: true, input }, visitor.headers);
   } catch (error) {
     console.error(error);
     json(res, 502, { error: "Could not run the live demo. Try again shortly." }, visitor.headers);

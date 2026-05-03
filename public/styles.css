@@ -2329,6 +2329,13 @@ textarea::placeholder {
   border-color: color-mix(in srgb, var(--color-accent) 52%, var(--color-border));
 }
 
+.result-summary-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
 .result-summary h2 {
   margin-top: 8px;
   color: var(--color-fg);

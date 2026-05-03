@@ -703,6 +703,7 @@ function outputTemplate(data = {}, options = {}) {
   const reply = buyerReplyText(data);
   const allCopy = listingCopyText({ ...data, photoChecklist: photoItems });
   const creditNote = options.creditUsed ? `<p class="credit-feedback">${options.creditUsed} credit used</p>` : "";
+  const demoCta = options.demo ? '<a class="button primary result-cta" href="/signup">Create free account to generate your own listings</a>' : "";
 
   return `
     <section class="result-set">
@@ -712,7 +713,10 @@ function outputTemplate(data = {}, options = {}) {
           <h2>Your listing is ready</h2>
           ${creditNote}
         </div>
-        ${copyButton("Copy all", allCopy)}
+        <div class="result-summary-actions">
+          ${copyButton("Copy all", allCopy)}
+          ${demoCta}
+        </div>
       </div>
       ${outputSection("Title", `<p class="result-title">${escapeHtml(data.title || "Vinted-ready listing title")}</p>`, data.title || "", "Copy title")}
       ${outputSection("Description", descriptionHtml(data.description), data.description || "", "Copy description")}
@@ -925,15 +929,16 @@ function installAppTools() {
   if (demo) {
     demo.addEventListener("click", async () => {
       const out = $("#demoOutput");
-      out.innerHTML = "<div class='skeleton'>Running real demo...</div>";
+      const input = $("#demoInput")?.value || "Black Zara dress size 10 worn twice good condition";
+      out.innerHTML = loadingTemplate("Generating your demo listing...");
       try {
         const data = await api("/api/demo-generate", {
           method: "POST",
-          body: JSON.stringify({})
+          body: JSON.stringify({ itemDetails: input })
         });
-        out.innerHTML = outputTemplate(data);
+        out.innerHTML = outputTemplate(data, { demo: true, inputText: input });
       } catch (error) {
-        out.innerHTML = `<p class="error">${error.message}</p>`;
+        out.innerHTML = `<p class="error">${escapeHtml(error.message)}</p>`;
       }
     });
   }

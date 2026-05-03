@@ -17,14 +17,18 @@
   <body>
     <div class="toast-region" id="toastRegion" aria-live="polite"></div>
     <header class="lb-header"></header>
-    <main class="page-wrap two-col" id="main">
-      <section class="card">
+    <main class="page-wrap two-col demo-page" id="main">
+      <section class="card demo-generator-card">
         <span class="badge">Live demo</span>
-        <h1>Run a real example.</h1>
-        <p>Uses a canned Zara dress input so visitors can see the output shape before signing up.</p>
-        <button class="button primary" id="runDemo" type="button">Run demo</button>
+        <h1>Try ListBoost without signing up.</h1>
+        <p>Generate a real Vinted-ready listing from a simple seller note. No account needed for this capped demo.</p>
+        <label>
+          Item details
+          <textarea id="demoInput">Black Zara dress size 10 worn twice good condition</textarea>
+        </label>
+        <button class="button primary generator-cta" id="runDemo" type="button">Generate demo listing</button>
       </section>
-      <section class="card output-stack" id="demoOutput"><div class="empty-state">Generated output appears here.</div></section>
+      <section class="card output-stack demo-output" id="demoOutput"><div class="empty-state">Your generated demo listing will appear here.</div></section>
     </main>
     <script type="module" src="/site.js"></script>
   </body>

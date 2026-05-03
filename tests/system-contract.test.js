@@ -114,9 +114,13 @@ test("pricing page renders three buyable packs", () => {
 
 test("example demo uses anonymous live generation endpoint", () => {
   assert.match(exampleHtml, /id="runDemo"/);
+  assert.match(exampleHtml, /Black Zara dress size 10 worn twice good condition/);
+  assert.match(exampleHtml, /Generate demo listing/);
   assert.match(serverJs, /handleDemoGenerate/);
   assert.match(serverJs, /\/api\/demo-generate/);
   assert.match(siteJs, /\/api\/demo-generate/);
+  assert.match(siteJs, /Create free account to generate your own listings/);
+  assert.match(siteJs, /demoInput/);
   assert.doesNotMatch(siteJs, /Generated output appears here[\s\S]*api\/generate/);
 });
 

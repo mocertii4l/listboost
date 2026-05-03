@@ -211,6 +211,30 @@ test("generation consumes credits and returns a paywall response at zero", async
   }
 });
 
+test("demo generation works without signup and returns the submitted input", async () => {
+  const port = await listen();
+  const oldOpenAi = process.env.OPENAI_API_KEY;
+  const oldAnthropic = process.env.ANTHROPIC_API_KEY;
+  delete process.env.OPENAI_API_KEY;
+  delete process.env.ANTHROPIC_API_KEY;
+
+  try {
+    const demo = await request(port, "/api/demo-generate", {
+      method: "POST",
+      body: JSON.stringify({ itemDetails: "Black Zara dress size 10 worn twice good condition" })
+    });
+    assert.equal(demo.response.status, 200);
+    assert.equal(demo.body.demo, true);
+    assert.equal(demo.body.input.itemDetails, "Black Zara dress size 10 worn twice good condition");
+    assert.match(demo.body.title, /Zara|Dress|Black/i);
+  } finally {
+    process.env.OPENAI_API_KEY = oldOpenAi;
+    if (oldAnthropic) process.env.ANTHROPIC_API_KEY = oldAnthropic;
+    else delete process.env.ANTHROPIC_API_KEY;
+    await close();
+  }
+});
+
 test("forgot and reset password flow is token based and single use", async () => {
   const port = await listen();
   const signup = await request(port, "/api/signup", {
