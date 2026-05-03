@@ -79,6 +79,12 @@ test("generated output shows value signals and before-after transformation", () 
   assert.match(stylesCss, /\.value-label/);
 });
 
+test("copy feedback nudges users toward listing", () => {
+  assert.match(siteJs, /copySuccessCount/);
+  assert.match(siteJs, /Copied — paste this into Vinted/);
+  assert.match(siteJs, /You're ready to list this item/);
+});
+
 test("app navigation switches routes client-side", () => {
   assert.match(siteJs, /function navigateApp/);
   assert.match(siteJs, /history\.pushState/);

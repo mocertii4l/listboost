@@ -7,6 +7,7 @@ const toastRegion = $("#toastRegion");
 let accountState = { user: null, credits: null };
 let globalCopyHandlerInstalled = false;
 let appNavigationInstalled = false;
+let copySuccessCount = 0;
 
 function toast(message, type = "info") {
   if (!toastRegion) return;
@@ -788,7 +789,8 @@ function installCopyFeedback() {
     const original = copy.textContent;
     copy.textContent = "Copied!";
     copy.setAttribute("aria-live", "polite");
-    toast("Copied.", "success");
+    copySuccessCount += 1;
+    toast(copySuccessCount >= 3 ? "You're ready to list this item" : "Copied — paste this into Vinted", "success");
     setTimeout(() => {
       copy.textContent = original;
       copy.removeAttribute("aria-live");
