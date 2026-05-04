@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import assert from "node:assert/strict";
+import Stripe from "stripe";
 
 const tempRoot = mkdtempSync(join(tmpdir(), "listboost-checkout-"));
 const tempDir = join(tempRoot, "missing-data-dir");
@@ -39,6 +40,7 @@ const {
   getPasswordResetCountForUser
 } = moduleUnderTest;
 const serverJs = readFileSync(new URL("../server.js", import.meta.url), "utf8");
+const stripeForTests = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 function listen() {
   return new Promise((resolve) => {
@@ -68,6 +70,19 @@ async function request(port, path, options = {}) {
     body = { text };
   }
   return { response, body };
+}
+
+async function stripeWebhook(port, event) {
+  const payload = JSON.stringify(event);
+  const signature = stripeForTests.webhooks.generateTestHeaderString({
+    payload,
+    secret: process.env.STRIPE_WEBHOOK_SECRET
+  });
+  return request(port, "/api/stripe-webhook", {
+    method: "POST",
+    headers: { "stripe-signature": signature },
+    body: payload
+  });
 }
 
 test.after(async () => {
@@ -162,6 +177,87 @@ test("checkout creates a Stripe URL for a valid pack and rejects invalid packs",
   });
   assert.equal(invalid.response.status, 400);
   assert.match(invalid.body.error, /Unknown credit pack/);
+  await close();
+});
+
+test("subscription checkout starts monthly billing and webhook grants refill credits", async () => {
+  const port = await listen();
+
+  const signup = await request(port, "/api/signup", {
+    method: "POST",
+    body: JSON.stringify({ email: "subscriber@example.com", password: "password123" })
+  });
+  assert.equal(signup.response.status, 200);
+  const cookie = signup.response.headers.get("set-cookie");
+  const userId = signup.body.user.id;
+
+  const checkout = await request(port, "/api/create-subscription-checkout-session", {
+    method: "POST",
+    headers: { cookie },
+    body: JSON.stringify({ planId: "seller" })
+  });
+  assert.equal(checkout.response.status, 200);
+  assert.equal(checkout.body.mode, "subscription");
+  assert.equal(checkout.body.planId, "seller");
+  assert.match(checkout.body.url, /^https:\/\/checkout\.stripe\.test\/subscription\/seller$/);
+
+  const startEvent = await stripeWebhook(port, {
+    id: "evt_subscription_start",
+    type: "checkout.session.completed",
+    data: {
+      object: {
+        id: "cs_subscription_seller",
+        mode: "subscription",
+        payment_status: "paid",
+        client_reference_id: userId,
+        customer: "cus_subscriber",
+        subscription: "sub_seller",
+        metadata: {
+          userId,
+          planId: "seller",
+          credits: "150",
+          billingType: "subscription"
+        }
+      }
+    }
+  });
+  assert.equal(startEvent.response.status, 200);
+
+  const afterStart = await request(port, "/api/billing", { headers: { cookie } });
+  assert.equal(afterStart.response.status, 200);
+  assert.equal(afterStart.body.subscription.plan, "seller");
+  assert.equal(afterStart.body.subscription.status, "active");
+  assert.equal(afterStart.body.credits.subscriptionCredits, 150);
+  assert.equal(afterStart.body.credits.remaining, 155);
+  assert.equal(afterStart.body.refills[0].credits, 150);
+
+  const renewalEvent = await stripeWebhook(port, {
+    id: "evt_subscription_renewal",
+    type: "invoice.paid",
+    data: {
+      object: {
+        id: "in_seller_renewal",
+        billing_reason: "subscription_cycle",
+        customer: "cus_subscriber",
+        subscription: "sub_seller",
+        subscription_details: {
+          metadata: {
+            userId,
+            planId: "seller",
+            credits: "150"
+          }
+        },
+        lines: { data: [{ period: { end: 1819843200 } }] }
+      }
+    }
+  });
+  assert.equal(renewalEvent.response.status, 200);
+
+  const afterRenewal = await request(port, "/api/billing", { headers: { cookie } });
+  assert.equal(afterRenewal.response.status, 200);
+  assert.equal(afterRenewal.body.credits.subscriptionCredits, 300);
+  assert.equal(afterRenewal.body.credits.remaining, 305);
+  assert.equal(afterRenewal.body.refills.length, 2);
   await close();
 });
 

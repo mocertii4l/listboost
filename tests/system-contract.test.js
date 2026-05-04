@@ -32,7 +32,7 @@ test("new app surfaces include required modules", () => {
   assert.match(siteJs, /function repliesRouteTemplate/);
   assert.match(siteJs, /Buyer reply tools/);
   assert.match(siteJs, /function billingRouteTemplate/);
-  assert.match(siteJs, /Recent transactions/);
+  assert.match(siteJs, /Recent credit activity/);
   assert.match(siteJs, /installCheckoutSuccess/);
   assert.match(siteJs, /theme-toggle/);
 });
@@ -87,7 +87,9 @@ test("copy feedback nudges users toward listing", () => {
 
 test("zero-credit paywall shows upgrade psychology", () => {
   assert.match(siteJs, /You've created/);
-  assert.match(siteJs, /Most sellers upgrade to keep listing faster/);
+  assert.match(siteJs, /Most sellers subscribe to keep listing faster/);
+  assert.match(siteJs, /Recommended monthly/);
+  assert.match(siteJs, /data-subscription-plan/);
   assert.match(siteJs, /Number\(pack\.credits\) === 150/);
   assert.match(siteJs, /is-dominant/);
   assert.match(stylesCss, /\.paywall-pack\.is-dominant/);
@@ -143,11 +145,13 @@ test("pricing page renders three buyable packs", () => {
   for (const pack of ["starter", "seller", "reseller"]) {
     assert.match(pricingHtml, new RegExp(`id="${pack}"`));
     assert.match(pricingHtml, new RegExp(`data-checkout-pack="${pack}"`));
+    assert.match(pricingHtml, new RegExp(`data-subscription-plan="${pack}"`));
   }
   assert.match(pricingHtml, /50/);
   assert.match(pricingHtml, /150/);
   assert.match(pricingHtml, /400/);
   assert.match(pricingHtml, /Best value/);
+  assert.match(pricingHtml, /Subscribe monthly/);
 });
 
 test("example demo uses anonymous live generation endpoint", () => {
@@ -157,9 +161,26 @@ test("example demo uses anonymous live generation endpoint", () => {
   assert.match(serverJs, /handleDemoGenerate/);
   assert.match(serverJs, /\/api\/demo-generate/);
   assert.match(siteJs, /\/api\/demo-generate/);
-  assert.match(siteJs, /Create free account to generate your own listings/);
+  assert.match(siteJs, /Create free account and get 5 free credits/);
   assert.match(siteJs, /demoInput/);
   assert.doesNotMatch(siteJs, /Generated output appears here[\s\S]*api\/generate/);
+});
+
+test("subscription billing surfaces monthly plans and refill status", () => {
+  assert.match(serverJs, /mode:\s*"subscription"/);
+  assert.match(serverJs, /subscription_plan/);
+  assert.match(serverJs, /subscription_status/);
+  assert.match(serverJs, /subscription_credits/);
+  assert.match(serverJs, /next_credit_refill/);
+  assert.match(serverJs, /checkout\.session\.completed/);
+  assert.match(serverJs, /invoice\.paid/);
+  assert.match(serverJs, /customer\.subscription\.updated/);
+  assert.match(serverJs, /customer\.subscription\.deleted/);
+  assert.match(siteJs, /Current plan/);
+  assert.match(siteJs, /Credits remaining/);
+  assert.match(siteJs, /Next refill/);
+  assert.match(siteJs, /Subscribe monthly/);
+  assert.match(stylesCss, /\.billing-toggle/);
 });
 
 test("public pages include social metadata and legal pages use shared shell", () => {
