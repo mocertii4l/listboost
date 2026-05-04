@@ -94,8 +94,9 @@ const freeCredits = Number(process.env.FREE_CREDITS || 5);
 const creditPackSize = Number(process.env.CREDIT_PACK_SIZE || 50);
 const creditPackPricePence = Number(process.env.CREDIT_PACK_PRICE_PENCE || 500);
 const creditPacks = buildCreditPacks();
+const subscriptionPlans = buildSubscriptionPlans();
 const appUrl = normalizeAppUrl(process.env.APP_URL || `http://localhost:${port}`);
-const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY) : null;
+const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: "2026-02-25.clover" }) : null;
 const stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET || "";
 const isProduction = process.env.NODE_ENV === "production";
 const requireEmailVerification = process.env.REQUIRE_EMAIL_VERIFICATION !== "false";
@@ -180,10 +181,107 @@ function publicCreditPacks() {
   }));
 }
 
+function buildSubscriptionPlans() {
+  const fallback = [
+    {
+      id: "starter",
+      name: "Starter",
+      credits: 50,
+      pricePence: 500,
+      label: "Monthly starter",
+      description: "For occasional sellers who want a steady monthly listing rhythm.",
+      priceEnv: "STRIPE_PRICE_STARTER_MONTHLY"
+    },
+    {
+      id: "seller",
+      name: "Seller",
+      credits: 150,
+      pricePence: 1200,
+      label: "Best value",
+      description: "For active sellers who list every week and want credits ready.",
+      featured: true,
+      priceEnv: "STRIPE_PRICE_SELLER_MONTHLY"
+    },
+    {
+      id: "reseller",
+      name: "Reseller",
+      credits: 400,
+      pricePence: 2500,
+      label: "Bulk seller",
+      description: "For resellers running larger batches and repeat listing sessions.",
+      priceEnv: "STRIPE_PRICE_RESELLER_MONTHLY"
+    }
+  ];
+
+  if (!process.env.SUBSCRIPTION_PLANS_JSON) return fallback.map(withSubscriptionPriceId);
+
+  try {
+    const parsed = JSON.parse(process.env.SUBSCRIPTION_PLANS_JSON);
+    const plans = Array.isArray(parsed) ? parsed : [];
+    const clean = plans
+      .map((plan) => ({
+        id: String(plan.id || "").trim().toLowerCase(),
+        name: String(plan.name || "").trim(),
+        credits: Number(plan.credits),
+        pricePence: Number(plan.pricePence),
+        label: String(plan.label || "").trim(),
+        description: String(plan.description || "").trim(),
+        featured: Boolean(plan.featured),
+        priceEnv: String(plan.priceEnv || "").trim(),
+        priceId: String(plan.priceId || "").trim()
+      }))
+      .filter((plan) => plan.id && plan.name && Number.isFinite(plan.credits) && plan.credits > 0 && Number.isFinite(plan.pricePence) && plan.pricePence > 0);
+    return clean.length ? clean.map(withSubscriptionPriceId) : fallback.map(withSubscriptionPriceId);
+  } catch {
+    console.warn("[launch-check] SUBSCRIPTION_PLANS_JSON is invalid. Using default subscription plans.");
+    return fallback.map(withSubscriptionPriceId);
+  }
+}
+
+function withSubscriptionPriceId(plan) {
+  return {
+    ...plan,
+    priceId: plan.priceId || (plan.priceEnv ? cleanEnvValue(process.env[plan.priceEnv] || "") : "")
+  };
+}
+
+function publicSubscriptionPlans() {
+  return subscriptionPlans.map((plan) => ({
+    id: plan.id,
+    name: plan.name,
+    credits: plan.credits,
+    pricePence: plan.pricePence,
+    price: `GBP ${(plan.pricePence / 100).toFixed(2).replace(/\.00$/, "")}`,
+    interval: "month",
+    label: plan.label,
+    description: plan.description,
+    featured: Boolean(plan.featured)
+  }));
+}
+
 function findCreditPack(packId) {
   const requestedPackId = String(packId || "").trim().toLowerCase();
   if (!requestedPackId) return creditPacks.find((item) => item.featured) || creditPacks[0];
   return creditPacks.find((item) => item.id === requestedPackId) || null;
+}
+
+function findSubscriptionPlan(planId) {
+  const requestedPlanId = String(planId || "").trim().toLowerCase();
+  if (!requestedPlanId) return subscriptionPlans.find((item) => item.featured) || subscriptionPlans[0];
+  return subscriptionPlans.find((item) => item.id === requestedPlanId) || null;
+}
+
+function publicSubscriptionForUser(user) {
+  const planId = user?.subscription_plan || "free";
+  const plan = findSubscriptionPlan(planId);
+  return {
+    plan: planId,
+    planName: plan ? plan.name : "Free",
+    status: user?.subscription_status || "inactive",
+    credits: Number(user?.subscription_credits || 0),
+    nextCreditRefill: user?.next_credit_refill || null,
+    stripeSubscriptionId: user?.stripe_subscription_id || null
+  };
 }
 
 function pricePenceForCredits(credits) {
@@ -206,7 +304,8 @@ async function createCheckoutSession({ user, pack }) {
     metadata: {
       userId: user.id,
       credits: String(pack.credits),
-      packId: pack.id
+      packId: pack.id,
+      billingType: "credits"
     },
     line_items: [
       {
@@ -225,6 +324,51 @@ async function createCheckoutSession({ user, pack }) {
     cancel_url: `${appUrl}/checkout/cancel`
   });
 }
+
+function subscriptionLineItem(plan) {
+  if (plan.priceId) return { price: plan.priceId, quantity: 1 };
+  return {
+    price_data: {
+      currency: "gbp",
+      product_data: {
+        name: `ListBoost ${plan.name}`,
+        description: plan.description || "Monthly ListBoost credits for Vinted sellers."
+      },
+      recurring: { interval: "month" },
+      unit_amount: plan.pricePence
+    },
+    quantity: 1
+  };
+}
+
+async function createSubscriptionCheckoutSession({ user, plan }) {
+  if (process.env.STRIPE_MOCK_CHECKOUT === "true") {
+    return { url: `https://checkout.stripe.test/subscription/${plan.id}` };
+  }
+
+  return stripe.checkout.sessions.create({
+    mode: "subscription",
+    client_reference_id: user.id,
+    customer: user.stripe_customer_id || undefined,
+    customer_email: user.stripe_customer_id ? undefined : user.email,
+    metadata: {
+      userId: user.id,
+      planId: plan.id,
+      credits: String(plan.credits),
+      billingType: "subscription"
+    },
+    subscription_data: {
+      metadata: {
+        userId: user.id,
+        planId: plan.id,
+        credits: String(plan.credits)
+      }
+    },
+    line_items: [subscriptionLineItem(plan)],
+    success_url: `${appUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${appUrl}/checkout/cancel`
+  });
+}
 db.exec(`
   CREATE TABLE IF NOT EXISTS users (
     id TEXT PRIMARY KEY,
@@ -233,6 +377,12 @@ db.exec(`
     free_credits INTEGER NOT NULL DEFAULT ${freeCredits},
     paid_credits INTEGER NOT NULL DEFAULT 0,
     used_credits INTEGER NOT NULL DEFAULT 0,
+    subscription_plan TEXT NOT NULL DEFAULT 'free',
+    subscription_status TEXT NOT NULL DEFAULT 'inactive',
+    subscription_credits INTEGER NOT NULL DEFAULT 0,
+    next_credit_refill TEXT,
+    stripe_customer_id TEXT,
+    stripe_subscription_id TEXT,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
   );
@@ -288,12 +438,28 @@ db.exec(`
     created_at TEXT NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
   );
+
+  CREATE TABLE IF NOT EXISTS subscription_refills (
+    stripe_invoice_id TEXT PRIMARY KEY,
+    stripe_subscription_id TEXT,
+    user_id TEXT NOT NULL,
+    plan TEXT NOT NULL,
+    credits INTEGER NOT NULL,
+    processed_at TEXT NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  );
 `);
 
 const columnAdditions = [
   ["generations", "score", "INTEGER"],
   ["generations", "result_json", "TEXT"],
-  ["users", "email_verified", "INTEGER NOT NULL DEFAULT 0"]
+  ["users", "email_verified", "INTEGER NOT NULL DEFAULT 0"],
+  ["users", "subscription_plan", "TEXT NOT NULL DEFAULT 'free'"],
+  ["users", "subscription_status", "TEXT NOT NULL DEFAULT 'inactive'"],
+  ["users", "subscription_credits", "INTEGER NOT NULL DEFAULT 0"],
+  ["users", "next_credit_refill", "TEXT"],
+  ["users", "stripe_customer_id", "TEXT"],
+  ["users", "stripe_subscription_id", "TEXT"]
 ];
 for (const [table, column, type] of columnAdditions) {
   const existing = db.prepare(`PRAGMA table_info(${table})`).all();
@@ -516,21 +682,34 @@ function getCredits(usage, visitorId) {
 function getAccountCredits(user) {
   const free = Number(user.free_credits || 0);
   const paid = Number(user.paid_credits || 0);
+  const subscription = Number(user.subscription_credits || 0);
   const used = Number(user.used_credits || 0);
-  const total = free + paid;
+  const total = free + paid + subscription;
   return {
     freeCredits: free,
     paidCredits: paid,
+    subscriptionCredits: subscription,
     totalCredits: total,
     used,
     remaining: Math.max(total - used, 0),
     packSize: creditPackSize,
-    packPricePence: creditPackPricePence
+    packPricePence: creditPackPricePence,
+    subscriptionPlan: user.subscription_plan || "free",
+    subscriptionStatus: user.subscription_status || "inactive",
+    nextCreditRefill: user.next_credit_refill || null
   };
 }
 
 function publicUser(user) {
-  return user ? { id: user.id, email: user.email, emailVerified: Boolean(user.email_verified) } : null;
+  return user ? {
+    id: user.id,
+    email: user.email,
+    emailVerified: Boolean(user.email_verified),
+    subscriptionPlan: user.subscription_plan || "free",
+    subscriptionStatus: user.subscription_status || "inactive",
+    subscriptionCredits: Number(user.subscription_credits || 0),
+    nextCreditRefill: user.next_credit_refill || null
+  } : null;
 }
 
 function getAiProvider() {
@@ -1141,17 +1320,22 @@ async function handleMe(req, res) {
       credits: {
         freeCredits,
         paidCredits: 0,
+        subscriptionCredits: 0,
         totalCredits: freeCredits,
         used: 0,
         remaining: 0,
         packSize: creditPackSize,
-        packPricePence: creditPackPricePence
+        packPricePence: creditPackPricePence,
+        subscriptionPlan: "free",
+        subscriptionStatus: "inactive",
+        nextCreditRefill: null
       },
       stripeReady: Boolean(stripe),
       aiProvider: getAiProvider(),
       appUrl,
       adminEnabled: Boolean(adminEmail && adminPassword),
       creditPacks: publicCreditPacks(),
+      subscriptionPlans: publicSubscriptionPlans(),
       emailVerified: false,
       verificationRequired: requireEmailVerification
     }, visitor.headers);
@@ -1166,6 +1350,8 @@ async function handleMe(req, res) {
     appUrl,
     adminEnabled: Boolean(adminEmail && adminPassword),
     creditPacks: publicCreditPacks(),
+    subscriptionPlans: publicSubscriptionPlans(),
+    subscription: publicSubscriptionForUser(user),
     emailVerified: Boolean(user.email_verified),
     verificationRequired: requireEmailVerification
   }, visitor.headers);
@@ -1280,11 +1466,29 @@ async function handleBilling(req, res) {
     reason: row.reason,
     createdAt: row.created_at
   }));
+  const refills = db.prepare(`
+    SELECT stripe_invoice_id, stripe_subscription_id, plan, credits, processed_at
+    FROM subscription_refills
+    WHERE user_id = ?
+    ORDER BY processed_at DESC
+    LIMIT 20
+  `).all(user.id).map((row) => ({
+    type: "subscription-refill",
+    reference: row.stripe_invoice_id,
+    subscriptionId: row.stripe_subscription_id,
+    plan: row.plan,
+    credits: row.credits,
+    createdAt: row.processed_at
+  }));
 
   json(res, 200, {
+    user: publicUser(user),
     credits: getAccountCredits(user),
+    subscription: publicSubscriptionForUser(user),
     creditPacks: publicCreditPacks(),
+    subscriptionPlans: publicSubscriptionPlans(),
     payments,
+    refills,
     audit
   }, visitor.headers);
 }
@@ -1456,6 +1660,93 @@ async function handleCheckout(req, res, forcedPackId = "") {
   }
 }
 
+function hasMutableSubscription(user) {
+  return Boolean(user?.stripe_subscription_id)
+    && ["active", "trialing", "past_due"].includes(String(user.subscription_status || "").toLowerCase());
+}
+
+async function changeStripeSubscriptionPlan({ user, plan }) {
+  if (!plan.priceId) return null;
+  const subscription = await stripe.subscriptions.retrieve(user.stripe_subscription_id);
+  const itemId = subscription.items?.data?.[0]?.id;
+  if (!itemId) throw new Error("Subscription has no editable item.");
+  const updated = await stripe.subscriptions.update(user.stripe_subscription_id, {
+    items: [{ id: itemId, price: plan.priceId }],
+    proration_behavior: "create_prorations",
+    metadata: {
+      ...(subscription.metadata || {}),
+      userId: user.id,
+      planId: plan.id,
+      credits: String(plan.credits)
+    }
+  });
+  syncSubscriptionFields({
+    userId: user.id,
+    customerId: stripeId(updated.customer),
+    subscriptionId: stripeId(updated.id),
+    plan,
+    status: updated.status || "active",
+    nextCreditRefill: subscriptionPeriodEnd(updated) || user.next_credit_refill || nextMonthIso()
+  });
+  recordAudit(user.id, "stripe:subscription.updated", 0, `Subscription switched to ${plan.name}`);
+  return db.prepare("SELECT * FROM users WHERE id = ?").get(user.id);
+}
+
+async function handleSubscriptionCheckout(req, res) {
+  const visitor = getVisitor(req);
+  const user = getUserBySession(req);
+
+  if (!user) {
+    json(res, 401, { error: "Create an account or sign in before subscribing.", authUrl: `/signup?next=${encodeURIComponent("/app/billing")}` }, visitor.headers);
+    return;
+  }
+
+  if (!stripe) {
+    json(res, 503, { error: "Stripe is not connected yet. Add a test STRIPE_SECRET_KEY to .env and restart the app." }, visitor.headers);
+    return;
+  }
+
+  try {
+    const body = JSON.parse(await readBody(req, 20_000) || "{}");
+    const requestedPlanId = String(body.planId || "").trim().toLowerCase();
+    const plan = findSubscriptionPlan(requestedPlanId);
+    if (!plan) {
+      json(res, 400, { error: "Unknown subscription plan. Please choose Starter, Seller or Reseller." }, visitor.headers);
+      return;
+    }
+
+    if (hasMutableSubscription(user) && user.subscription_plan === plan.id) {
+      json(res, 200, {
+        updated: true,
+        unchanged: true,
+        planId: plan.id,
+        credits: getAccountCredits(user),
+        subscription: publicSubscriptionForUser(user),
+        user: publicUser(user)
+      }, visitor.headers);
+      return;
+    }
+
+    if (hasMutableSubscription(user) && plan.priceId && process.env.STRIPE_MOCK_CHECKOUT !== "true") {
+      const updatedUser = await changeStripeSubscriptionPlan({ user, plan });
+      json(res, 200, {
+        updated: true,
+        planId: plan.id,
+        credits: getAccountCredits(updatedUser),
+        subscription: publicSubscriptionForUser(updatedUser),
+        user: publicUser(updatedUser)
+      }, visitor.headers);
+      return;
+    }
+
+    const session = await createSubscriptionCheckoutSession({ user, plan });
+    json(res, 200, { url: session.url, planId: plan.id, mode: "subscription" }, visitor.headers);
+  } catch (error) {
+    console.error(error);
+    json(res, 500, { error: "Could not start subscription checkout." }, visitor.headers);
+  }
+}
+
 async function handleCheckoutSuccess(req, res) {
   const visitor = getVisitor(req);
   const user = getUserBySession(req);
@@ -1474,10 +1765,12 @@ async function handleCheckoutSuccess(req, res) {
 
   const fresh = db.prepare("SELECT * FROM users WHERE id = ?").get(user.id);
   const granted = db.prepare("SELECT credits FROM payments WHERE stripe_session_id = ? AND user_id = ?").get(sessionId, user.id);
+  const subscriptionGrant = db.prepare("SELECT credits FROM subscription_refills WHERE stripe_invoice_id = ? AND user_id = ?").get(`checkout:${sessionId}`, user.id);
   json(res, 200, {
     ok: true,
-    pending: !granted,
+    pending: !granted && !subscriptionGrant,
     credits: getAccountCredits(fresh),
+    subscription: publicSubscriptionForUser(fresh),
     user: publicUser(fresh)
   }, visitor.headers);
 }
@@ -1491,6 +1784,209 @@ function grantCreditsFromPayment({ sessionId, userId, credits, source }) {
   db.prepare("UPDATE users SET paid_credits = paid_credits + ?, updated_at = ? WHERE id = ?")
     .run(credits, now, userId);
   recordAudit(userId, source || "stripe:webhook", credits, `Stripe session ${sessionId}`);
+  return true;
+}
+
+function stripeId(value) {
+  if (!value) return "";
+  if (typeof value === "string") return value;
+  return String(value.id || "");
+}
+
+function isoFromStripeSeconds(value) {
+  const seconds = Number(value || 0);
+  return Number.isFinite(seconds) && seconds > 0 ? new Date(seconds * 1000).toISOString() : null;
+}
+
+function nextMonthIso(from = new Date()) {
+  const date = new Date(from);
+  date.setMonth(date.getMonth() + 1);
+  return date.toISOString();
+}
+
+function subscriptionPeriodEnd(subscription) {
+  return isoFromStripeSeconds(subscription?.current_period_end)
+    || isoFromStripeSeconds(subscription?.items?.data?.[0]?.current_period_end)
+    || null;
+}
+
+function invoicePeriodEnd(invoice) {
+  const line = invoice?.lines?.data?.find((item) => item?.period?.end);
+  return isoFromStripeSeconds(line?.period?.end)
+    || isoFromStripeSeconds(invoice?.period_end)
+    || null;
+}
+
+async function fetchStripeSubscription(subscriptionId) {
+  if (!stripe || !subscriptionId || process.env.STRIPE_MOCK_CHECKOUT === "true") return null;
+  try {
+    return await stripe.subscriptions.retrieve(subscriptionId);
+  } catch (error) {
+    console.warn(`Could not retrieve Stripe subscription ${subscriptionId}: ${error.message}`);
+    return null;
+  }
+}
+
+function findUserForStripeSubscription({ userId, subscriptionId, customerId }) {
+  if (userId) {
+    const user = db.prepare("SELECT * FROM users WHERE id = ?").get(userId);
+    if (user) return user;
+  }
+  if (subscriptionId) {
+    const user = db.prepare("SELECT * FROM users WHERE stripe_subscription_id = ?").get(subscriptionId);
+    if (user) return user;
+  }
+  if (customerId) {
+    const user = db.prepare("SELECT * FROM users WHERE stripe_customer_id = ?").get(customerId);
+    if (user) return user;
+  }
+  return null;
+}
+
+function syncSubscriptionFields({ userId, customerId, subscriptionId, plan, status = "active", nextCreditRefill }) {
+  const now = new Date().toISOString();
+  db.prepare(`
+    UPDATE users
+    SET subscription_plan = ?,
+        subscription_status = ?,
+        next_credit_refill = ?,
+        stripe_customer_id = COALESCE(?, stripe_customer_id),
+        stripe_subscription_id = COALESCE(?, stripe_subscription_id),
+        updated_at = ?
+    WHERE id = ?
+  `).run(plan.id, status, nextCreditRefill || nextMonthIso(), customerId || null, subscriptionId || null, now, userId);
+}
+
+function clearSubscriptionFields(userId, status = "canceled") {
+  const now = new Date().toISOString();
+  db.prepare(`
+    UPDATE users
+    SET subscription_plan = 'free',
+        subscription_status = ?,
+        next_credit_refill = NULL,
+        stripe_subscription_id = NULL,
+        updated_at = ?
+    WHERE id = ?
+  `).run(status, now, userId);
+}
+
+function grantSubscriptionCreditsOnce({ grantId, userId, subscriptionId, plan, credits, nextCreditRefill, source }) {
+  const existing = db.prepare("SELECT stripe_invoice_id FROM subscription_refills WHERE stripe_invoice_id = ?").get(grantId);
+  if (existing) return false;
+  const now = new Date().toISOString();
+  const amount = Number(credits || plan.credits || 0);
+  db.prepare(`
+    INSERT INTO subscription_refills (stripe_invoice_id, stripe_subscription_id, user_id, plan, credits, processed_at)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `).run(grantId, subscriptionId || null, userId, plan.id, amount, now);
+  db.prepare(`
+    UPDATE users
+    SET subscription_plan = ?,
+        subscription_status = 'active',
+        subscription_credits = subscription_credits + ?,
+        next_credit_refill = ?,
+        stripe_subscription_id = COALESCE(?, stripe_subscription_id),
+        updated_at = ?
+    WHERE id = ?
+  `).run(plan.id, amount, nextCreditRefill || nextMonthIso(), subscriptionId || null, now, userId);
+  recordAudit(userId, source || "stripe:subscription", amount, `Subscription credits for ${plan.name}`);
+  return true;
+}
+
+async function activateSubscriptionFromCheckout(session) {
+  const userId = session.metadata?.userId || session.client_reference_id;
+  const plan = findSubscriptionPlan(session.metadata?.planId);
+  if (!userId || !plan) return false;
+  if (session.payment_status && !["paid", "no_payment_required"].includes(session.payment_status)) return false;
+
+  const subscriptionId = stripeId(session.subscription);
+  const customerId = stripeId(session.customer);
+  const subscription = await fetchStripeSubscription(subscriptionId);
+  const status = subscription?.status || "active";
+  const nextCreditRefill = subscriptionPeriodEnd(subscription) || nextMonthIso();
+  const user = findUserForStripeSubscription({ userId, subscriptionId, customerId });
+  if (!user) {
+    console.warn(`Webhook: subscription checkout for unknown user ${userId} (session ${session.id})`);
+    return false;
+  }
+
+  syncSubscriptionFields({ userId: user.id, customerId, subscriptionId, plan, status, nextCreditRefill });
+  grantSubscriptionCreditsOnce({
+    grantId: `checkout:${session.id}`,
+    userId: user.id,
+    subscriptionId,
+    plan,
+    credits: plan.credits,
+    nextCreditRefill,
+    source: "stripe:subscription-start"
+  });
+  return true;
+}
+
+async function grantRenewalCreditsFromInvoice(invoice) {
+  const subscriptionId = stripeId(invoice.subscription)
+    || stripeId(invoice.parent?.subscription_details?.subscription)
+    || stripeId(invoice.lines?.data?.[0]?.subscription);
+  const customerId = stripeId(invoice.customer);
+  const metadata = {
+    ...(invoice.subscription_details?.metadata || {}),
+    ...(invoice.metadata || {})
+  };
+  const user = findUserForStripeSubscription({ userId: metadata.userId, subscriptionId, customerId });
+  if (!user) return false;
+
+  const plan = findSubscriptionPlan(metadata.planId) || findSubscriptionPlan(user.subscription_plan);
+  if (!plan) return false;
+
+  const nextCreditRefill = invoicePeriodEnd(invoice) || nextMonthIso();
+  syncSubscriptionFields({
+    userId: user.id,
+    customerId,
+    subscriptionId,
+    plan,
+    status: "active",
+    nextCreditRefill
+  });
+
+  if (invoice.billing_reason === "subscription_create") return false;
+  return grantSubscriptionCreditsOnce({
+    grantId: `invoice:${invoice.id}`,
+    userId: user.id,
+    subscriptionId,
+    plan,
+    credits: Number(metadata.credits || plan.credits),
+    nextCreditRefill,
+    source: "stripe:invoice.paid"
+  });
+}
+
+function updateSubscriptionFromStripeObject(subscription, deleted = false) {
+  const subscriptionId = stripeId(subscription.id);
+  const customerId = stripeId(subscription.customer);
+  const user = findUserForStripeSubscription({
+    userId: subscription.metadata?.userId,
+    subscriptionId,
+    customerId
+  });
+  if (!user) return false;
+
+  if (deleted) {
+    clearSubscriptionFields(user.id, subscription.status || "canceled");
+    recordAudit(user.id, "stripe:subscription.deleted", 0, "Subscription canceled");
+    return true;
+  }
+
+  const plan = findSubscriptionPlan(subscription.metadata?.planId) || findSubscriptionPlan(user.subscription_plan);
+  if (!plan) return false;
+  const nextCreditRefill = subscriptionPeriodEnd(subscription) || user.next_credit_refill || nextMonthIso();
+  syncSubscriptionFields({
+    userId: user.id,
+    customerId,
+    subscriptionId,
+    plan,
+    status: subscription.status || "active",
+    nextCreditRefill
+  });
   return true;
 }
 
@@ -1621,16 +2117,26 @@ async function handleStripeWebhook(req, res) {
   try {
     if (event.type === "checkout.session.completed") {
       const session = event.data.object;
-      const userId = session.metadata?.userId || session.client_reference_id;
-      const credits = Number(session.metadata?.credits || creditPackSize);
-      if (session.payment_status === "paid" && userId && credits > 0) {
-        const userExists = db.prepare("SELECT id FROM users WHERE id = ?").get(userId);
-        if (userExists) {
-          grantCreditsFromPayment({ sessionId: session.id, userId, credits, source: "stripe:webhook" });
-        } else {
-          console.warn(`Webhook: paid session for unknown user ${userId} (session ${session.id})`);
+      if (session.mode === "subscription" || session.metadata?.billingType === "subscription") {
+        await activateSubscriptionFromCheckout(session);
+      } else {
+        const userId = session.metadata?.userId || session.client_reference_id;
+        const credits = Number(session.metadata?.credits || creditPackSize);
+        if (session.payment_status === "paid" && userId && credits > 0) {
+          const userExists = db.prepare("SELECT id FROM users WHERE id = ?").get(userId);
+          if (userExists) {
+            grantCreditsFromPayment({ sessionId: session.id, userId, credits, source: "stripe:webhook" });
+          } else {
+            console.warn(`Webhook: paid session for unknown user ${userId} (session ${session.id})`);
+          }
         }
       }
+    } else if (event.type === "invoice.paid") {
+      await grantRenewalCreditsFromInvoice(event.data.object);
+    } else if (event.type === "customer.subscription.updated") {
+      updateSubscriptionFromStripeObject(event.data.object, false);
+    } else if (event.type === "customer.subscription.deleted") {
+      updateSubscriptionFromStripeObject(event.data.object, true);
     }
     res.writeHead(200, { "content-type": "application/json; charset=utf-8" });
     res.end(JSON.stringify({ received: true }));
@@ -2146,6 +2652,8 @@ async function handleSignup(req, res) {
       appUrl,
       adminEnabled: Boolean(adminEmail && adminPassword),
       creditPacks: publicCreditPacks(),
+      subscriptionPlans: publicSubscriptionPlans(),
+      subscription: publicSubscriptionForUser(user),
       emailVerified: Boolean(user.email_verified),
       verificationRequired: requireEmailVerification,
       verificationEmailDelivered: verificationDelivery.delivered,
@@ -2198,6 +2706,8 @@ async function handleLogin(req, res) {
       appUrl,
       adminEnabled: Boolean(adminEmail && adminPassword),
       creditPacks: publicCreditPacks(),
+      subscriptionPlans: publicSubscriptionPlans(),
+      subscription: publicSubscriptionForUser(user),
       emailVerified: Boolean(user.email_verified),
       verificationRequired: requireEmailVerification
     }, { ...visitor.headers, ...authHeaders(token) });
@@ -2378,6 +2888,11 @@ const server = createServer((req, res) => {
     return;
   }
 
+  if (req.method === "POST" && req.url === "/api/create-subscription-checkout-session") {
+    handleSubscriptionCheckout(req, res);
+    return;
+  }
+
   {
     const checkoutMatch = req.url.match(/^\/checkout\/([a-z0-9_-]+)$/i);
     if (checkoutMatch && req.method === "GET") {
@@ -2437,8 +2952,10 @@ export {
   ensureDataDir,
   normalizeAppUrl,
   findCreditPack,
+  findSubscriptionPlan,
   createPasswordResetToken,
   getPasswordResetCountForUser,
   publicCreditPacks,
+  publicSubscriptionPlans,
   server
 };
