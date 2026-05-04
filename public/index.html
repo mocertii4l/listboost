@@ -3,525 +3,139 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ListBoost &mdash; Sell-ready Vinted listings in seconds</title>
-    <meta name="description" content="ListBoost helps UK Vinted sellers turn rough item notes or photos into polished titles, descriptions, keywords, price guidance, photo checklists and buyer replies — without connecting your Vinted account." />
+    <title>ListBoost - Sell-ready Vinted listings in seconds</title>
+    <meta name="description" content="Turn messy item notes into sell-ready Vinted titles, descriptions, keywords, price guidance, photo checklists and buyer replies." />
+    <link rel="canonical" href="https://www.listboost.uk/" />
+    <meta property="og:title" content="ListBoost - Sell-ready Vinted listings in seconds" />
+    <meta property="og:description" content="Turn messy item notes into polished Vinted listings, price guidance, photo checklists and buyer replies." />
+    <meta property="og:image" content="https://www.listboost.uk/og-image.svg" />
+    <meta property="og:url" content="https://www.listboost.uk/" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="icon" href="/favicon.svg" />
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
-    <a class="skip-link" href="#workspace">Skip to workspace</a>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <div class="toast-region" id="toastRegion" aria-live="polite"></div>
+    <header class="lb-header"></header>
 
-    <header class="site-nav" role="banner">
-      <div class="nav-inner">
-        <a class="brand" href="/" aria-label="ListBoost home">
-          <span class="brand-mark" aria-hidden="true">LB</span>
-          <span class="brand-text">
-            <strong>ListBoost</strong>
-            <small>for Vinted</small>
-          </span>
-        </a>
-
-        <nav class="nav-links" aria-label="Primary">
-          <a href="#how-it-works">How it works</a>
-          <a href="#example">Example</a>
-          <a href="#pricing">Pricing</a>
-          <a href="#workspace">Workspace</a>
-        </nav>
-
-        <div class="nav-meta" aria-label="Account status">
-          <span class="status-pill muted" id="accountStatus">Not signed in</span>
-          <span class="status-pill" id="creditStatus">5 credits left</span>
-          <span class="status-pill muted" id="providerStatus">Checking AI</span>
-        </div>
-      </div>
-    </header>
-
-    <main class="app-shell">
-      <div class="verify-banner hidden" id="verifyBanner" role="status">
-        <span id="verifyBannerText">Verify your email to start generating listings.</span>
-        <button type="button" id="resendVerifyButton">Resend link</button>
-      </div>
-
-      <section class="hero" aria-labelledby="hero-title">
-        <div class="hero-bg" aria-hidden="true">
-          <span class="hero-blob hero-blob-1"></span>
-          <span class="hero-blob hero-blob-2"></span>
-        </div>
-
-        <div class="hero-grid">
-          <div class="hero-copy">
-            <span class="eyebrow">For UK Vinted sellers</span>
-            <h1 id="hero-title">Turn messy item notes into <span class="hero-accent">sell-ready Vinted listings</span> in seconds.</h1>
-            <p class="lede">ListBoost helps UK Vinted sellers create better titles, descriptions, keywords, price guidance, photo checklists and buyer replies &mdash; without connecting your Vinted account.</p>
-
-            <div class="hero-cta">
-              <a class="cta-primary" href="#workspace">
-                <span>Start free</span>
-                <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M11.3 4.3a1 1 0 0 1 1.4 0l4.5 4.5a1 1 0 0 1 0 1.4l-4.5 4.5a1 1 0 1 1-1.4-1.4l2.79-2.8H4a1 1 0 1 1 0-2h10.09l-2.79-2.8a1 1 0 0 1 0-1.4z" /></svg>
-              </a>
-              <a class="cta-secondary" href="#example">See example</a>
-            </div>
-
-            <ul class="trust-row" aria-label="Why sellers trust ListBoost">
-              <li><span aria-hidden="true">&#10003;</span> No Vinted login</li>
-              <li><span aria-hidden="true">&#10003;</span> Manual copy &amp; paste</li>
-              <li><span aria-hidden="true">&#10003;</span> Free credits to try</li>
-              <li><span aria-hidden="true">&#10003;</span> Independent &mdash; not affiliated with Vinted</li>
-            </ul>
+    <main class="page-wrap premium-home" id="main">
+      <section class="premium-hero" aria-labelledby="hero-title">
+        <div class="premium-hero-copy">
+          <p class="eyebrow">ListBoost for Vinted sellers</p>
+          <h1 id="hero-title">Turn messy item notes into sell-ready Vinted listings in seconds</h1>
+          <p class="lede">Paste rough notes, generate a human listing package, then copy the title, description, keywords, price guidance, photo checklist and buyer reply into Vinted.</p>
+          <div class="hero-cta">
+            <a class="button primary" href="/signup">Start with 5 free credits</a>
+            <a class="button secondary" href="/example">Try demo</a>
           </div>
-
-          <aside class="hero-card" aria-label="Starter pack" id="pricing">
-            <div class="hero-card-top">
-              <div>
-                <p class="panel-label">Starter pack</p>
-                <p class="hero-card-price"><strong>50</strong><span>credits / £5</span></p>
-              </div>
-              <span class="hero-card-tag">One-time</span>
-            </div>
-            <p class="hero-card-meta" id="packStatus">GBP 5 one-time top up</p>
-            <ul class="hero-card-list">
-              <li><span aria-hidden="true">&#10003;</span> ~50 polished listings</li>
-              <li><span aria-hidden="true">&#10003;</span> Title, description, keywords</li>
-              <li><span aria-hidden="true">&#10003;</span> Price tiers + buyer replies</li>
-              <li><span aria-hidden="true">&#10003;</span> Photo checklist + safety check</li>
-            </ul>
-            <button type="button" class="cta-primary cta-block" id="upgradeButton">Get 50 credits</button>
-            <p class="hero-card-fineprint">Card processed by Stripe. Test card 4242 4242 4242 4242 works in dev.</p>
-          </aside>
+          <ul class="trust-strip hero-trust" aria-label="Trust signals">
+            <li>No Vinted login needed</li>
+            <li>Copy &amp; paste manually</li>
+            <li>Independent tool</li>
+          </ul>
         </div>
-      </section>
-
-      <section class="benefits" id="how-it-works" aria-labelledby="benefits-title">
-        <header class="section-head">
-          <p class="eyebrow">What you get</p>
-          <h2 id="benefits-title">Everything you need to list faster &mdash; and sell more.</h2>
-        </header>
-
-        <div class="benefit-grid">
-          <article class="benefit-card">
-            <div class="benefit-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M13 2 4 14h6l-1 8 9-12h-6l1-8z"/></svg>
-            </div>
-            <h3>List faster</h3>
-            <p>Type a few rough notes or upload a photo. Get a polished listing in seconds &mdash; ready to copy.</p>
-          </article>
-
-          <article class="benefit-card">
-            <div class="benefit-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M12 2 9 9H2l5.5 4L5 21l7-4 7 4-2.5-8L22 9h-7l-3-7z"/></svg>
-            </div>
-            <h3>Improve weak listings</h3>
-            <p>A 0&ndash;100 score with concrete fixes: better keywords, missing photos, weak descriptions, smarter pricing.</p>
-          </article>
-
-          <article class="benefit-card">
-            <div class="benefit-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M4 4h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H8l-4 4V6a2 2 0 0 1 2-2z"/></svg>
-            </div>
-            <h3>Reply to buyers better</h3>
-            <p>Paste a buyer&rsquo;s message, get a polite on-brand reply &mdash; plus a library of quick replies for offers and postage.</p>
-          </article>
-        </div>
+        <aside class="product-preview" aria-label="Generated Vinted listing preview">
+          <img src="/og-image.svg" alt="" class="product-preview-media" />
+          <div class="preview-output">
+            <span class="badge">Generated output</span>
+            <h2>Zara Black Midi Dress UK 10</h2>
+            <p>Lovely black Zara midi dress in good preloved condition. Easy to style for evenings, workwear or a simple capsule wardrobe outfit.</p>
+            <div class="preview-chips"><span>Title</span><span>Description</span><span>Keywords</span><span>Price</span><span>Replies</span></div>
+          </div>
+        </aside>
       </section>
 
       <section class="example-section" id="example" aria-labelledby="example-title">
         <header class="section-head">
-          <p class="eyebrow">Before &amp; after</p>
-          <h2 id="example-title">Same item. Two very different listings.</h2>
-          <p class="section-sub">A rough note vs. a sell-ready ListBoost output. No edits, no cherry-picking.</p>
+          <p class="eyebrow">Before and after</p>
+          <h2 id="example-title">A better listing from the same rough note.</h2>
         </header>
-
         <div class="comparison-card">
           <article class="comparison-side comparison-before">
-            <div class="comparison-header">
-              <span class="comparison-tag">Weak listing</span>
-              <span class="comparison-mood">Buried in search</span>
-            </div>
-            <p class="comparison-title">untitled</p>
-            <p class="comparison-body">&ldquo;black zara dress size 10 good condition&rdquo;</p>
+            <div class="comparison-header"><span class="comparison-tag">Before</span><span class="comparison-mood">Hard to search</span></div>
+            <p class="comparison-title">black dress</p>
+            <p class="comparison-body">black zara dress size 10 worn twice good condition</p>
             <ul class="comparison-issues">
-              <li>No real keywords</li>
-              <li>No occasion or fit context</li>
-              <li>No call to buyers</li>
+              <li>Missing searchable title</li>
+              <li>No selling details</li>
+              <li>No price or reply guidance</li>
             </ul>
           </article>
-
-          <div class="comparison-divider" aria-hidden="true">
-            <svg viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M11.3 4.3a1 1 0 0 1 1.4 0l4.5 4.5a1 1 0 0 1 0 1.4l-4.5 4.5a1 1 0 1 1-1.4-1.4l2.79-2.8H4a1 1 0 1 1 0-2h10.09l-2.79-2.8a1 1 0 0 1 0-1.4z"/></svg>
-          </div>
-
           <article class="comparison-side comparison-after">
-            <div class="comparison-header">
-              <span class="comparison-tag">Sell-ready listing</span>
-              <span class="comparison-mood">Ranks on keywords</span>
-            </div>
-            <p class="comparison-title">Zara Black Midi Dress Size 10 &ndash; Smart Casual / Evening Outfit</p>
-            <p class="comparison-body">Lovely black Zara midi dress in a UK size 10. Great for smart casual, evening plans or workwear. Good condition with no obvious flaws. Open to sensible offers.</p>
+            <div class="comparison-header"><span class="comparison-tag">After</span><span class="comparison-mood">Ready to paste</span></div>
+            <p class="comparison-title">Zara Black Midi Dress UK 10 - Good Condition</p>
+            <p class="comparison-body">Lovely black Zara midi dress in a UK size 10. Worn twice and still in good condition. Great for evenings, workwear or simple smart-casual outfits.</p>
             <ul class="comparison-tags">
-              <li>Zara midi dress</li>
-              <li>black midi dress</li>
-              <li>UK size 10</li>
+              <li>zara black dress</li>
+              <li>uk 10 midi dress</li>
               <li>smart casual</li>
-              <li>evening outfit</li>
+              <li>vinted keywords</li>
             </ul>
           </article>
         </div>
       </section>
 
-      <section class="workspace" id="workspace" aria-labelledby="workspace-title">
-        <header class="section-head workspace-head">
-          <div>
-            <p class="eyebrow">Listing studio</p>
-            <h2 id="workspace-title">Build your next listing</h2>
-            <p class="section-sub">Sign in or create an account, then generate from notes or photos. Credits, history and saved listings stay with your account.</p>
-          </div>
-          <ol class="workflow-bar" aria-label="Workflow">
-            <li><span>1</span> Add details</li>
-            <li><span>2</span> Generate</li>
-            <li><span>3</span> Copy to Vinted</li>
-          </ol>
+      <section class="how-it-works" id="how-it-works" aria-labelledby="how-title">
+        <header class="section-head">
+          <p class="eyebrow">How it works</p>
+          <h2 id="how-title">Paste, generate, copy.</h2>
         </header>
+        <div class="step-grid">
+          <article class="step-card"><span>1</span><h3>Paste rough notes</h3><p>Add the honest item details you already have.</p></article>
+          <article class="step-card"><span>2</span><h3>Generate listing</h3><p>ListBoost structures the title, description, price and buyer reply.</p></article>
+          <article class="step-card"><span>3</span><h3>Copy to Vinted</h3><p>Use the copy buttons and paste each section manually.</p></article>
+        </div>
+      </section>
 
-        <div class="tool-grid">
-          <div class="input-panel panel">
-            <div class="panel-header">
-              <div>
-                <p class="section-kicker">Input</p>
-                <h2>Item details</h2>
-              </div>
-              <button type="button" class="ghost-button" id="exampleButton">Use example</button>
+      <section class="benefits" aria-labelledby="benefits-title">
+        <header class="section-head">
+          <p class="eyebrow">What you get</p>
+          <h2 id="benefits-title">Every output is built for Vinted.</h2>
+        </header>
+        <div class="benefit-grid premium-benefits">
+          <article class="benefit-card"><h3>Titles</h3><p>Short, searchable Vinted titles with the right item signals.</p></article>
+          <article class="benefit-card"><h3>Descriptions</h3><p>Concise, human descriptions that feel trustworthy.</p></article>
+          <article class="benefit-card"><h3>Keywords</h3><p>Plain search terms buyers actually type.</p></article>
+          <article class="benefit-card"><h3>Price guidance</h3><p>Fast, fair and max pricing suggestions in GBP.</p></article>
+          <article class="benefit-card"><h3>Photo checklist</h3><p>The photos to take before you publish.</p></article>
+          <article class="benefit-card"><h3>Buyer replies</h3><p>Polite replies for offers, postage and condition questions.</p></article>
+        </div>
+      </section>
+
+      <section class="pricing-section" id="pricing" aria-labelledby="pricing-title">
+        <header class="section-head">
+          <p class="eyebrow">Pricing</p>
+          <h2 id="pricing-title">Buy credits once, or subscribe monthly.</h2>
+          <p class="section-sub">Monthly plans are recommended for sellers who list every week and want credits ready.</p>
+        </header>
+        <div id="packGrid" aria-live="polite">
+          <div class="pricing-mode-section">
+            <div class="section-head compact"><p class="eyebrow">Buy credits</p><h2>One-time packs</h2></div>
+            <div class="pricing-grid">
+              <article class="pricing-card" id="starter"><span class="badge">One-time</span><h3>Starter</h3><p class="pricing-price"><strong>50</strong><span>credits</span></p><p class="pricing-meta">&pound;5 one-time</p><button class="pricing-buy" type="button" data-checkout-pack="starter" data-pack-id="starter">Buy Starter</button></article>
+              <article class="pricing-card is-featured featured" id="seller"><span class="badge">Best value</span><h3>Seller</h3><p class="pricing-price"><strong>150</strong><span>credits</span></p><p class="pricing-meta">&pound;12 one-time</p><button class="pricing-buy" type="button" data-checkout-pack="seller" data-pack-id="seller">Buy Seller</button></article>
+              <article class="pricing-card" id="reseller"><span class="badge">Bulk pack</span><h3>Reseller</h3><p class="pricing-price"><strong>400</strong><span>credits</span></p><p class="pricing-meta">&pound;25 one-time</p><button class="pricing-buy" type="button" data-checkout-pack="reseller" data-pack-id="reseller">Buy Reseller</button></article>
             </div>
-
-            <div class="input-tabs" role="tablist">
-              <button type="button" class="input-tab is-active" id="tabNotes" role="tab" aria-selected="true" aria-controls="listingForm">Write notes</button>
-              <button type="button" class="input-tab" id="tabPhotos" role="tab" aria-selected="false" aria-controls="photoForm">From photos <span class="badge-new">new</span></button>
-            </div>
-
-            <form class="input-form" id="listingForm" role="tabpanel" aria-labelledby="tabNotes">
-              <div class="mini-grid">
-                <div class="field">
-                  <label class="stacked-label" for="category">Category</label>
-                  <select id="category" name="category">
-                    <option value="Clothing">Clothing</option>
-                    <option value="Shoes">Shoes</option>
-                    <option value="Bags">Bags</option>
-                    <option value="Accessories">Accessories</option>
-                    <option value="Kids">Kids</option>
-                    <option value="Home">Home</option>
-                  </select>
-                </div>
-                <div class="field">
-                  <label class="stacked-label" for="tone">Tone</label>
-                  <select id="tone" name="tone">
-                    <option value="clean">Clean</option>
-                    <option value="premium">Premium</option>
-                    <option value="friendly">Friendly</option>
-                    <option value="quick-sale">Quick sale</option>
-                  </select>
-                </div>
-              </div>
-
-              <div class="mini-grid">
-                <div class="field">
-                  <label class="stacked-label" for="sellerMode">Seller mode</label>
-                  <select id="sellerMode" name="sellerMode">
-                    <option value="clearout">Quick clear-out</option>
-                    <option value="profit">Profit reseller</option>
-                    <option value="premium">Premium item</option>
-                    <option value="bundle">Bundle seller</option>
-                    <option value="kids">Baby/kids seller</option>
-                  </select>
-                </div>
-                <div class="field">
-                  <label class="stacked-label" for="negotiationGoal">Buyer reply style</label>
-                  <select id="negotiationGoal" name="negotiationGoal">
-                    <option value="friendly">Friendly</option>
-                    <option value="polite-firm">Polite but firm</option>
-                    <option value="urgent-close">Urgent close</option>
-                    <option value="accept">Accept offer</option>
-                    <option value="counter">Counter offer</option>
-                    <option value="reject">Reject offer</option>
-                  </select>
-                </div>
-              </div>
-
-              <div class="mini-grid">
-                <div class="field">
-                  <label class="stacked-label" for="size">Size</label>
-                  <input id="size" name="size" placeholder="UK 8, M, EU 39" />
-                </div>
-                <div class="field">
-                  <label class="stacked-label" for="condition">Condition</label>
-                  <input id="condition" name="condition" placeholder="New, good, worn twice" />
-                </div>
-              </div>
-
-              <div class="field">
-                <label class="stacked-label" for="itemDetails">Item notes</label>
-                <span class="field-help">A few honest sentences. Brand, size, condition, why you&rsquo;re selling.</span>
-                <textarea id="itemDetails" name="itemDetails" placeholder="e.g. Zara black blazer, size M, worn twice, no marks, bought last year, selling because it doesn't fit"></textarea>
-              </div>
-
-              <div class="field">
-                <label class="stacked-label" for="buyerQuestion">Buyer message <span class="optional-tag">optional</span></label>
-                <span class="field-help">Paste what the buyer asked. We&rsquo;ll draft a polite, honest reply.</span>
-                <textarea class="buyer-message-box" id="buyerQuestion" name="buyerQuestion" placeholder="e.g. Would you take £18 and can you post tomorrow?"></textarea>
-              </div>
-
-              <div class="actions">
-                <button type="submit" id="generateButton">Boost listing</button>
-              </div>
-              <p class="form-note" id="formNote">Ready when you are.</p>
-            </form>
-
-            <form class="input-form hidden" id="photoForm" role="tabpanel" aria-labelledby="tabPhotos">
-              <p class="form-help">Snap your item and we&rsquo;ll draft the listing from what we can actually see in the photos. Anything we can&rsquo;t tell for sure shows up in <strong>safety check</strong> &mdash; we won&rsquo;t invent facts.</p>
-
-              <div class="photo-uploader" id="photoDropzone">
-                <input type="file" id="photoInput" accept="image/*" multiple capture="environment" hidden />
-                <div class="photo-uploader-row">
-                  <div class="photo-uploader-icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M5 7h3l2-2h4l2 2h3a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2zm7 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm0 2a2 2 0 1 1 0 4 2 2 0 0 1 0-4z"/></svg>
-                  </div>
-                  <div class="photo-uploader-copy">
-                    <strong>Drop photos here, or choose up to 4</strong>
-                    <span>JPEG, PNG or WebP &middot; sent for analysis only, not stored.</span>
-                  </div>
-                  <button type="button" class="secondary" id="photoUploadButton">Choose photos</button>
-                </div>
-                <p class="form-note" id="photoNote">No photos yet.</p>
-                <div class="photo-previews" id="photoPreviews"></div>
-              </div>
-
-              <div class="mini-grid">
-                <div class="field">
-                  <label class="stacked-label" for="photoCategory">Category</label>
-                  <select id="photoCategory" name="category">
-                    <option value="">Auto-detect</option>
-                    <option value="Clothing">Clothing</option>
-                    <option value="Shoes">Shoes</option>
-                    <option value="Bags">Bags</option>
-                    <option value="Accessories">Accessories</option>
-                    <option value="Kids">Kids</option>
-                    <option value="Home">Home</option>
-                  </select>
-                </div>
-                <div class="field">
-                  <label class="stacked-label" for="photoTone">Tone</label>
-                  <select id="photoTone" name="tone">
-                    <option value="clean">Clean</option>
-                    <option value="premium">Premium</option>
-                    <option value="friendly">Friendly</option>
-                    <option value="quick-sale">Quick sale</option>
-                  </select>
-                </div>
-              </div>
-
-              <div class="mini-grid">
-                <div class="field">
-                  <label class="stacked-label" for="photoSize">Size <span class="optional-tag">if known</span></label>
-                  <input id="photoSize" name="size" placeholder="UK 8, M, EU 39" />
-                </div>
-                <div class="field">
-                  <label class="stacked-label" for="photoCondition">Condition <span class="optional-tag">if known</span></label>
-                  <input id="photoCondition" name="condition" placeholder="New, good, worn twice" />
-                </div>
-              </div>
-
-              <div class="field">
-                <label class="stacked-label" for="photoNotes">Notes <span class="optional-tag">optional</span></label>
-                <textarea class="buyer-message-box" id="photoNotes" name="notes" placeholder="Anything photos can't show — brand, history, why you're selling, postage info"></textarea>
-              </div>
-
-              <div class="actions">
-                <button type="submit" id="photoGenerateButton" disabled>Generate from photos</button>
-              </div>
-              <p class="form-note" id="photoFormNote">Add at least one photo to start.</p>
-            </form>
           </div>
-
-          <div class="side-stack">
-            <section class="auth-panel panel" aria-labelledby="auth-title">
-              <div class="panel-header">
-                <div>
-                  <p class="section-kicker">Account</p>
-                  <h2 id="auth-title">Sign in to save credits</h2>
-                </div>
-                <button type="button" class="ghost-button hidden" id="logoutButton">Log out</button>
-              </div>
-
-              <form class="auth-form" id="authForm">
-                <div class="mini-grid">
-                  <div class="field">
-                    <label class="stacked-label" for="email">Email</label>
-                    <input id="email" name="email" type="email" autocomplete="email" placeholder="you@example.com" />
-                  </div>
-                  <div class="field">
-                    <label class="stacked-label" for="password">Password</label>
-                    <input id="password" name="password" type="password" autocomplete="current-password" placeholder="8+ characters" />
-                  </div>
-                </div>
-                <div class="auth-actions">
-                  <button type="submit" id="loginButton">Sign in</button>
-                  <button type="button" class="secondary" id="signupButton">Create account</button>
-                </div>
-                <p class="form-note" id="authNote">Create an account to keep credits across browsers and devices.</p>
-              </form>
-            </section>
-
-            <section class="output-panel panel" aria-live="polite">
-              <div class="panel-header output-header">
-                <div>
-                  <p class="section-kicker">Output</p>
-                  <h2>Listing package</h2>
-                </div>
-              </div>
-
-              <div class="empty-state" id="emptyState">
-                <div class="preview-card" aria-hidden="true">
-                  <div class="preview-topline"></div>
-                  <div class="preview-title"></div>
-                  <div class="preview-line"></div>
-                  <div class="preview-line short"></div>
-                  <div class="preview-tags">
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                  </div>
-                </div>
-                <p>Your polished listing appears here.</p>
-              </div>
-
-              <div class="results hidden" id="results">
-                <article class="result-block score-block">
-                  <div class="score-row">
-                    <div class="score-meter" role="img" aria-label="Listing score">
-                      <strong id="scoreOutput">0/100</strong>
-                    </div>
-                    <div class="score-detail">
-                      <h2>Listing score</h2>
-                      <p id="scoreSummaryOutput">Add more details to score this listing.</p>
-                      <ul id="scoreImprovementsOutput"></ul>
-                    </div>
-                  </div>
-                </article>
-
-                <article class="result-block price-block">
-                  <h2>Sell faster pricing</h2>
-                  <div class="price-grid" id="priceOptionsOutput"></div>
-                </article>
-
-                <article class="result-block extracted-block hidden" id="extractedBlock">
-                  <h2>What we saw in the photos</h2>
-                  <p class="form-note">Only fields we could actually see. Anything missing is in the safety check below.</p>
-                  <dl class="extracted-grid" id="extractedOutput"></dl>
-                </article>
-
-                <article class="result-block">
-                  <div class="result-heading">
-                    <h2>Title</h2>
-                    <button class="copy-button" data-copy-target="titleOutput">Copy</button>
-                  </div>
-                  <p id="titleOutput"></p>
-                </article>
-
-                <article class="result-block">
-                  <div class="result-heading">
-                    <h2>Description</h2>
-                    <button class="copy-button" data-copy-target="descriptionOutput">Copy</button>
-                  </div>
-                  <pre id="descriptionOutput"></pre>
-                </article>
-
-                <article class="result-block reply-block hidden" id="buyerReplyBlock">
-                  <div class="result-heading">
-                    <h2>Reply to buyer</h2>
-                    <button class="copy-button" data-copy-target="buyerQuestionReplyOutput">Copy</button>
-                  </div>
-                  <pre id="buyerQuestionReplyOutput"></pre>
-                </article>
-
-                <div class="split-results">
-                  <article class="result-block">
-                    <h2>Vinted keywords</h2>
-                    <div class="tag-list" id="tagsOutput"></div>
-                  </article>
-
-                  <article class="result-block">
-                    <h2>Search terms</h2>
-                    <div class="tag-list" id="searchTermsOutput"></div>
-                  </article>
-                </div>
-
-                <article class="result-block">
-                  <h2>Price guidance</h2>
-                  <p id="priceOutput"></p>
-                </article>
-
-                <div class="split-results">
-                  <article class="result-block">
-                    <h2>Photo checklist</h2>
-                    <ul id="photoOutput"></ul>
-                  </article>
-
-                  <article class="result-block">
-                    <h2>Buyer replies</h2>
-                    <ul id="repliesOutput"></ul>
-                  </article>
-                </div>
-
-                <article class="result-block safety-block">
-                  <div class="result-heading">
-                    <h2>Safety checklist</h2>
-                  </div>
-                  <p class="safety-lede">A few things worth confirming before you post. ListBoost flags anything it couldn&rsquo;t verify so your listing stays honest.</p>
-                  <ul id="missingOutput"></ul>
-                </article>
-              </div>
-            </section>
-
-            <section class="templates-panel panel">
-              <div class="panel-header">
-                <div>
-                  <p class="section-kicker">Templates</p>
-                  <h2>Quick replies</h2>
-                </div>
-              </div>
-              <div class="template-grid" id="templateGrid"></div>
-            </section>
-
-            <section class="history-panel panel">
-              <div class="panel-header">
-                <div>
-                  <p class="section-kicker">History</p>
-                  <h2>Saved listings</h2>
-                </div>
-              </div>
-              <div class="history-list" id="historyList">
-                <p class="form-note">Sign in and generate a listing to see history.</p>
-              </div>
-            </section>
+          <div class="pricing-mode-section recommended">
+            <div class="section-head compact"><p class="eyebrow">Subscribe monthly</p><h2>Recommended</h2></div>
+            <div class="pricing-grid">
+              <article class="pricing-card subscription-card" id="subscribe-starter"><span class="badge">Monthly</span><h3>Starter</h3><p class="pricing-price"><strong>50</strong><span>credits/month</span></p><p class="pricing-meta">&pound;5/month</p><button class="pricing-buy" type="button" data-subscription-plan="starter">Subscribe Starter</button></article>
+              <article class="pricing-card subscription-card is-featured featured" id="subscribe-seller"><span class="badge">Best value</span><h3>Seller</h3><p class="pricing-price"><strong>150</strong><span>credits/month</span></p><p class="pricing-meta">&pound;12/month</p><button class="pricing-buy" type="button" data-subscription-plan="seller">Subscribe monthly</button></article>
+              <article class="pricing-card subscription-card" id="subscribe-reseller"><span class="badge">Bulk seller</span><h3>Reseller</h3><p class="pricing-price"><strong>400</strong><span>credits/month</span></p><p class="pricing-meta">&pound;25/month</p><button class="pricing-buy" type="button" data-subscription-plan="reseller">Subscribe Reseller</button></article>
+            </div>
           </div>
         </div>
       </section>
 
-      <footer class="app-footer">
-        <div class="footer-inner">
-          <a class="brand" href="/" aria-label="ListBoost home">
-            <span class="brand-mark" aria-hidden="true">LB</span>
-            <span class="brand-text">
-              <strong>ListBoost</strong>
-              <small>for Vinted</small>
-            </span>
-          </a>
-          <nav class="footer-links" aria-label="Footer">
-            <a href="/privacy">Privacy</a>
-            <a href="/terms">Terms</a>
-          </nav>
-          <p class="footer-disclaimer">Independent &mdash; not affiliated with Vinted.</p>
-        </div>
-      </footer>
+      <ul class="trust-strip final-trust" aria-label="Trust strip">
+        <li>No Vinted login needed</li>
+        <li>Copy &amp; paste manually</li>
+        <li>Independent tool</li>
+      </ul>
     </main>
 
-    <script src="/app.js" type="module"></script>
+    <script type="module" src="/site.js"></script>
   </body>
 </html>

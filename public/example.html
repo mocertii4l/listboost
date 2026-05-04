@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Example - ListBoost</title>
+    <meta name="description" content="See a live ListBoost Vinted listing example." />
+    <link rel="canonical" href="https://www.listboost.uk/example" />
+    <meta property="og:title" content="ListBoost example" />
+    <meta property="og:description" content="Run a capped live ListBoost demo from a canned Vinted seller input before signing up." />
+    <meta property="og:image" content="https://www.listboost.uk/og-image.svg" />
+    <meta property="og:url" content="https://www.listboost.uk/example" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="icon" href="/favicon.svg" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="toast-region" id="toastRegion" aria-live="polite"></div>
+    <header class="lb-header"></header>
+    <main class="page-wrap two-col demo-page" id="main">
+      <section class="card demo-generator-card">
+        <span class="badge">Live demo</span>
+        <h1>Try the Vinted listing generator.</h1>
+        <p>Use the prefilled note or edit it, then generate a full premium listing package before signing up.</p>
+        <label>
+          Item details
+          <textarea id="demoInput">Black Zara dress size 10 worn twice good condition</textarea>
+        </label>
+        <button class="button primary generator-cta" id="runDemo" type="button">Generate demo listing</button>
+        <a class="button secondary" href="/signup">Create free account and get 5 free credits</a>
+      </section>
+      <section class="card output-stack demo-output" id="demoOutput"><div class="empty-state">Your generated demo listing will appear here.</div></section>
+    </main>
+    <script type="module" src="/site.js"></script>
+  </body>
+</html>

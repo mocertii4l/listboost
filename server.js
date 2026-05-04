@@ -1,38 +1,374 @@
 import "dotenv/config";
 import { createServer } from "node:http";
-import { pbkdf2Sync, randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
+import { createHash, pbkdf2Sync, randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { accessSync, constants as fsConstants, existsSync, mkdirSync, statSync } from "node:fs";
 import { extname, isAbsolute, join, normalize } from "node:path";
 import OpenAI from "openai";
 import Anthropic from "@anthropic-ai/sdk";
 import Stripe from "stripe";
 import Database from "better-sqlite3";
 
+const TRIMMED_ENV_KEYS = [
+  "APP_URL",
+  "OPENAI_API_KEY",
+  "STRIPE_SECRET_KEY",
+  "STRIPE_WEBHOOK_SECRET",
+  "RESEND_API_KEY",
+  "EMAIL_FROM",
+  "SUPPORT_EMAIL",
+  "ADMIN_EMAIL",
+  "ADMIN_PASSWORD",
+  "DATA_DIR",
+  "ANTHROPIC_API_KEY",
+  "OPENAI_MODEL",
+  "OPENAI_VISION_MODEL",
+  "ANTHROPIC_MODEL",
+  "ANTHROPIC_VISION_MODEL",
+  "CREDIT_PACKS_JSON",
+  "NODE_ENV",
+  "REQUIRE_EMAIL_VERIFICATION"
+];
+
+const rawDataDirEnv = process.env.DATA_DIR ?? "";
+
+function cleanEnvValue(value) {
+  let next = String(value ?? "").trim();
+  if (
+    next.length >= 2
+    && ((next.startsWith('"') && next.endsWith('"')) || (next.startsWith("'") && next.endsWith("'")))
+  ) {
+    next = next.slice(1, -1).trim();
+  }
+  return next;
+}
+
+function trimConfiguredEnv(env = process.env) {
+  for (const key of TRIMMED_ENV_KEYS) {
+    if (Object.prototype.hasOwnProperty.call(env, key)) {
+      env[key] = cleanEnvValue(env[key]);
+    }
+  }
+  return env;
+}
+
+trimConfiguredEnv();
+
+function resolveDataDir(rawValue = process.env.DATA_DIR, cwd = process.cwd()) {
+  const raw = rawValue == null ? "" : String(rawValue);
+  const trimmed = cleanEnvValue(raw);
+  const explicit = trimmed.length > 0;
+  const resolved = explicit
+    ? (isAbsolute(trimmed) ? trimmed : join(cwd, trimmed))
+    : join(cwd, "data");
+  return { raw, trimmed, explicit, dataDir: resolved };
+}
+
+function ensureDataDir(resolution) {
+  try {
+    mkdirSync(resolution.dataDir, { recursive: true });
+    const stat = statSync(resolution.dataDir);
+    if (!stat.isDirectory()) {
+      throw new Error("resolved path is not a directory");
+    }
+    accessSync(resolution.dataDir, fsConstants.W_OK);
+    return {
+      ...resolution,
+      exists: existsSync(resolution.dataDir),
+      writable: true
+    };
+  } catch (error) {
+    const source = resolution.explicit ? "DATA_DIR" : "local ./data fallback";
+    throw new Error(`[launch-check] ${source} cannot be created or written at "${resolution.dataDir}": ${error.message}`);
+  }
+}
+
 const port = Number(process.env.PORT || 3000);
 const publicDir = join(process.cwd(), "public");
-const dataDirEnv = String(process.env.DATA_DIR || "").trim();
-const dataDir = dataDirEnv
-  ? (isAbsolute(dataDirEnv) ? dataDirEnv : join(process.cwd(), dataDirEnv))
-  : join(process.cwd(), "data");
+const dataDirDiagnostics = ensureDataDir(resolveDataDir(rawDataDirEnv));
+const dataDirEnv = dataDirDiagnostics.trimmed;
+const dataDir = dataDirDiagnostics.dataDir;
 const usagePath = join(dataDir, "usage.json");
 const dbPath = join(dataDir, "listboost.db");
 const freeCredits = Number(process.env.FREE_CREDITS || 5);
 const creditPackSize = Number(process.env.CREDIT_PACK_SIZE || 50);
 const creditPackPricePence = Number(process.env.CREDIT_PACK_PRICE_PENCE || 500);
-const appUrl = process.env.APP_URL || `http://localhost:${port}`;
-const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY) : null;
+const creditPacks = buildCreditPacks();
+const subscriptionPlans = buildSubscriptionPlans();
+const appUrl = normalizeAppUrl(process.env.APP_URL || `http://localhost:${port}`);
+const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: "2026-02-25.clover" }) : null;
 const stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET || "";
 const isProduction = process.env.NODE_ENV === "production";
 const requireEmailVerification = process.env.REQUIRE_EMAIL_VERIFICATION !== "false";
-const adminEmail = String(process.env.ADMIN_EMAIL || "").trim().toLowerCase();
+const adminEmail = String(process.env.ADMIN_EMAIL || "").toLowerCase();
 const adminPassword = String(process.env.ADMIN_PASSWORD || "");
-const resendApiKey = String(process.env.RESEND_API_KEY || "").trim();
-const emailFrom = String(process.env.EMAIL_FROM || "ListBoost <onboarding@resend.dev>").trim();
-const supportEmail = String(process.env.SUPPORT_EMAIL || "hello@listboost.app").trim();
-await mkdir(dataDir, { recursive: true });
+const resendApiKey = String(process.env.RESEND_API_KEY || "");
+const emailFrom = String(process.env.EMAIL_FROM || "ListBoost <onboarding@resend.dev>");
+const supportEmail = String(process.env.SUPPORT_EMAIL || "hello@listboost.app");
+if (isProduction && !dataDirDiagnostics.explicit) {
+  console.warn("[launch-check] DATA_DIR is unset in production. Using local ./data; configure persistent storage to avoid losing SQLite data.");
+}
 
 const db = new Database(dbPath);
 db.pragma("journal_mode = WAL");
+
+function buildCreditPacks() {
+  const fallback = [
+    {
+      id: "starter",
+      name: "Starter",
+      credits: 50,
+      pricePence: 500,
+      label: "Try it",
+      description: "A practical first pack for a wardrobe clear-out or first seller test."
+    },
+    {
+      id: "seller",
+      name: "Seller",
+      credits: 150,
+      pricePence: 1200,
+      label: "Best value",
+      description: "The best value pack for regular Vinted sellers listing every week.",
+      featured: true
+    },
+    {
+      id: "reseller",
+      name: "Reseller",
+      credits: 400,
+      pricePence: 2500,
+      label: "Power seller",
+      description: "For bulk listing sessions, serious resellers and repeat sellers."
+    }
+  ];
+
+  if (!process.env.CREDIT_PACKS_JSON) return fallback;
+
+  try {
+    const parsed = JSON.parse(process.env.CREDIT_PACKS_JSON);
+    const packs = Array.isArray(parsed) ? parsed : [];
+    const clean = packs
+      .map((pack) => ({
+        id: String(pack.id || "").trim().toLowerCase().replace(/[^a-z0-9_-]/g, ""),
+        name: String(pack.name || "").trim(),
+        credits: Number(pack.credits),
+        pricePence: Number(pack.pricePence),
+        label: String(pack.label || "").trim(),
+        description: String(pack.description || "").trim(),
+        featured: Boolean(pack.featured)
+      }))
+      .filter((pack) => pack.id && pack.name && Number.isFinite(pack.credits) && pack.credits > 0 && Number.isFinite(pack.pricePence) && pack.pricePence > 0);
+    return clean.length ? clean.slice(0, 6) : fallback;
+  } catch (error) {
+    console.warn("[launch-check] CREDIT_PACKS_JSON is invalid. Using default credit packs.");
+    return fallback;
+  }
+}
+
+function normalizeAppUrl(value) {
+  return cleanEnvValue(value).replace(/\/+$/, "");
+}
+
+function publicCreditPacks() {
+  return creditPacks.map((pack) => ({
+    id: pack.id,
+    name: pack.name,
+    credits: pack.credits,
+    pricePence: pack.pricePence,
+    price: `GBP ${(pack.pricePence / 100).toFixed(2).replace(/\.00$/, "")}`,
+    label: pack.label,
+    description: pack.description,
+    featured: Boolean(pack.featured)
+  }));
+}
+
+function buildSubscriptionPlans() {
+  const fallback = [
+    {
+      id: "starter",
+      name: "Starter",
+      credits: 50,
+      pricePence: 500,
+      label: "Monthly starter",
+      description: "For occasional sellers who want a steady monthly listing rhythm.",
+      priceEnv: "STRIPE_PRICE_STARTER_MONTHLY"
+    },
+    {
+      id: "seller",
+      name: "Seller",
+      credits: 150,
+      pricePence: 1200,
+      label: "Best value",
+      description: "For active sellers who list every week and want credits ready.",
+      featured: true,
+      priceEnv: "STRIPE_PRICE_SELLER_MONTHLY"
+    },
+    {
+      id: "reseller",
+      name: "Reseller",
+      credits: 400,
+      pricePence: 2500,
+      label: "Bulk seller",
+      description: "For resellers running larger batches and repeat listing sessions.",
+      priceEnv: "STRIPE_PRICE_RESELLER_MONTHLY"
+    }
+  ];
+
+  if (!process.env.SUBSCRIPTION_PLANS_JSON) return fallback.map(withSubscriptionPriceId);
+
+  try {
+    const parsed = JSON.parse(process.env.SUBSCRIPTION_PLANS_JSON);
+    const plans = Array.isArray(parsed) ? parsed : [];
+    const clean = plans
+      .map((plan) => ({
+        id: String(plan.id || "").trim().toLowerCase(),
+        name: String(plan.name || "").trim(),
+        credits: Number(plan.credits),
+        pricePence: Number(plan.pricePence),
+        label: String(plan.label || "").trim(),
+        description: String(plan.description || "").trim(),
+        featured: Boolean(plan.featured),
+        priceEnv: String(plan.priceEnv || "").trim(),
+        priceId: String(plan.priceId || "").trim()
+      }))
+      .filter((plan) => plan.id && plan.name && Number.isFinite(plan.credits) && plan.credits > 0 && Number.isFinite(plan.pricePence) && plan.pricePence > 0);
+    return clean.length ? clean.map(withSubscriptionPriceId) : fallback.map(withSubscriptionPriceId);
+  } catch {
+    console.warn("[launch-check] SUBSCRIPTION_PLANS_JSON is invalid. Using default subscription plans.");
+    return fallback.map(withSubscriptionPriceId);
+  }
+}
+
+function withSubscriptionPriceId(plan) {
+  return {
+    ...plan,
+    priceId: plan.priceId || (plan.priceEnv ? cleanEnvValue(process.env[plan.priceEnv] || "") : "")
+  };
+}
+
+function publicSubscriptionPlans() {
+  return subscriptionPlans.map((plan) => ({
+    id: plan.id,
+    name: plan.name,
+    credits: plan.credits,
+    pricePence: plan.pricePence,
+    price: `GBP ${(plan.pricePence / 100).toFixed(2).replace(/\.00$/, "")}`,
+    interval: "month",
+    label: plan.label,
+    description: plan.description,
+    featured: Boolean(plan.featured)
+  }));
+}
+
+function findCreditPack(packId) {
+  const requestedPackId = String(packId || "").trim().toLowerCase();
+  if (!requestedPackId) return creditPacks.find((item) => item.featured) || creditPacks[0];
+  return creditPacks.find((item) => item.id === requestedPackId) || null;
+}
+
+function findSubscriptionPlan(planId) {
+  const requestedPlanId = String(planId || "").trim().toLowerCase();
+  if (!requestedPlanId) return subscriptionPlans.find((item) => item.featured) || subscriptionPlans[0];
+  return subscriptionPlans.find((item) => item.id === requestedPlanId) || null;
+}
+
+function publicSubscriptionForUser(user) {
+  const planId = user?.subscription_plan || "free";
+  const plan = findSubscriptionPlan(planId);
+  return {
+    plan: planId,
+    planName: plan ? plan.name : "Free",
+    status: user?.subscription_status || "inactive",
+    credits: Number(user?.subscription_credits || 0),
+    nextCreditRefill: user?.next_credit_refill || null,
+    stripeSubscriptionId: user?.stripe_subscription_id || null
+  };
+}
+
+function pricePenceForCredits(credits) {
+  const pack = creditPacks.find((item) => Number(item.credits) === Number(credits));
+  return Number(pack?.pricePence || 0);
+}
+
+function formatPence(pence) {
+  return `GBP ${(Number(pence || 0) / 100).toFixed(2).replace(/\.00$/, "")}`;
+}
+
+async function createCheckoutSession({ user, pack }) {
+  if (process.env.STRIPE_MOCK_CHECKOUT === "true") {
+    return { url: `https://checkout.stripe.test/session/${pack.id}` };
+  }
+
+  return stripe.checkout.sessions.create({
+    mode: "payment",
+    client_reference_id: user.id,
+    metadata: {
+      userId: user.id,
+      credits: String(pack.credits),
+      packId: pack.id,
+      billingType: "credits"
+    },
+    line_items: [
+      {
+        price_data: {
+          currency: "gbp",
+          product_data: {
+            name: `${pack.credits} ListBoost credits`,
+            description: pack.description || "Credits for Vinted listing generation and buyer replies."
+          },
+          unit_amount: pack.pricePence
+        },
+        quantity: 1
+      }
+    ],
+    success_url: `${appUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${appUrl}/checkout/cancel`
+  });
+}
+
+function subscriptionLineItem(plan) {
+  if (plan.priceId) return { price: plan.priceId, quantity: 1 };
+  return {
+    price_data: {
+      currency: "gbp",
+      product_data: {
+        name: `ListBoost ${plan.name}`,
+        description: plan.description || "Monthly ListBoost credits for Vinted sellers."
+      },
+      recurring: { interval: "month" },
+      unit_amount: plan.pricePence
+    },
+    quantity: 1
+  };
+}
+
+async function createSubscriptionCheckoutSession({ user, plan }) {
+  if (process.env.STRIPE_MOCK_CHECKOUT === "true") {
+    return { url: `https://checkout.stripe.test/subscription/${plan.id}` };
+  }
+
+  return stripe.checkout.sessions.create({
+    mode: "subscription",
+    client_reference_id: user.id,
+    customer: user.stripe_customer_id || undefined,
+    customer_email: user.stripe_customer_id ? undefined : user.email,
+    metadata: {
+      userId: user.id,
+      planId: plan.id,
+      credits: String(plan.credits),
+      billingType: "subscription"
+    },
+    subscription_data: {
+      metadata: {
+        userId: user.id,
+        planId: plan.id,
+        credits: String(plan.credits)
+      }
+    },
+    line_items: [subscriptionLineItem(plan)],
+    success_url: `${appUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${appUrl}/checkout/cancel`
+  });
+}
 db.exec(`
   CREATE TABLE IF NOT EXISTS users (
     id TEXT PRIMARY KEY,
@@ -41,6 +377,12 @@ db.exec(`
     free_credits INTEGER NOT NULL DEFAULT ${freeCredits},
     paid_credits INTEGER NOT NULL DEFAULT 0,
     used_credits INTEGER NOT NULL DEFAULT 0,
+    subscription_plan TEXT NOT NULL DEFAULT 'free',
+    subscription_status TEXT NOT NULL DEFAULT 'inactive',
+    subscription_credits INTEGER NOT NULL DEFAULT 0,
+    next_credit_refill TEXT,
+    stripe_customer_id TEXT,
+    stripe_subscription_id TEXT,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
   );
@@ -78,6 +420,15 @@ db.exec(`
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
   );
 
+  CREATE TABLE IF NOT EXISTS password_resets (
+    token_hash TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    expires_at TEXT NOT NULL,
+    used_at TEXT,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  );
+
   CREATE TABLE IF NOT EXISTS credit_audit (
     id TEXT PRIMARY KEY,
     user_id TEXT NOT NULL,
@@ -87,12 +438,28 @@ db.exec(`
     created_at TEXT NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
   );
+
+  CREATE TABLE IF NOT EXISTS subscription_refills (
+    stripe_invoice_id TEXT PRIMARY KEY,
+    stripe_subscription_id TEXT,
+    user_id TEXT NOT NULL,
+    plan TEXT NOT NULL,
+    credits INTEGER NOT NULL,
+    processed_at TEXT NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  );
 `);
 
 const columnAdditions = [
   ["generations", "score", "INTEGER"],
   ["generations", "result_json", "TEXT"],
-  ["users", "email_verified", "INTEGER NOT NULL DEFAULT 0"]
+  ["users", "email_verified", "INTEGER NOT NULL DEFAULT 0"],
+  ["users", "subscription_plan", "TEXT NOT NULL DEFAULT 'free'"],
+  ["users", "subscription_status", "TEXT NOT NULL DEFAULT 'inactive'"],
+  ["users", "subscription_credits", "INTEGER NOT NULL DEFAULT 0"],
+  ["users", "next_credit_refill", "TEXT"],
+  ["users", "stripe_customer_id", "TEXT"],
+  ["users", "stripe_subscription_id", "TEXT"]
 ];
 for (const [table, column, type] of columnAdditions) {
   const existing = db.prepare(`PRAGMA table_info(${table})`).all();
@@ -315,21 +682,34 @@ function getCredits(usage, visitorId) {
 function getAccountCredits(user) {
   const free = Number(user.free_credits || 0);
   const paid = Number(user.paid_credits || 0);
+  const subscription = Number(user.subscription_credits || 0);
   const used = Number(user.used_credits || 0);
-  const total = free + paid;
+  const total = free + paid + subscription;
   return {
     freeCredits: free,
     paidCredits: paid,
+    subscriptionCredits: subscription,
     totalCredits: total,
     used,
     remaining: Math.max(total - used, 0),
     packSize: creditPackSize,
-    packPricePence: creditPackPricePence
+    packPricePence: creditPackPricePence,
+    subscriptionPlan: user.subscription_plan || "free",
+    subscriptionStatus: user.subscription_status || "inactive",
+    nextCreditRefill: user.next_credit_refill || null
   };
 }
 
 function publicUser(user) {
-  return user ? { id: user.id, email: user.email, emailVerified: Boolean(user.email_verified) } : null;
+  return user ? {
+    id: user.id,
+    email: user.email,
+    emailVerified: Boolean(user.email_verified),
+    subscriptionPlan: user.subscription_plan || "free",
+    subscriptionStatus: user.subscription_status || "inactive",
+    subscriptionCredits: Number(user.subscription_credits || 0),
+    nextCreditRefill: user.next_credit_refill || null
+  } : null;
 }
 
 function getAiProvider() {
@@ -354,6 +734,11 @@ function getLaunchChecks() {
     nodeEnv: process.env.NODE_ENV || "development",
     appUrl,
     dataDir,
+    dataDirRaw: dataDirDiagnostics.raw,
+    dataDirTrimmed: dataDirDiagnostics.trimmed,
+    dataDirExplicit: dataDirDiagnostics.explicit,
+    dataDirExists: dataDirDiagnostics.exists,
+    dataDirWritable: dataDirDiagnostics.writable,
     openaiConfigured: Boolean(process.env.OPENAI_API_KEY),
     anthropicConfigured: Boolean(process.env.ANTHROPIC_API_KEY),
     stripeConfigured: Boolean(stripe),
@@ -370,6 +755,7 @@ function getLaunchChecks() {
 function logLaunchChecks() {
   const checks = getLaunchChecks();
   const warnings = [];
+  console.log(`[launch-check] DATA_DIR raw=${JSON.stringify(dataDirDiagnostics.raw)} trimmed=${JSON.stringify(dataDirDiagnostics.trimmed)} resolved=${dataDirDiagnostics.dataDir} exists=${dataDirDiagnostics.exists} writable=${dataDirDiagnostics.writable}`);
   if (isProduction && !appUrl.startsWith("https://")) warnings.push("APP_URL should be an https:// production URL.");
   if (!checks.openaiConfigured && !checks.anthropicConfigured) warnings.push("No AI API key configured. App will run in demo mode.");
   if (stripe && !stripeWebhookSecret) warnings.push("STRIPE_WEBHOOK_SECRET is missing. Paid credits will remain pending until the webhook is configured.");
@@ -382,10 +768,13 @@ function buildPrompt({ tone, itemDetails, category, size, condition, buyerQuesti
   return [
     "You are Vinted Listing Booster, a conversion-focused resale listing assistant for Vinted sellers.",
     "Rewrite rough seller notes into a listing that is accurate, searchable, buyer-friendly, safe, and easy to trust.",
-    "The title should be under 80 characters and should naturally include brand, item type, size, color, or condition when provided.",
-    "Write in authentic UK Vinted style. Avoid robotic phrases like 'elevate your wardrobe' unless the premium mode truly needs it.",
-    "Use UK spelling, GBP pricing, and practical postage wording like 'can post tomorrow' when provided by the seller.",
-    "Include Vinted-friendly search terms as plain keywords, not hashtags.",
+    "TITLE: write a short Vinted-style title under 70 characters. Make it keyword-rich with brand, colour, item type, size, and condition only when provided.",
+    "The description must be copy-paste ready: one short opening line, then concise bullet-style lines for size, condition, colour/material, flaws, postage, and fit only when the seller gave those facts.",
+    "DESCRIPTION: use clean bullet-style lines, no fluff, no emojis, no markdown tables. Make each line easy to paste into Vinted.",
+    "PRICE: use realistic UK resale pricing in GBP for Vinted. Include a short reason in priceGuidance.",
+    "KEYWORDS: include strong plain search terms buyers would actually type. No hashtags.",
+    "BUYER REPLY: write in a natural UK seller tone. Friendly, honest, concise, and useful.",
+    "Use UK spelling and practical postage wording only when provided by the seller.",
     "Give a listing score out of 100 and explain what would improve it before posting.",
     "Give three price options: fastSale, fairPrice, maxPrice. Also include lowestOffer, startPrice, autoCounterOffer, and bundleDiscount.",
     "Include buyer replies for common Vinted messages, offers, postage questions, authenticity questions, and condition questions.",
@@ -468,47 +857,50 @@ async function callWithJsonRetry(fn) {
 function sampleResult({ tone, itemDetails, category, size, condition, buyerQuestion }) {
   const firstLine = itemDetails.split(/\r?\n/).find(Boolean) || "your item";
   const concise = firstLine.replace(/[^\w\s.'&-]/g, "").trim().slice(0, 64) || "Quality Item";
-  const detailLine = [category, size, condition].filter(Boolean).join(" | ");
+  const titleCore = /zara|dress|size|black/i.test(concise)
+    ? "Black Zara Midi Dress UK 10"
+    : `${concise} UK ${size || ""}`.replace(/\s+/g, " ").trim();
 
   return {
-    title: `${concise} - Vinted Ready`,
+    title: titleCore,
     description: [
-      `Selling ${concise}.`,
-      detailLine ? detailLine : "Add size, condition, and brand before posting.",
-      "",
-      `Rewritten in a ${tone.replace("-", " ")} tone for a clear Vinted listing.`,
-      "Happy to answer questions or send extra photos if needed."
+      `Lovely ${titleCore.toLowerCase()} in a clean, easy-to-style look.`,
+      `Size: ${size || "please confirm before posting"}`,
+      `Condition: ${condition || "good preloved condition"}`,
+      "Colour: black",
+      "Great for evenings, workwear or a simple capsule wardrobe outfit.",
+      "Happy to answer questions or send extra photos before you buy."
     ].join("\n"),
-    tags: ["vinted", "preloved", "clean condition", "fast dispatch", "wardrobe clearout"],
-    searchTerms: ["white trainers", "nike trainers", "air force 1", "casual shoes", "streetwear"],
+    tags: ["zara dress", "black midi dress", "uk 10", "preloved", "minimal style"],
+    searchTerms: ["zara black dress", "black midi dress", "size 10 dress", "vinted uk", "capsule wardrobe"],
     listingScore: {
-      score: 76,
-      summary: "Strong start, but it needs clearer photos and more condition detail before posting.",
-      improvements: ["Add a size label photo", "Mention any marks clearly", "Add a close-up of soles or wear"]
+      score: 88,
+      summary: "Clear, searchable and ready to paste after a quick final check.",
+      improvements: ["Add a label photo", "Show the full length on a hanger", "Photograph any wear in natural light"]
     },
     priceOptions: {
-      fastSale: "GBP 24",
-      fairPrice: "GBP 30",
-      maxPrice: "GBP 36",
-      lowestOffer: "GBP 26",
-      startPrice: "GBP 34",
-      autoCounterOffer: "GBP 30",
-      bundleDiscount: "10-15%"
+      fastSale: "GBP 8",
+      fairPrice: "GBP 12",
+      maxPrice: "GBP 15",
+      lowestOffer: "GBP 9",
+      startPrice: "GBP 14",
+      autoCounterOffer: "GBP 11",
+      bundleDiscount: "10%"
     },
-    priceGuidance: "Check 3-5 similar sold Vinted items. Price slightly below the average for a quick sale.",
+    priceGuidance: "Start around GBP 14 and expect serious buyers near GBP 10-12. Price lower if you want a same-week sale.",
     photoChecklist: [
-      "Front photo in natural light",
-      "Close-up of label, size, or model number",
-      "Any marks or wear shown clearly",
-      "Photo of packaging or accessories if included"
+      "Full front photo in natural light",
+      "Back view showing the length and shape",
+      "Close-up of Zara label and size tag",
+      "Any marks or fabric wear shown clearly"
     ],
     buyerQuestionReply: buyerQuestion
-      ? "Hi, yes it is still available. The condition is shown in the photos, and I can post quickly after payment. Let me know if you want any extra close-up photos."
+      ? "Hi, yes it is still available. It is in good condition and I am happy to send an extra close-up if helpful."
       : "",
     buyerReplies: [
-      "Yes, this is still available. I can post it quickly after payment.",
-      "The condition is shown in the photos, but I can send another close-up if helpful.",
-      "I can accept a reasonable offer if you are ready to buy today."
+      "Hi, yes it is still available. I can post after payment and I am happy to send another photo if helpful.",
+      "Thanks for the offer. I could meet you at GBP 11 if you are ready to buy today.",
+      "It has only light signs of wear from normal use, but please check the photos before buying."
     ],
     missingDetails: ["Exact size or dimensions", "Brand/model", "Condition details", "Shipping or collection options"],
     provider: "demo"
@@ -871,6 +1263,53 @@ async function handleGenerate(req, res) {
   }
 }
 
+async function handleDemoGenerate(req, res) {
+  const visitor = getVisitor(req);
+  const ip = getClientIp(req);
+  const limit = rateLimit(`demo:${ip}`, { max: 10, windowMs: 60_000 });
+  if (!limit.ok) {
+    tooManyRequests(res, visitor, limit.retryAfterSec, "The demo is busy. Try again in a moment.");
+    return;
+  }
+
+  try {
+    const raw = await readBody(req);
+    const body = JSON.parse(raw || "{}");
+    const itemDetails = String(body.itemDetails || "Black Zara dress size 10 worn twice good condition").trim().slice(0, 600);
+    const input = {
+      category: "Clothing",
+      tone: "friendly",
+      sellerMode: "clearout",
+      negotiationGoal: "friendly",
+      size: "UK 10",
+      condition: "Good condition",
+      itemDetails: itemDetails.length >= 8 ? itemDetails : "Black Zara dress size 10 worn twice good condition",
+      buyerQuestion: ""
+    };
+    let result;
+    let provider = "demo";
+    if (process.env.OPENAI_API_KEY) {
+      result = await generateWithOpenAI(input);
+      provider = "openai";
+    } else if (process.env.ANTHROPIC_API_KEY) {
+      result = await generateWithAnthropic(input);
+      provider = "anthropic";
+    } else {
+      result = sampleResult(input);
+    }
+
+    if (!looksLikeListing(result)) {
+      json(res, 502, { error: "The demo returned an unexpected response. Try again." }, visitor.headers);
+      return;
+    }
+
+    json(res, 200, { ...result, provider, demo: true, input }, visitor.headers);
+  } catch (error) {
+    console.error(error);
+    json(res, 502, { error: "Could not run the live demo. Try again shortly." }, visitor.headers);
+  }
+}
+
 async function handleMe(req, res) {
   const visitor = getVisitor(req);
   const user = getUserBySession(req);
@@ -881,14 +1320,22 @@ async function handleMe(req, res) {
       credits: {
         freeCredits,
         paidCredits: 0,
+        subscriptionCredits: 0,
         totalCredits: freeCredits,
         used: 0,
         remaining: 0,
         packSize: creditPackSize,
-        packPricePence: creditPackPricePence
+        packPricePence: creditPackPricePence,
+        subscriptionPlan: "free",
+        subscriptionStatus: "inactive",
+        nextCreditRefill: null
       },
       stripeReady: Boolean(stripe),
       aiProvider: getAiProvider(),
+      appUrl,
+      adminEnabled: Boolean(adminEmail && adminPassword),
+      creditPacks: publicCreditPacks(),
+      subscriptionPlans: publicSubscriptionPlans(),
       emailVerified: false,
       verificationRequired: requireEmailVerification
     }, visitor.headers);
@@ -900,6 +1347,11 @@ async function handleMe(req, res) {
     credits: getAccountCredits(user),
     stripeReady: Boolean(stripe),
     aiProvider: getAiProvider(),
+    appUrl,
+    adminEnabled: Boolean(adminEmail && adminPassword),
+    creditPacks: publicCreditPacks(),
+    subscriptionPlans: publicSubscriptionPlans(),
+    subscription: publicSubscriptionForUser(user),
     emailVerified: Boolean(user.email_verified),
     verificationRequired: requireEmailVerification
   }, visitor.headers);
@@ -938,13 +1390,23 @@ async function handleHistory(req, res) {
     return;
   }
 
+  const url = new URL(req.url, `http://${req.headers.host}`);
+  const page = Math.max(1, Number.parseInt(url.searchParams.get("page") || "1", 10) || 1);
+  const pageSize = Math.min(20, Math.max(1, Number.parseInt(url.searchParams.get("pageSize") || "20", 10) || 20));
+  const search = String(url.searchParams.get("q") || "").trim();
+  const offset = (page - 1) * pageSize;
+  const where = search
+    ? "WHERE user_id = ? AND (title LIKE ? OR result_json LIKE ?)"
+    : "WHERE user_id = ?";
+  const args = search ? [user.id, `%${search}%`, `%${search}%`] : [user.id];
+  const total = db.prepare(`SELECT COUNT(*) AS count FROM generations ${where}`).get(...args);
   const rows = db.prepare(`
     SELECT id, title, score, result_json, created_at
     FROM generations
-    WHERE user_id = ?
+    ${where}
     ORDER BY created_at DESC
-    LIMIT 12
-  `).all(user.id);
+    LIMIT ? OFFSET ?
+  `).all(...args, pageSize, offset);
 
   const history = rows.map((row) => {
     const result = safeParseResultJson(row.result_json);
@@ -960,7 +1422,75 @@ async function handleHistory(req, res) {
     };
   });
 
-  json(res, 200, { history }, visitor.headers);
+  json(res, 200, {
+    history,
+    pagination: {
+      page,
+      pageSize,
+      total: Number(total?.count || 0),
+      totalPages: Math.max(1, Math.ceil(Number(total?.count || 0) / pageSize))
+    }
+  }, visitor.headers);
+}
+
+async function handleBilling(req, res) {
+  const visitor = getVisitor(req);
+  const user = getUserBySession(req);
+  if (!user) {
+    json(res, 401, { error: "Sign in to view billing." }, visitor.headers);
+    return;
+  }
+
+  const payments = db.prepare(`
+    SELECT stripe_session_id, credits, processed_at
+    FROM payments
+    WHERE user_id = ?
+    ORDER BY processed_at DESC
+    LIMIT 20
+  `).all(user.id).map((row) => ({
+    type: "payment",
+    reference: row.stripe_session_id,
+    credits: row.credits,
+    createdAt: row.processed_at
+  }));
+  const audit = db.prepare(`
+    SELECT actor, delta, reason, created_at
+    FROM credit_audit
+    WHERE user_id = ?
+    ORDER BY created_at DESC
+    LIMIT 50
+  `).all(user.id).map((row) => ({
+    type: "credit-audit",
+    actor: row.actor,
+    delta: row.delta,
+    reason: row.reason,
+    createdAt: row.created_at
+  }));
+  const refills = db.prepare(`
+    SELECT stripe_invoice_id, stripe_subscription_id, plan, credits, processed_at
+    FROM subscription_refills
+    WHERE user_id = ?
+    ORDER BY processed_at DESC
+    LIMIT 20
+  `).all(user.id).map((row) => ({
+    type: "subscription-refill",
+    reference: row.stripe_invoice_id,
+    subscriptionId: row.stripe_subscription_id,
+    plan: row.plan,
+    credits: row.credits,
+    createdAt: row.processed_at
+  }));
+
+  json(res, 200, {
+    user: publicUser(user),
+    credits: getAccountCredits(user),
+    subscription: publicSubscriptionForUser(user),
+    creditPacks: publicCreditPacks(),
+    subscriptionPlans: publicSubscriptionPlans(),
+    payments,
+    refills,
+    audit
+  }, visitor.headers);
 }
 
 async function handleHistoryGet(req, res, id) {
@@ -1092,12 +1622,14 @@ async function handleRegenerate(req, res, id) {
   }
 }
 
-async function handleCheckout(req, res) {
+async function handleCheckout(req, res, forcedPackId = "") {
   const visitor = getVisitor(req);
   const user = getUserBySession(req);
+  const isRouteCheckout = Boolean(forcedPackId);
 
   if (!user) {
-    json(res, 401, { error: "Sign in before buying credits." }, visitor.headers);
+    const next = forcedPackId ? `/checkout/${encodeURIComponent(forcedPackId)}` : "/pricing";
+    json(res, 401, { error: "Create an account or sign in before buying credits.", authUrl: `/signup?next=${encodeURIComponent(next)}` }, visitor.headers);
     return;
   }
 
@@ -1107,33 +1639,111 @@ async function handleCheckout(req, res) {
   }
 
   try {
-    const session = await stripe.checkout.sessions.create({
-      mode: "payment",
-      client_reference_id: user.id,
-      metadata: {
-        userId: user.id,
-        credits: String(creditPackSize)
-      },
-      line_items: [
-        {
-          price_data: {
-            currency: "gbp",
-            product_data: {
-              name: `${creditPackSize} Vinted Listing Booster credits`
-            },
-            unit_amount: creditPackPricePence
-          },
-          quantity: 1
-        }
-      ],
-      success_url: `${appUrl}/?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${appUrl}/?checkout=cancelled`
-    });
+    const body = forcedPackId ? { packId: forcedPackId } : JSON.parse(await readBody(req, 20_000) || "{}");
+    const requestedPackId = String(body.packId || "").trim().toLowerCase();
+    const pack = findCreditPack(requestedPackId);
+    if (!pack) {
+      json(res, 400, { error: "Unknown credit pack. Please choose Starter, Seller or Reseller." }, visitor.headers);
+      return;
+    }
 
-    json(res, 200, { url: session.url }, visitor.headers);
+    const session = await createCheckoutSession({ user, pack });
+    if (isRouteCheckout) {
+      res.writeHead(303, { location: session.url, ...visitor.headers });
+      res.end();
+      return;
+    }
+    json(res, 200, { url: session.url, packId: pack.id }, visitor.headers);
   } catch (error) {
     console.error(error);
     json(res, 500, { error: "Could not start Stripe Checkout." }, visitor.headers);
+  }
+}
+
+function hasMutableSubscription(user) {
+  return Boolean(user?.stripe_subscription_id)
+    && ["active", "trialing", "past_due"].includes(String(user.subscription_status || "").toLowerCase());
+}
+
+async function changeStripeSubscriptionPlan({ user, plan }) {
+  if (!plan.priceId) return null;
+  const subscription = await stripe.subscriptions.retrieve(user.stripe_subscription_id);
+  const itemId = subscription.items?.data?.[0]?.id;
+  if (!itemId) throw new Error("Subscription has no editable item.");
+  const updated = await stripe.subscriptions.update(user.stripe_subscription_id, {
+    items: [{ id: itemId, price: plan.priceId }],
+    proration_behavior: "create_prorations",
+    metadata: {
+      ...(subscription.metadata || {}),
+      userId: user.id,
+      planId: plan.id,
+      credits: String(plan.credits)
+    }
+  });
+  syncSubscriptionFields({
+    userId: user.id,
+    customerId: stripeId(updated.customer),
+    subscriptionId: stripeId(updated.id),
+    plan,
+    status: updated.status || "active",
+    nextCreditRefill: subscriptionPeriodEnd(updated) || user.next_credit_refill || nextMonthIso()
+  });
+  recordAudit(user.id, "stripe:subscription.updated", 0, `Subscription switched to ${plan.name}`);
+  return db.prepare("SELECT * FROM users WHERE id = ?").get(user.id);
+}
+
+async function handleSubscriptionCheckout(req, res) {
+  const visitor = getVisitor(req);
+  const user = getUserBySession(req);
+
+  if (!user) {
+    json(res, 401, { error: "Create an account or sign in before subscribing.", authUrl: `/signup?next=${encodeURIComponent("/app/billing")}` }, visitor.headers);
+    return;
+  }
+
+  if (!stripe) {
+    json(res, 503, { error: "Stripe is not connected yet. Add a test STRIPE_SECRET_KEY to .env and restart the app." }, visitor.headers);
+    return;
+  }
+
+  try {
+    const body = JSON.parse(await readBody(req, 20_000) || "{}");
+    const requestedPlanId = String(body.planId || "").trim().toLowerCase();
+    const plan = findSubscriptionPlan(requestedPlanId);
+    if (!plan) {
+      json(res, 400, { error: "Unknown subscription plan. Please choose Starter, Seller or Reseller." }, visitor.headers);
+      return;
+    }
+
+    if (hasMutableSubscription(user) && user.subscription_plan === plan.id) {
+      json(res, 200, {
+        updated: true,
+        unchanged: true,
+        planId: plan.id,
+        credits: getAccountCredits(user),
+        subscription: publicSubscriptionForUser(user),
+        user: publicUser(user)
+      }, visitor.headers);
+      return;
+    }
+
+    if (hasMutableSubscription(user) && plan.priceId && process.env.STRIPE_MOCK_CHECKOUT !== "true") {
+      const updatedUser = await changeStripeSubscriptionPlan({ user, plan });
+      json(res, 200, {
+        updated: true,
+        planId: plan.id,
+        credits: getAccountCredits(updatedUser),
+        subscription: publicSubscriptionForUser(updatedUser),
+        user: publicUser(updatedUser)
+      }, visitor.headers);
+      return;
+    }
+
+    const session = await createSubscriptionCheckoutSession({ user, plan });
+    json(res, 200, { url: session.url, planId: plan.id, mode: "subscription" }, visitor.headers);
+  } catch (error) {
+    console.error(error);
+    json(res, 500, { error: "Could not start subscription checkout." }, visitor.headers);
   }
 }
 
@@ -1155,10 +1765,12 @@ async function handleCheckoutSuccess(req, res) {
 
   const fresh = db.prepare("SELECT * FROM users WHERE id = ?").get(user.id);
   const granted = db.prepare("SELECT credits FROM payments WHERE stripe_session_id = ? AND user_id = ?").get(sessionId, user.id);
+  const subscriptionGrant = db.prepare("SELECT credits FROM subscription_refills WHERE stripe_invoice_id = ? AND user_id = ?").get(`checkout:${sessionId}`, user.id);
   json(res, 200, {
     ok: true,
-    pending: !granted,
+    pending: !granted && !subscriptionGrant,
     credits: getAccountCredits(fresh),
+    subscription: publicSubscriptionForUser(fresh),
     user: publicUser(fresh)
   }, visitor.headers);
 }
@@ -1173,6 +1785,301 @@ function grantCreditsFromPayment({ sessionId, userId, credits, source }) {
     .run(credits, now, userId);
   recordAudit(userId, source || "stripe:webhook", credits, `Stripe session ${sessionId}`);
   return true;
+}
+
+function stripeId(value) {
+  if (!value) return "";
+  if (typeof value === "string") return value;
+  return String(value.id || "");
+}
+
+function isoFromStripeSeconds(value) {
+  const seconds = Number(value || 0);
+  return Number.isFinite(seconds) && seconds > 0 ? new Date(seconds * 1000).toISOString() : null;
+}
+
+function nextMonthIso(from = new Date()) {
+  const date = new Date(from);
+  date.setMonth(date.getMonth() + 1);
+  return date.toISOString();
+}
+
+function subscriptionPeriodEnd(subscription) {
+  return isoFromStripeSeconds(subscription?.current_period_end)
+    || isoFromStripeSeconds(subscription?.items?.data?.[0]?.current_period_end)
+    || null;
+}
+
+function invoicePeriodEnd(invoice) {
+  const line = invoice?.lines?.data?.find((item) => item?.period?.end);
+  return isoFromStripeSeconds(line?.period?.end)
+    || isoFromStripeSeconds(invoice?.period_end)
+    || null;
+}
+
+async function fetchStripeSubscription(subscriptionId) {
+  if (!stripe || !subscriptionId || process.env.STRIPE_MOCK_CHECKOUT === "true") return null;
+  try {
+    return await stripe.subscriptions.retrieve(subscriptionId);
+  } catch (error) {
+    console.warn(`Could not retrieve Stripe subscription ${subscriptionId}: ${error.message}`);
+    return null;
+  }
+}
+
+function findUserForStripeSubscription({ userId, subscriptionId, customerId }) {
+  if (userId) {
+    const user = db.prepare("SELECT * FROM users WHERE id = ?").get(userId);
+    if (user) return user;
+  }
+  if (subscriptionId) {
+    const user = db.prepare("SELECT * FROM users WHERE stripe_subscription_id = ?").get(subscriptionId);
+    if (user) return user;
+  }
+  if (customerId) {
+    const user = db.prepare("SELECT * FROM users WHERE stripe_customer_id = ?").get(customerId);
+    if (user) return user;
+  }
+  return null;
+}
+
+function syncSubscriptionFields({ userId, customerId, subscriptionId, plan, status = "active", nextCreditRefill }) {
+  const now = new Date().toISOString();
+  db.prepare(`
+    UPDATE users
+    SET subscription_plan = ?,
+        subscription_status = ?,
+        next_credit_refill = ?,
+        stripe_customer_id = COALESCE(?, stripe_customer_id),
+        stripe_subscription_id = COALESCE(?, stripe_subscription_id),
+        updated_at = ?
+    WHERE id = ?
+  `).run(plan.id, status, nextCreditRefill || nextMonthIso(), customerId || null, subscriptionId || null, now, userId);
+}
+
+function clearSubscriptionFields(userId, status = "canceled") {
+  const now = new Date().toISOString();
+  db.prepare(`
+    UPDATE users
+    SET subscription_plan = 'free',
+        subscription_status = ?,
+        next_credit_refill = NULL,
+        stripe_subscription_id = NULL,
+        updated_at = ?
+    WHERE id = ?
+  `).run(status, now, userId);
+}
+
+function grantSubscriptionCreditsOnce({ grantId, userId, subscriptionId, plan, credits, nextCreditRefill, source }) {
+  const existing = db.prepare("SELECT stripe_invoice_id FROM subscription_refills WHERE stripe_invoice_id = ?").get(grantId);
+  if (existing) return false;
+  const now = new Date().toISOString();
+  const amount = Number(credits || plan.credits || 0);
+  db.prepare(`
+    INSERT INTO subscription_refills (stripe_invoice_id, stripe_subscription_id, user_id, plan, credits, processed_at)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `).run(grantId, subscriptionId || null, userId, plan.id, amount, now);
+  db.prepare(`
+    UPDATE users
+    SET subscription_plan = ?,
+        subscription_status = 'active',
+        subscription_credits = subscription_credits + ?,
+        next_credit_refill = ?,
+        stripe_subscription_id = COALESCE(?, stripe_subscription_id),
+        updated_at = ?
+    WHERE id = ?
+  `).run(plan.id, amount, nextCreditRefill || nextMonthIso(), subscriptionId || null, now, userId);
+  recordAudit(userId, source || "stripe:subscription", amount, `Subscription credits for ${plan.name}`);
+  return true;
+}
+
+async function activateSubscriptionFromCheckout(session) {
+  const userId = session.metadata?.userId || session.client_reference_id;
+  const plan = findSubscriptionPlan(session.metadata?.planId);
+  if (!userId || !plan) return false;
+  if (session.payment_status && !["paid", "no_payment_required"].includes(session.payment_status)) return false;
+
+  const subscriptionId = stripeId(session.subscription);
+  const customerId = stripeId(session.customer);
+  const subscription = await fetchStripeSubscription(subscriptionId);
+  const status = subscription?.status || "active";
+  const nextCreditRefill = subscriptionPeriodEnd(subscription) || nextMonthIso();
+  const user = findUserForStripeSubscription({ userId, subscriptionId, customerId });
+  if (!user) {
+    console.warn(`Webhook: subscription checkout for unknown user ${userId} (session ${session.id})`);
+    return false;
+  }
+
+  syncSubscriptionFields({ userId: user.id, customerId, subscriptionId, plan, status, nextCreditRefill });
+  grantSubscriptionCreditsOnce({
+    grantId: `checkout:${session.id}`,
+    userId: user.id,
+    subscriptionId,
+    plan,
+    credits: plan.credits,
+    nextCreditRefill,
+    source: "stripe:subscription-start"
+  });
+  return true;
+}
+
+async function grantRenewalCreditsFromInvoice(invoice) {
+  const subscriptionId = stripeId(invoice.subscription)
+    || stripeId(invoice.parent?.subscription_details?.subscription)
+    || stripeId(invoice.lines?.data?.[0]?.subscription);
+  const customerId = stripeId(invoice.customer);
+  const metadata = {
+    ...(invoice.subscription_details?.metadata || {}),
+    ...(invoice.metadata || {})
+  };
+  const user = findUserForStripeSubscription({ userId: metadata.userId, subscriptionId, customerId });
+  if (!user) return false;
+
+  const plan = findSubscriptionPlan(metadata.planId) || findSubscriptionPlan(user.subscription_plan);
+  if (!plan) return false;
+
+  const nextCreditRefill = invoicePeriodEnd(invoice) || nextMonthIso();
+  syncSubscriptionFields({
+    userId: user.id,
+    customerId,
+    subscriptionId,
+    plan,
+    status: "active",
+    nextCreditRefill
+  });
+
+  if (invoice.billing_reason === "subscription_create") return false;
+  return grantSubscriptionCreditsOnce({
+    grantId: `invoice:${invoice.id}`,
+    userId: user.id,
+    subscriptionId,
+    plan,
+    credits: Number(metadata.credits || plan.credits),
+    nextCreditRefill,
+    source: "stripe:invoice.paid"
+  });
+}
+
+function updateSubscriptionFromStripeObject(subscription, deleted = false) {
+  const subscriptionId = stripeId(subscription.id);
+  const customerId = stripeId(subscription.customer);
+  const user = findUserForStripeSubscription({
+    userId: subscription.metadata?.userId,
+    subscriptionId,
+    customerId
+  });
+  if (!user) return false;
+
+  if (deleted) {
+    clearSubscriptionFields(user.id, subscription.status || "canceled");
+    recordAudit(user.id, "stripe:subscription.deleted", 0, "Subscription canceled");
+    return true;
+  }
+
+  const plan = findSubscriptionPlan(subscription.metadata?.planId) || findSubscriptionPlan(user.subscription_plan);
+  if (!plan) return false;
+  const nextCreditRefill = subscriptionPeriodEnd(subscription) || user.next_credit_refill || nextMonthIso();
+  syncSubscriptionFields({
+    userId: user.id,
+    customerId,
+    subscriptionId,
+    plan,
+    status: subscription.status || "active",
+    nextCreditRefill
+  });
+  return true;
+}
+
+function hashToken(token) {
+  return createHash("sha256").update(String(token || "")).digest("hex");
+}
+
+function createPasswordResetToken(userId) {
+  const token = randomBytes(32).toString("base64url");
+  const now = new Date();
+  const expires = new Date(now.getTime() + 1000 * 60 * 30);
+  db.prepare(
+    "INSERT INTO password_resets (token_hash, user_id, created_at, expires_at) VALUES (?, ?, ?, ?)"
+  ).run(hashToken(token), userId, now.toISOString(), expires.toISOString());
+  return token;
+}
+
+function getPasswordResetCountForUser(userId) {
+  const row = db.prepare("SELECT COUNT(*) AS count FROM password_resets WHERE user_id = ?").get(userId);
+  return Number(row?.count || 0);
+}
+
+function getValidPasswordReset(token) {
+  const tokenHash = hashToken(token);
+  if (!token || !/^[A-Za-z0-9_-]{24,}$/.test(String(token))) return null;
+  return db.prepare(`
+    SELECT password_resets.*, users.email
+    FROM password_resets
+    JOIN users ON users.id = password_resets.user_id
+    WHERE token_hash = ? AND expires_at > ? AND used_at IS NULL
+  `).get(tokenHash, new Date().toISOString()) || null;
+}
+
+async function sendPasswordResetEmail(user, token) {
+  const link = `${appUrl}/reset-password?token=${encodeURIComponent(token)}`;
+  const subject = "Reset your ListBoost password";
+  const text = [
+    "Reset your ListBoost password",
+    "",
+    "Use this secure link within 30 minutes:",
+    link,
+    "",
+    "If you did not request this, you can ignore this email.",
+    "ListBoost is independent and is not affiliated with Vinted."
+  ].join("\n");
+
+  const html = `
+    <div style="margin:0;background:#fbfffd;padding:28px;font-family:Inter,Arial,sans-serif;color:#10201e">
+      <div style="max-width:520px;margin:0 auto;border:1px solid #dbe8e5;border-radius:18px;background:#ffffff;padding:28px">
+        <p style="margin:0 0 12px;color:#00b3a4;font-weight:800;letter-spacing:.08em;text-transform:uppercase">ListBoost</p>
+        <h1 style="margin:0 0 12px;font-size:24px;line-height:1.2">Reset your password</h1>
+        <p style="margin:0 0 18px;color:#5c716e;line-height:1.6">Use the secure link below within 30 minutes to choose a new password.</p>
+        <p style="margin:0 0 18px"><a href="${link}" style="display:inline-block;background:#00b3a4;color:#ffffff;text-decoration:none;padding:12px 18px;border-radius:10px;font-weight:800">Reset password</a></p>
+        <p style="margin:0 0 8px;color:#5c716e">If the button does not work, copy this link:</p>
+        <p style="word-break:break-all"><a href="${link}" style="color:#007f75">${link}</a></p>
+        <p style="margin:18px 0 0;color:#5c716e;font-size:13px">If you did not request this, you can ignore this email. ListBoost is independent and is not affiliated with Vinted.</p>
+      </div>
+    </div>
+  `;
+
+  if (process.env.RESEND_MOCK_EMAIL === "true") {
+    return { delivered: false, link };
+  }
+
+  if (!resendApiKey) {
+    console.log("=================================================================");
+    console.log(`[reset] Password reset link for ${user.email}:`);
+    console.log(`        ${link}`);
+    console.log("=================================================================");
+    return { delivered: false, link };
+  }
+
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      authorization: `Bearer ${resendApiKey}`,
+      "content-type": "application/json"
+    },
+    body: JSON.stringify({
+      from: emailFrom,
+      to: [user.email],
+      subject,
+      html,
+      text
+    })
+  });
+
+  if (!response.ok) {
+    const body = await response.text().catch(() => "");
+    throw new Error(`Resend password reset failed: ${response.status} ${body.slice(0, 200)}`);
+  }
+
+  return { delivered: true };
 }
 
 async function handleStripeWebhook(req, res) {
@@ -1210,16 +2117,26 @@ async function handleStripeWebhook(req, res) {
   try {
     if (event.type === "checkout.session.completed") {
       const session = event.data.object;
-      const userId = session.metadata?.userId || session.client_reference_id;
-      const credits = Number(session.metadata?.credits || creditPackSize);
-      if (session.payment_status === "paid" && userId && credits > 0) {
-        const userExists = db.prepare("SELECT id FROM users WHERE id = ?").get(userId);
-        if (userExists) {
-          grantCreditsFromPayment({ sessionId: session.id, userId, credits, source: "stripe:webhook" });
-        } else {
-          console.warn(`Webhook: paid session for unknown user ${userId} (session ${session.id})`);
+      if (session.mode === "subscription" || session.metadata?.billingType === "subscription") {
+        await activateSubscriptionFromCheckout(session);
+      } else {
+        const userId = session.metadata?.userId || session.client_reference_id;
+        const credits = Number(session.metadata?.credits || creditPackSize);
+        if (session.payment_status === "paid" && userId && credits > 0) {
+          const userExists = db.prepare("SELECT id FROM users WHERE id = ?").get(userId);
+          if (userExists) {
+            grantCreditsFromPayment({ sessionId: session.id, userId, credits, source: "stripe:webhook" });
+          } else {
+            console.warn(`Webhook: paid session for unknown user ${userId} (session ${session.id})`);
+          }
         }
       }
+    } else if (event.type === "invoice.paid") {
+      await grantRenewalCreditsFromInvoice(event.data.object);
+    } else if (event.type === "customer.subscription.updated") {
+      updateSubscriptionFromStripeObject(event.data.object, false);
+    } else if (event.type === "customer.subscription.deleted") {
+      updateSubscriptionFromStripeObject(event.data.object, true);
     }
     res.writeHead(200, { "content-type": "application/json; charset=utf-8" });
     res.end(JSON.stringify({ received: true }));
@@ -1265,13 +2182,16 @@ async function sendVerificationEmail(user, token) {
       to: [user.email],
       subject: "Verify your ListBoost email",
       html: `
-        <div style="font-family:Arial,sans-serif;line-height:1.5;color:#101828">
-          <h1 style="font-size:22px">Verify your email</h1>
-          <p>Thanks for creating a ListBoost account. Click the button below to start generating Vinted listings.</p>
-          <p><a href="${link}" style="display:inline-block;background:#1570ef;color:#fff;text-decoration:none;padding:12px 16px;border-radius:8px;font-weight:700">Verify email</a></p>
-          <p>If the button does not work, copy this link:</p>
-          <p><a href="${link}">${link}</a></p>
-          <p style="color:#667085;font-size:13px">ListBoost is independent and is not affiliated with Vinted.</p>
+        <div style="margin:0;background:#fbfffd;padding:28px;font-family:Inter,Arial,sans-serif;color:#10201e">
+          <div style="max-width:520px;margin:0 auto;border:1px solid #dbe8e5;border-radius:18px;background:#ffffff;padding:28px">
+            <p style="margin:0 0 12px;color:#00b3a4;font-weight:800;letter-spacing:.08em;text-transform:uppercase">ListBoost</p>
+            <h1 style="margin:0 0 12px;font-size:24px;line-height:1.2">Verify your email</h1>
+            <p style="margin:0 0 18px;color:#5c716e;line-height:1.6">Thanks for creating a ListBoost account. Verify your email to start generating Vinted listings.</p>
+            <p style="margin:0 0 18px"><a href="${link}" style="display:inline-block;background:#00b3a4;color:#fff;text-decoration:none;padding:12px 18px;border-radius:10px;font-weight:800">Verify email</a></p>
+            <p style="margin:0 0 8px;color:#5c716e">If the button does not work, copy this link:</p>
+            <p style="word-break:break-all"><a href="${link}" style="color:#007f75">${link}</a></p>
+            <p style="margin:18px 0 0;color:#5c716e;font-size:13px">ListBoost is independent and is not affiliated with Vinted.</p>
+          </div>
         </div>
       `,
       text: `Verify your ListBoost email: ${link}`
@@ -1342,6 +2262,83 @@ async function handleResendVerification(req, res) {
   }
 }
 
+async function handleForgotPassword(req, res) {
+  const visitor = getVisitor(req);
+  const ip = getClientIp(req);
+  const limit = rateLimit(`forgot:${ip}`, { max: 6, windowMs: 15 * 60_000 });
+  if (!limit.ok) {
+    tooManyRequests(res, visitor, limit.retryAfterSec, "Too many reset requests. Try again later.");
+    return;
+  }
+
+  try {
+    const body = JSON.parse(await readBody(req, 20_000) || "{}");
+    const email = normalizeEmail(body.email);
+    if (isValidEmail(email)) {
+      const user = db.prepare("SELECT * FROM users WHERE email = ?").get(email);
+      if (user) {
+        const token = createPasswordResetToken(user.id);
+        try {
+          await sendPasswordResetEmail(user, token);
+        } catch (error) {
+          console.error(error);
+        }
+      }
+    }
+    json(res, 200, { ok: true, message: "If an account exists for that email, we'll send reset instructions." }, visitor.headers);
+  } catch (error) {
+    console.error(error);
+    json(res, 200, { ok: true, message: "If an account exists for that email, we'll send reset instructions." }, visitor.headers);
+  }
+}
+
+async function handleResetPasswordValidate(req, res) {
+  const visitor = getVisitor(req);
+  const url = new URL(req.url, `http://${req.headers.host}`);
+  const token = url.searchParams.get("token") || "";
+  const row = getValidPasswordReset(token);
+  if (!row) {
+    json(res, 400, { valid: false, error: "Reset link is invalid or expired." }, visitor.headers);
+    return;
+  }
+  json(res, 200, { valid: true, email: row.email }, visitor.headers);
+}
+
+async function handleResetPassword(req, res) {
+  const visitor = getVisitor(req);
+  const ip = getClientIp(req);
+  const limit = rateLimit(`reset:${ip}`, { max: 10, windowMs: 15 * 60_000 });
+  if (!limit.ok) {
+    tooManyRequests(res, visitor, limit.retryAfterSec, "Too many reset attempts. Try again later.");
+    return;
+  }
+
+  try {
+    const body = JSON.parse(await readBody(req, 20_000) || "{}");
+    const token = String(body.token || "");
+    const password = String(body.password || "");
+    const row = getValidPasswordReset(token);
+    if (!row) {
+      json(res, 400, { error: "Reset link is invalid or expired." }, visitor.headers);
+      return;
+    }
+    if (password.length < 8) {
+      json(res, 400, { error: "Password must be at least 8 characters." }, visitor.headers);
+      return;
+    }
+
+    const now = new Date().toISOString();
+    db.prepare("UPDATE users SET password_hash = ?, updated_at = ? WHERE id = ?").run(hashPassword(password), now, row.user_id);
+    db.prepare("UPDATE password_resets SET used_at = ? WHERE token_hash = ?").run(now, row.token_hash);
+    db.prepare("DELETE FROM sessions WHERE user_id = ?").run(row.user_id);
+    recordAudit(row.user_id, "system:password-reset", 0, "Password reset completed");
+    json(res, 200, { ok: true }, visitor.headers);
+  } catch (error) {
+    console.error(error);
+    json(res, 500, { error: "Could not reset password. Try again." }, visitor.headers);
+  }
+}
+
 function isAdminAuthorized(req) {
   if (!adminEmail || !adminPassword) return false;
   const header = req.headers.authorization || "";
@@ -1401,9 +2398,23 @@ async function handleAdminPage(req, res) {
     SELECT id, user_id, actor, delta, reason, created_at
     FROM credit_audit ORDER BY created_at DESC LIMIT 50
   `).all();
+  const summary = db.prepare(`
+    SELECT
+      COUNT(*) AS totalUsers,
+      SUM(CASE WHEN paid_credits > 0 THEN 1 ELSE 0 END) AS paidUsers,
+      SUM(free_credits + paid_credits) AS creditsGranted,
+      SUM(used_credits) AS creditsUsed
+    FROM users
+  `).get();
+  const recentPayments = db.prepare(`
+    SELECT credits
+    FROM payments
+    WHERE processed_at >= datetime('now', '-30 days')
+  `).all();
+  const recentRevenuePence = recentPayments.reduce((sum, row) => sum + pricePenceForCredits(row.credits), 0);
 
   const userRows = users.map((u) => `
-    <tr>
+    <tr data-user-row>
       <td><code>${escapeHtml(u.id.slice(0, 8))}</code></td>
       <td>${escapeHtml(u.email)}</td>
       <td>${u.email_verified ? "yes" : "no"}</td>
@@ -1423,7 +2434,7 @@ async function handleAdminPage(req, res) {
   `).join("");
 
   const paymentRows = payments.map((p) => `
-    <tr><td><code>${escapeHtml(p.stripe_session_id)}</code></td><td><code>${escapeHtml(p.user_id.slice(0, 8))}</code></td><td>${p.credits}</td><td>${escapeHtml(p.processed_at)}</td></tr>
+    <tr><td><a href="https://dashboard.stripe.com/test/checkout/sessions/${escapeHtml(p.stripe_session_id)}" rel="noreferrer"><code>${escapeHtml(p.stripe_session_id)}</code></a></td><td><code>${escapeHtml(p.user_id.slice(0, 8))}</code></td><td>${p.credits}</td><td>${escapeHtml(p.processed_at)}</td></tr>
   `).join("");
 
   const genRows = generations.map((g) => `
@@ -1435,24 +2446,47 @@ async function handleAdminPage(req, res) {
   `).join("");
 
   const html = `<!doctype html>
-<html><head><meta charset="utf-8" /><title>ListBoost admin</title>
+<html><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><title>ListBoost admin</title>
 <style>
-  body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; margin: 24px; color: #101828; }
+  :root { color-scheme: light; --bg:#f9fafb; --panel:#fff; --fg:#101828; --muted:#475467; --line:#d0d5dd; --accent:#00b3a4; }
+  :root[data-theme="dark"] { color-scheme: dark; --bg:#071412; --panel:#0d1d1a; --fg:#f4fffc; --muted:#b8d0cb; --line:#223c38; --accent:#7ee7d8; }
+  body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; margin: 24px; color: var(--fg); background: var(--bg); }
   h1 { margin: 0 0 6px; }
-  h2 { margin: 28px 0 8px; font-size: 1rem; text-transform: uppercase; color: #475467; letter-spacing: 0.04em; }
+  h2 { margin: 28px 0 8px; font-size: 1rem; text-transform: uppercase; color: var(--muted); letter-spacing: 0.04em; }
+  a { color: var(--accent); }
+  .skip-link { position:absolute; left:12px; top:12px; transform:translateY(-200%); background:var(--fg); color:var(--bg); padding:8px 12px; border-radius:8px; }
+  .skip-link:focus { transform:translateY(0); }
+  .admin-top { display:flex; justify-content:space-between; align-items:center; gap:12px; }
+  .summary { display: grid; grid-template-columns: repeat(5, minmax(140px, 1fr)); gap: 12px; margin: 20px 0; }
+  .card { border: 1px solid var(--line); border-radius: 14px; padding: 16px; background: var(--panel); }
+  .card span { display: block; color: var(--muted); font-size: 0.78rem; text-transform: uppercase; font-weight: 800; }
+  .card strong { display: block; margin-top: 6px; font-size: 1.5rem; }
+  .table-tools { display:flex; justify-content:space-between; gap:12px; align-items:center; margin: 10px 0; flex-wrap:wrap; }
   table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
-  th, td { border-bottom: 1px solid #e4e7ec; padding: 6px 8px; text-align: left; vertical-align: top; }
-  th { background: #f9fafb; font-weight: 700; }
+  th, td { border-bottom: 1px solid var(--line); padding: 6px 8px; text-align: left; vertical-align: top; }
+  th { background: color-mix(in srgb, var(--panel) 88%, var(--accent) 12%); font-weight: 700; }
   code { font-size: 0.85rem; }
   form { display: inline-flex; gap: 6px; }
-  input, button { font: inherit; padding: 4px 6px; border: 1px solid #d0d5dd; border-radius: 4px; background: #fff; }
-  button { background: #101828; color: #fff; cursor: pointer; }
+  input, button { font: inherit; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); color: var(--fg); }
+  button { background: var(--fg); color: var(--bg); cursor: pointer; }
+  .toast { position: fixed; right: 18px; bottom: 18px; border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; background: var(--panel); box-shadow: 0 18px 40px rgba(0,0,0,.18); }
+  @media (max-width: 900px) { .summary { grid-template-columns: 1fr 1fr; } table { display:block; overflow-x:auto; } }
 </style></head>
-<body>
-  <h1>ListBoost admin</h1>
+<body><a class="skip-link" href="#main">Skip to content</a>
+  <div class="admin-top"><div><h1>ListBoost admin</h1>
   <p>Logged in as <strong>${escapeHtml(adminEmail)}</strong>. Webhook secret: ${stripeWebhookSecret ? "configured" : "<strong style='color:#b42318'>missing</strong>"}.</p>
+  </div><button type="button" id="themeToggle">Dark</button></div>
+  <main id="main">
+  <section class="summary">
+    <div class="card"><span>Total users</span><strong>${summary.totalUsers || 0}</strong></div>
+    <div class="card"><span>Paid users</span><strong>${summary.paidUsers || 0}</strong></div>
+    <div class="card"><span>Last-30d revenue</span><strong>${formatPence(recentRevenuePence)}</strong></div>
+    <div class="card"><span>Credits granted</span><strong>${summary.creditsGranted || 0}</strong></div>
+    <div class="card"><span>Credits used</span><strong>${summary.creditsUsed || 0}</strong></div>
+  </section>
   <h2>Users (latest 200)</h2>
-  <table><thead><tr><th>id</th><th>email</th><th>verified</th><th>free</th><th>paid</th><th>used</th><th>remaining</th><th>adjust</th></tr></thead>
+  <div class="table-tools"><label>Search users <input id="userSearch" type="search" placeholder="email" /></label><div id="userPager"></div></div>
+  <table id="usersTable"><thead><tr><th>id</th><th>email</th><th>verified</th><th>free</th><th>paid</th><th>used</th><th>remaining</th><th>adjust</th></tr></thead>
   <tbody>${userRows}</tbody></table>
   <h2>Payments (latest 50)</h2>
   <table><thead><tr><th>session</th><th>user</th><th>credits</th><th>at</th></tr></thead><tbody>${paymentRows}</tbody></table>
@@ -1460,6 +2494,47 @@ async function handleAdminPage(req, res) {
   <table><thead><tr><th>at</th><th>user</th><th>title</th><th>score</th></tr></thead><tbody>${genRows}</tbody></table>
   <h2>Credit audit (latest 50)</h2>
   <table><thead><tr><th>at</th><th>user</th><th>actor</th><th>delta</th><th>reason</th></tr></thead><tbody>${auditRows}</tbody></table>
+  </main>
+  <script>
+    const root = document.documentElement;
+    const saved = localStorage.getItem("lb_theme") || "system";
+    if (saved !== "system") root.dataset.theme = saved;
+    themeToggle.textContent = root.dataset.theme === "dark" ? "Light" : "Dark";
+    themeToggle.addEventListener("click", () => {
+      const next = root.dataset.theme === "dark" ? "light" : "dark";
+      root.dataset.theme = next;
+      localStorage.setItem("lb_theme", next);
+      themeToggle.textContent = next === "dark" ? "Light" : "Dark";
+    });
+    document.querySelectorAll('form[action="/admin/credits"]').forEach((form) => {
+      form.addEventListener("submit", (event) => {
+        if (!confirm("Adjust this user's credits?")) event.preventDefault();
+      });
+    });
+    const rows = Array.from(document.querySelectorAll("[data-user-row]"));
+    let page = 1;
+    const pageSize = 25;
+    function renderUsers() {
+      const q = userSearch.value.toLowerCase().trim();
+      const visible = rows.filter((row) => row.textContent.toLowerCase().includes(q));
+      rows.forEach((row) => row.style.display = "none");
+      visible.slice((page - 1) * pageSize, page * pageSize).forEach((row) => row.style.display = "");
+      const pages = Math.max(1, Math.ceil(visible.length / pageSize));
+      if (page > pages) page = pages;
+      userPager.innerHTML = '<button type="button" id="prevUsers" ' + (page <= 1 ? "disabled" : "") + '>Previous</button> <span>Page ' + page + ' of ' + pages + '</span> <button type="button" id="nextUsers" ' + (page >= pages ? "disabled" : "") + '>Next</button>';
+      prevUsers.onclick = () => { page -= 1; renderUsers(); };
+      nextUsers.onclick = () => { page += 1; renderUsers(); };
+    }
+    userSearch.addEventListener("input", () => { page = 1; renderUsers(); });
+    renderUsers();
+    if (new URLSearchParams(location.search).get("adjusted")) {
+      const toast = document.createElement("div");
+      toast.className = "toast";
+      toast.textContent = "Credits adjusted.";
+      document.body.append(toast);
+      setTimeout(() => toast.remove(), 3500);
+    }
+  </script>
 </body></html>`;
   res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
   res.end(html);
@@ -1503,7 +2578,7 @@ async function handleAdminCreditsAdjust(req, res) {
   }
   recordAudit(userId, `admin:${adminEmail}`, delta, reason);
 
-  res.writeHead(303, { location: "/admin" });
+  res.writeHead(303, { location: "/admin?adjusted=1" });
   res.end();
 }
 
@@ -1573,6 +2648,12 @@ async function handleSignup(req, res) {
       user: publicUser(user),
       credits: getAccountCredits(user),
       stripeReady: Boolean(stripe),
+      aiProvider: getAiProvider(),
+      appUrl,
+      adminEnabled: Boolean(adminEmail && adminPassword),
+      creditPacks: publicCreditPacks(),
+      subscriptionPlans: publicSubscriptionPlans(),
+      subscription: publicSubscriptionForUser(user),
       emailVerified: Boolean(user.email_verified),
       verificationRequired: requireEmailVerification,
       verificationEmailDelivered: verificationDelivery.delivered,
@@ -1621,6 +2702,12 @@ async function handleLogin(req, res) {
       user: publicUser(user),
       credits: getAccountCredits(user),
       stripeReady: Boolean(stripe),
+      aiProvider: getAiProvider(),
+      appUrl,
+      adminEnabled: Boolean(adminEmail && adminPassword),
+      creditPacks: publicCreditPacks(),
+      subscriptionPlans: publicSubscriptionPlans(),
+      subscription: publicSubscriptionForUser(user),
       emailVerified: Boolean(user.email_verified),
       verificationRequired: requireEmailVerification
     }, { ...visitor.headers, ...authHeaders(token) });
@@ -1640,8 +2727,26 @@ async function handleLogout(req, res) {
 
 const prettyRoutes = {
   "/": "/index.html",
+  "/example": "/example.html",
+  "/pricing": "/pricing.html",
+  "/signup": "/auth.html",
+  "/login": "/auth.html",
+  "/verify-email": "/verify-email.html",
+  "/forgot-password": "/forgot-password.html",
+  "/reset-password": "/reset-password.html",
+  "/app": "/app.html",
+  "/app/notes": "/app.html",
+  "/app/photo": "/app.html",
+  "/app/score": "/app.html",
+  "/app/replies": "/app.html",
+  "/app/history": "/app.html",
+  "/app/billing": "/app.html",
+  "/checkout/success": "/checkout-success.html",
+  "/checkout/cancel": "/checkout-cancel.html",
   "/privacy": "/privacy.html",
-  "/terms": "/terms.html"
+  "/terms": "/terms.html",
+  "/robots.txt": "/robots.txt",
+  "/sitemap.xml": "/sitemap.xml"
 };
 
 async function serveStatic(req, res) {
@@ -1661,12 +2766,25 @@ async function serveStatic(req, res) {
     res.writeHead(200, { "content-type": mimeTypes[extname(filePath)] || "application/octet-stream" });
     res.end(content);
   } catch {
-    res.writeHead(404, { "content-type": "text/plain; charset=utf-8" });
-    res.end("Not found");
+    try {
+      const content = await readFile(join(publicDir, "404.html"));
+      res.writeHead(404, { "content-type": "text/html; charset=utf-8" });
+      res.end(content);
+    } catch {
+      res.writeHead(404, { "content-type": "text/plain; charset=utf-8" });
+      res.end("Not found");
+    }
   }
 }
 
-createServer((req, res) => {
+const server = createServer((req, res) => {
+  const host = String(req.headers.host || "").toLowerCase();
+  if (host === "listboost.uk" || host.startsWith("listboost.uk:")) {
+    res.writeHead(301, { location: `https://www.listboost.uk${req.url || "/"}` });
+    res.end();
+    return;
+  }
+
   if (req.method === "GET" && req.url === "/health") {
     handleHealth(req, res);
     return;
@@ -1697,6 +2815,21 @@ createServer((req, res) => {
     return;
   }
 
+  if (req.method === "POST" && req.url === "/api/forgot-password") {
+    handleForgotPassword(req, res);
+    return;
+  }
+
+  if (req.method === "GET" && req.url.startsWith("/api/reset-password/validate")) {
+    handleResetPasswordValidate(req, res);
+    return;
+  }
+
+  if (req.method === "POST" && req.url === "/api/reset-password") {
+    handleResetPassword(req, res);
+    return;
+  }
+
   if (req.method === "GET" && req.url.startsWith("/verify")) {
     handleVerifyEmail(req, res);
     return;
@@ -1704,6 +2837,11 @@ createServer((req, res) => {
 
   if (req.method === "POST" && req.url === "/api/generate") {
     handleGenerate(req, res);
+    return;
+  }
+
+  if (req.method === "POST" && req.url === "/api/demo-generate") {
+    handleDemoGenerate(req, res);
     return;
   }
 
@@ -1717,8 +2855,13 @@ createServer((req, res) => {
     return;
   }
 
-  if (req.method === "GET" && req.url === "/api/history") {
+  if (req.method === "GET" && (req.url === "/api/history" || req.url.startsWith("/api/history?"))) {
     handleHistory(req, res);
+    return;
+  }
+
+  if (req.method === "GET" && req.url === "/api/billing") {
+    handleBilling(req, res);
     return;
   }
 
@@ -1745,12 +2888,34 @@ createServer((req, res) => {
     return;
   }
 
+  if (req.method === "POST" && req.url === "/api/create-subscription-checkout-session") {
+    handleSubscriptionCheckout(req, res);
+    return;
+  }
+
+  {
+    const checkoutMatch = req.url.match(/^\/checkout\/([a-z0-9_-]+)$/i);
+    if (checkoutMatch && req.method === "GET") {
+      if (["success", "cancel"].includes(checkoutMatch[1])) {
+        serveStatic(req, res);
+        return;
+      }
+      if (!getUserBySession(req)) {
+        res.writeHead(302, { location: `/signup?next=${encodeURIComponent(`/checkout/${checkoutMatch[1]}`)}` });
+        res.end();
+        return;
+      }
+      handleCheckout(req, res, checkoutMatch[1]);
+      return;
+    }
+  }
+
   if (req.method === "GET" && req.url.startsWith("/api/checkout/success")) {
     handleCheckoutSuccess(req, res);
     return;
   }
 
-  if (req.method === "GET" && req.url === "/admin") {
+  if (req.method === "GET" && (req.url === "/admin" || req.url.startsWith("/admin?"))) {
     handleAdminPage(req, res);
     return;
   }
@@ -1771,7 +2936,26 @@ createServer((req, res) => {
   }
 
   json(res, 405, { error: "Method not allowed." });
-}).listen(port, () => {
-  console.log(`Vinted Listing Booster running at http://localhost:${port}`);
-  logLaunchChecks();
 });
+
+if (process.env.LISTBOOST_NO_LISTEN !== "true") {
+  server.listen(port, () => {
+    console.log(`Vinted Listing Booster running at http://localhost:${port}`);
+    logLaunchChecks();
+  });
+}
+
+export {
+  cleanEnvValue,
+  trimConfiguredEnv,
+  resolveDataDir,
+  ensureDataDir,
+  normalizeAppUrl,
+  findCreditPack,
+  findSubscriptionPlan,
+  createPasswordResetToken,
+  getPasswordResetCountForUser,
+  publicCreditPacks,
+  publicSubscriptionPlans,
+  server
+};

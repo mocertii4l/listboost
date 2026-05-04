@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>App - ListBoost</title>
+    <link rel="icon" href="/favicon.svg" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <div class="toast-region" id="toastRegion" aria-live="polite"></div>
+    <header class="lb-header">
+      <a class="lb-brand" href="/app"><img src="/logo.svg" alt="" />ListBoost</a>
+      <nav class="app-nav" aria-label="App">
+        <a href="/app">Dashboard</a>
+        <a href="/app/notes">Notes</a>
+        <a href="/app/replies">Replies</a>
+        <a href="/app/history">History</a>
+        <a href="/app/billing">Billing</a>
+      </nav>
+      <div class="nav-actions">
+        <span class="status-pill js-credits">Loading credits</span>
+        <a class="button primary low-credit-cta hidden" href="/app/billing">Subscribe or buy credits</a>
+        <button class="theme-toggle" type="button">Dark</button>
+      </div>
+    </header>
+    <main class="page-wrap app-route-shell" id="main">
+      <div id="appRoute"><div class="skeleton">Loading workspace...</div></div>
+    </main>
+    <script type="module" src="/site.js"></script>
+  </body>
+</html>

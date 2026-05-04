@@ -8,12 +8,16 @@ const providerStatus = document.querySelector("#providerStatus");
 const creditStatus = document.querySelector("#creditStatus");
 const accountStatus = document.querySelector("#accountStatus");
 const upgradeButton = document.querySelector("#upgradeButton");
-const packStatus = document.querySelector("#packStatus");
+const pricingGrid = document.querySelector("#pricingGrid");
 const authForm = document.querySelector("#authForm");
 const authNote = document.querySelector("#authNote");
 const signupButton = document.querySelector("#signupButton");
 const loginButton = document.querySelector("#loginButton");
 const logoutButton = document.querySelector("#logoutButton");
+const accountSummaryStatus = document.querySelector("#accountSummaryStatus");
+const accountSummaryCredits = document.querySelector("#accountSummaryCredits");
+const accountSummaryDomain = document.querySelector("#accountSummaryDomain");
+const accountSummaryAdmin = document.querySelector("#accountSummaryAdmin");
 const templateGrid = document.querySelector("#templateGrid");
 const historyList = document.querySelector("#historyList");
 const tabNotes = document.querySelector("#tabNotes");
@@ -111,16 +115,13 @@ function updateCredits(credits) {
   if (!credits) return;
   latestCredits = credits;
   creditStatus.textContent = `${credits.remaining} credits left`;
-  if (packStatus) {
-    const price = Number(credits.packPricePence || 500) / 100;
-    packStatus.textContent = `GBP ${price} one-time top up`;
-  }
+  if (accountSummaryCredits) accountSummaryCredits.textContent = `${credits.remaining} left (${credits.freeCredits || 0} free, ${credits.paidCredits || 0} paid, ${credits.used || 0} used)`;
   generateButton.disabled = !currentUser || credits.remaining <= 0;
-  upgradeButton.disabled = !currentUser;
+  if (upgradeButton) upgradeButton.disabled = !currentUser;
   if (!currentUser) {
     formNote.textContent = "Create an account or sign in to start boosting listings.";
   } else if (credits.remaining <= 0) {
-    formNote.textContent = `No credits left. Get ${credits.packSize || 50} more credits to keep boosting listings.`;
+    formNote.textContent = "No credits left. Choose a credit pack to keep boosting listings.";
   }
   updatePhotoFormState();
 }
@@ -128,18 +129,53 @@ function updateCredits(credits) {
 function updateAccount(user) {
   currentUser = user || null;
   accountStatus.textContent = currentUser ? currentUser.email : "Not signed in";
-  logoutButton.classList.toggle("hidden", !currentUser);
-  authForm.classList.toggle("signed-in", Boolean(currentUser));
+  if (accountSummaryStatus) accountSummaryStatus.textContent = currentUser ? currentUser.email : "Signed out";
+  if (logoutButton) logoutButton.classList.toggle("hidden", !currentUser);
+  if (authForm) authForm.classList.toggle("signed-in", Boolean(currentUser));
   if (currentUser) {
-    authNote.textContent = "Signed in. Your credits are saved to this account.";
+    if (authNote) authNote.textContent = "Signed in. Your credits are saved to this account.";
+  } else {
+    if (accountSummaryCredits) accountSummaryCredits.textContent = "Sign in to load";
   }
   setLoading(false);
 }
 
 function updateProviderStatus(provider) {
   providerStatus.textContent = provider === "demo"
-    ? "Demo mode"
-    : `${provider} connected`;
+    ? "AI not connected"
+    : `${provider[0].toUpperCase()}${provider.slice(1)} connected`;
+}
+
+function formatPrice(pence) {
+  const pounds = Number(pence || 0) / 100;
+  return `GBP ${pounds.toFixed(2).replace(/\.00$/, "")}`;
+}
+
+function updateEnvironmentLinks(data = {}) {
+  const liveUrl = data.appUrl || window.location.origin;
+  if (!accountSummaryDomain || !accountSummaryAdmin) return;
+  accountSummaryDomain.href = liveUrl;
+  accountSummaryDomain.textContent = liveUrl.replace(/^https?:\/\//, "");
+  accountSummaryAdmin.href = `${liveUrl.replace(/\/$/, "")}/admin`;
+  accountSummaryAdmin.textContent = data.adminEnabled ? "Open dashboard" : "Admin disabled";
+}
+
+function renderPricingPacks(packs = []) {
+  if (!pricingGrid || !Array.isArray(packs) || !packs.length) return;
+  pricingGrid.innerHTML = "";
+  for (const pack of packs) {
+    const card = document.createElement("article");
+    card.className = `pricing-card${pack.featured ? " is-featured" : ""}`;
+    card.innerHTML = `
+      <span class="pricing-badge">${escapeHistoryText(pack.label || "Credit pack")}</span>
+      <h3>${escapeHistoryText(pack.name)}</h3>
+      <p class="pricing-price"><strong>${Number(pack.credits || 0)}</strong><span>credits</span></p>
+      <p class="pricing-meta">${formatPrice(pack.pricePence)} one-time</p>
+      <p class="pricing-copy">${escapeHistoryText(pack.description || "Credits for listings, price guidance and buyer replies.")}</p>
+      <button type="button" class="pricing-buy" data-pack-id="${escapeHistoryText(pack.id)}">Buy ${escapeHistoryText(pack.name)}</button>
+    `;
+    pricingGrid.append(card);
+  }
 }
 
 function renderList(element, items) {
@@ -315,6 +351,8 @@ async function loadAccount() {
     updateAccount(data.user);
     updateCredits(data.credits);
     updateProviderStatus(data.aiProvider || "demo");
+    updateEnvironmentLinks(data);
+    renderPricingPacks(data.creditPacks || []);
     syncVerificationBanner();
     loadHistory();
   } catch {
@@ -534,24 +572,35 @@ function renderTemplates() {
   }
 }
 
-async function buyCredits() {
+async function buyCredits(packId) {
   if (!currentUser) {
-    formNote.textContent = "Sign in before buying credits.";
+    formNote.textContent = "Create an account or sign in before buying credits.";
+    window.location.href = `/signup?next=${encodeURIComponent("/pricing")}`;
     return;
   }
-  upgradeButton.disabled = true;
+  document.querySelectorAll(".pricing-buy").forEach((button) => { button.disabled = true; });
+  if (upgradeButton) upgradeButton.disabled = true;
   formNote.textContent = "Opening checkout...";
 
   try {
-    const response = await fetch("/api/create-checkout-session", { method: "POST" });
+    const response = await fetch("/api/create-checkout-session", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ packId })
+    });
     const data = await response.json();
     if (!response.ok) {
+      if (data.authUrl) {
+        window.location.href = data.authUrl;
+        return;
+      }
       throw new Error(data.error || "Could not open checkout.");
     }
     window.location.href = data.url;
   } catch (error) {
     formNote.textContent = error.message;
-    upgradeButton.disabled = false;
+    document.querySelectorAll(".pricing-buy").forEach((button) => { button.disabled = false; });
+    if (upgradeButton) upgradeButton.disabled = false;
   }
 }
 
@@ -584,6 +633,9 @@ async function submitAuth(mode) {
     }
     updateAccount(data.user);
     updateCredits(data.credits);
+    updateProviderStatus(data.aiProvider || "demo");
+    updateEnvironmentLinks(data);
+    renderPricingPacks(data.creditPacks || []);
     syncVerificationBanner();
     authNote.textContent = mode === "signup"
       ? (verificationState.required && !verificationState.verified
@@ -828,14 +880,21 @@ async function copyOutput(event) {
 
 form.addEventListener("submit", generateListing);
 photoForm.addEventListener("submit", generateFromPhotos);
-authForm.addEventListener("submit", (event) => {
+if (authForm) authForm.addEventListener("submit", (event) => {
   event.preventDefault();
   submitAuth("login");
 });
-signupButton.addEventListener("click", () => submitAuth("signup"));
-logoutButton.addEventListener("click", logout);
+if (signupButton) signupButton.addEventListener("click", () => submitAuth("signup"));
+if (logoutButton) logoutButton.addEventListener("click", logout);
 exampleButton.addEventListener("click", loadExample);
-upgradeButton.addEventListener("click", buyCredits);
+if (upgradeButton) upgradeButton.addEventListener("click", () => buyCredits("seller"));
+if (pricingGrid) {
+  pricingGrid.addEventListener("click", (event) => {
+    const button = event.target.closest(".pricing-buy");
+    if (!button) return;
+    buyCredits(button.dataset.packId);
+  });
+}
 tabNotes.addEventListener("click", () => activateTab("notes"));
 tabPhotos.addEventListener("click", () => activateTab("photos"));
 resendVerifyButton.addEventListener("click", resendVerification);
