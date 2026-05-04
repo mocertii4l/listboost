@@ -138,11 +138,35 @@ function formatPrice(pence) {
   return `GBP ${(Number(pence || 0) / 100).toFixed(2).replace(/\.00$/, "")}`;
 }
 
+function formatMonthlyPrice(plan) {
+  return `${formatPrice(plan.pricePence)}/month`;
+}
+
+function titleCasePlan(value) {
+  const text = String(value || "free").replace(/[-_]/g, " ");
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
+function formatDate(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric" }).format(date);
+}
+
 function fallbackCreditPacks() {
   return [
-    { id: "starter", name: "Starter", credits: 50, pricePence: 500, label: "Try it" },
+    { id: "starter", name: "Starter", credits: 50, pricePence: 500, label: "One-time" },
     { id: "seller", name: "Seller", credits: 150, pricePence: 1200, label: "Best value", featured: true },
-    { id: "reseller", name: "Reseller", credits: 400, pricePence: 2500, label: "Power seller" }
+    { id: "reseller", name: "Reseller", credits: 400, pricePence: 2500, label: "Bulk pack" }
+  ];
+}
+
+function fallbackSubscriptionPlans() {
+  return [
+    { id: "starter", name: "Starter", credits: 50, pricePence: 500, label: "Monthly starter" },
+    { id: "seller", name: "Seller", credits: 150, pricePence: 1200, label: "Best value", featured: true },
+    { id: "reseller", name: "Reseller", credits: 400, pricePence: 2500, label: "Bulk seller" }
   ];
 }
 
@@ -152,15 +176,24 @@ function getCreditPacks() {
     : fallbackCreditPacks();
 }
 
+function getSubscriptionPlans() {
+  return Array.isArray(accountState.subscriptionPlans) && accountState.subscriptionPlans.length
+    ? accountState.subscriptionPlans
+    : fallbackSubscriptionPlans();
+}
+
 function updateAccountChrome(me = accountState) {
   accountState = { ...accountState, ...me };
   const remaining = Number(accountState.credits?.remaining || 0);
+  const plan = accountState.subscription || accountState.user || {};
   $$(".js-email").forEach((node) => { node.textContent = accountState.user?.email || "Signed out"; });
   $$(".js-credits").forEach((node) => { node.textContent = `${remaining} credits remaining`; });
+  $$(".js-current-plan").forEach((node) => { node.textContent = plan.planName || titleCasePlan(plan.subscriptionPlan || plan.plan || "Free"); });
+  $$(".js-next-refill").forEach((node) => { node.textContent = plan.nextCreditRefill ? formatDate(plan.nextCreditRefill) : "No refill scheduled"; });
   $$(".low-credit-cta").forEach((node) => {
     const show = Boolean(accountState.user) && remaining < 10;
     node.classList.toggle("hidden", !show);
-    node.textContent = remaining <= 0 ? "Buy credits" : `Only ${remaining} credits left - top up`;
+    node.textContent = remaining <= 0 ? "Subscribe or buy credits" : `Only ${remaining} credits left - top up`;
     node.href = "/app/billing";
   });
   document.body.classList.toggle("signed-in", Boolean(accountState.user));
@@ -172,7 +205,9 @@ function updateCreditsFromResponse(data = {}) {
   updateAccountChrome({
     user: data.user || accountState.user,
     credits: data.credits || accountState.credits,
-    creditPacks: accountState.creditPacks
+    creditPacks: data.creditPacks || accountState.creditPacks,
+    subscriptionPlans: data.subscriptionPlans || accountState.subscriptionPlans,
+    subscription: data.subscription || accountState.subscription
   });
 }
 
@@ -194,17 +229,38 @@ function momentumMessage(count) {
 function renderPacks(packs) {
   const grid = $("#packGrid");
   if (!grid || !Array.isArray(packs)) return;
-  grid.innerHTML = packs.map((pack) => `
-    <article class="pricing-card ${pack.featured ? "is-featured featured" : ""}" id="${pack.id}">
-      <span class="badge">${pack.label}</span>
-      <h3>${pack.name}</h3>
-      <p class="pricing-price"><strong>${pack.credits}</strong><span>credits</span></p>
-      <p class="pricing-meta">${formatPrice(pack.pricePence)} one-time</p>
-      <p class="pricing-copy">${pack.description}</p>
-      <ul class="pricing-compare"><li>One credit per generated listing</li><li>Saved history and copy tools</li><li>Buyer replies and pricing guidance</li></ul>
-      <button class="pricing-buy" type="button" data-checkout-pack="${pack.id}">Buy ${pack.name}</button>
+  const creditCards = packs.map((pack) => `
+    <article class="pricing-card ${pack.featured ? "is-featured featured" : ""}" id="${escapeHtml(pack.id)}">
+      <span class="badge">${escapeHtml(pack.label || "One-time")}</span>
+      <h3>${escapeHtml(pack.name)}</h3>
+      <p class="pricing-price"><strong>${Number(pack.credits || 0)}</strong><span>credits</span></p>
+      <p class="pricing-meta">${escapeHtml(formatPrice(pack.pricePence))} one-time</p>
+      <p class="pricing-copy">${escapeHtml(pack.description || "Credits for listings, price guidance and buyer replies.")}</p>
+      <ul class="pricing-compare"><li>One credit per generated listing</li><li>Saved history and copy tools</li><li>Buyer replies and price guidance</li></ul>
+      <button class="pricing-buy" type="button" data-checkout-pack="${escapeHtml(pack.id)}" data-pack-id="${escapeHtml(pack.id)}">Buy ${escapeHtml(pack.name)}</button>
     </article>
   `).join("");
+  const subscriptionCards = getSubscriptionPlans().map((plan) => `
+    <article class="pricing-card subscription-card ${plan.featured ? "is-featured featured" : ""}" id="subscribe-${escapeHtml(plan.id)}">
+      <span class="badge">${escapeHtml(plan.featured ? "Recommended" : plan.label || "Monthly")}</span>
+      <h3>${escapeHtml(plan.name)}</h3>
+      <p class="pricing-price"><strong>${Number(plan.credits || 0)}</strong><span>credits/month</span></p>
+      <p class="pricing-meta">${escapeHtml(formatMonthlyPrice(plan))}</p>
+      <p class="pricing-copy">${escapeHtml(plan.description || "Fresh credits every month for consistent Vinted listing.")}</p>
+      <ul class="pricing-compare"><li>Monthly credit refill</li><li>Good for regular listing sessions</li><li>Cancel or switch plans from billing</li></ul>
+      <button class="pricing-buy" type="button" data-subscription-plan="${escapeHtml(plan.id)}">${plan.featured ? "Subscribe monthly" : `Subscribe ${escapeHtml(plan.name)}`}</button>
+    </article>
+  `).join("");
+  grid.innerHTML = `
+    <div class="pricing-mode-section">
+      <div class="section-head compact"><p class="eyebrow">Buy credits</p><h2>One-time packs</h2></div>
+      <div class="pricing-grid">${creditCards}</div>
+    </div>
+    <div class="pricing-mode-section recommended">
+      <div class="section-head compact"><p class="eyebrow">Subscribe monthly</p><h2>Recommended for active sellers</h2></div>
+      <div class="pricing-grid">${subscriptionCards}</div>
+    </div>
+  `;
 }
 
 async function bootstrap() {
@@ -301,11 +357,9 @@ function appRouteName() {
 
 const appFeatureTiles = [
   ["notes", "Notes", "Turn rough item notes into a complete listing.", "/app/notes"],
-  ["photo", "Photo", "Upload item photos and generate from visible details.", "/app/photo"],
-  ["score", "Score", "Check why an existing listing is not selling.", "/app/score"],
   ["replies", "Replies", "Write buyer replies for offers and questions.", "/app/replies"],
   ["history", "History", "Search and reopen saved listing packages.", "/app/history"],
-  ["billing", "Billing", "View credits, packs and recent transactions.", "/app/billing"]
+  ["billing", "Billing", "Manage credits, subscriptions and recent transactions.", "/app/billing"]
 ];
 
 function renderAppRoute() {
@@ -443,11 +497,20 @@ function historyRouteTemplate() {
 function billingRouteTemplate() {
   return `
     <section data-route="billing">
-      ${routeHeader("Billing", "Credits and transactions", "View your balance, buy more credits and audit recent credit changes.")}
-      <div class="dashboard-grid route-grid">
-        <article class="card balance-card"><span class="badge">Balance</span><h2 class="js-credits">Loading credits</h2><p class="muted">Buy more when your balance drops below 10.</p></article>
-        <article class="card"><h3>Credit packs</h3><div class="billing-packs" id="billingPacks"><div class="skeleton">Loading packs...</div></div></article>
-        <article class="card"><h3>Recent transactions</h3><div id="billingTransactions"><div class="skeleton">Loading transactions...</div></div></article>
+      ${routeHeader("Billing", "Plan and credits", "Manage monthly credits, one-time packs and recent credit activity.")}
+      <div class="billing-overview">
+        <article class="card balance-card"><span class="badge">Current plan</span><h2 class="js-current-plan">Free</h2><p class="muted">Status and plan changes update after Stripe confirms them.</p></article>
+        <article class="card balance-card"><span class="badge">Credits remaining</span><h2 class="js-credits">Loading credits</h2><p class="muted">One credit creates one listing package or buyer reply.</p></article>
+        <article class="card balance-card"><span class="badge">Next refill</span><h2 class="js-next-refill">No refill scheduled</h2><p class="muted">Monthly plans refill on renewal.</p></article>
+      </div>
+      <div class="billing-toggle" role="tablist" aria-label="Billing options">
+        <button class="is-active" type="button" data-billing-view="credits">Buy credits</button>
+        <button type="button" data-billing-view="subscriptions">Subscribe monthly</button>
+      </div>
+      <div class="dashboard-grid route-grid billing-grid">
+        <article class="card billing-panel" data-billing-panel="credits"><h3>One-time packs</h3><div class="billing-packs" id="billingPacks"><div class="skeleton">Loading packs...</div></div></article>
+        <article class="card billing-panel hidden" data-billing-panel="subscriptions"><h3>Monthly plans</h3><div class="billing-packs" id="billingSubscriptions"><div class="skeleton">Loading plans...</div></div></article>
+        <article class="card"><h3>Recent credit activity</h3><div id="billingTransactions"><div class="skeleton">Loading transactions...</div></div></article>
       </div>
     </section>
   `;
@@ -742,7 +805,7 @@ function outputTemplate(data = {}, options = {}) {
   const reply = buyerReplyText(data);
   const allCopy = listingCopyText({ ...data, photoChecklist: photoItems });
   const creditNote = options.creditUsed ? `<p class="credit-feedback">${options.creditUsed} credit used</p>` : "";
-  const demoCta = options.demo ? '<a class="button primary result-cta" href="/signup">Create free account to generate your own listings</a>' : "";
+  const demoCta = options.demo ? '<a class="button primary result-cta" href="/signup">Create free account and get 5 free credits</a>' : "";
   const inputText = options.inputText || data.input?.itemDetails || "";
   const momentumNote = options.momentumCount ? `<p class="momentum-feedback">${escapeHtml(momentumMessage(options.momentumCount))}</p>` : "";
 
@@ -818,7 +881,9 @@ function installCopyFeedback() {
 function showPaywallModal() {
   $(".paywall-backdrop")?.remove();
   const packs = getCreditPacks();
+  const plans = getSubscriptionPlans();
   const createdCount = Number(accountState.credits?.used || 0);
+  const featuredPlan = plans.find((plan) => plan.featured) || plans[0];
   document.body.insertAdjacentHTML("beforeend", `
     <div class="paywall-backdrop" role="presentation">
       <section class="paywall-modal" role="dialog" aria-modal="true" aria-labelledby="paywallTitle">
@@ -826,11 +891,19 @@ function showPaywallModal() {
         <p class="badge">Credits</p>
         <h2 id="paywallTitle">You're out of credits</h2>
         <p class="paywall-proof">You've created ${createdCount} ${createdCount === 1 ? "listing" : "listings"} already.</p>
-        <p class="muted">Most sellers upgrade to keep listing faster.</p>
+        <p class="muted">Most sellers subscribe to keep listing faster</p>
+        ${featuredPlan ? `
+          <article class="paywall-pack is-featured is-dominant subscription-paywall">
+            <span>Recommended monthly</span>
+            <strong>${escapeHtml(featuredPlan.name)} - ${Number(featuredPlan.credits || 0)} credits/month</strong>
+            <p>${escapeHtml(formatMonthlyPrice(featuredPlan))}</p>
+            <button type="button" class="pricing-buy" data-subscription-plan="${escapeHtml(featuredPlan.id)}">Subscribe monthly</button>
+          </article>
+        ` : ""}
         <div class="paywall-packs">
           ${packs.map((pack) => `
-            <article class="paywall-pack ${pack.featured || Number(pack.credits) === 150 ? "is-featured is-dominant" : ""}">
-              <span>${escapeHtml(Number(pack.credits) === 150 ? "Best value" : pack.label || "")}</span>
+            <article class="paywall-pack ${pack.featured || Number(pack.credits) === 150 ? "is-featured" : ""}">
+              <span>${escapeHtml(Number(pack.credits) === 150 ? "Best one-time pack" : pack.label || "")}</span>
               <strong>${Number(pack.credits || 0)} credits</strong>
               <p>${escapeHtml(formatPrice(pack.pricePence))}</p>
               <button type="button" class="pricing-buy" data-checkout-pack="${escapeHtml(pack.id)}">Buy credits</button>
@@ -1044,15 +1117,18 @@ async function loadAppHistory(page = 1) {
 
 async function loadBilling(me = accountState) {
   const packs = $("#billingPacks");
+  const subscriptions = $("#billingSubscriptions");
   const transactions = $("#billingTransactions");
-  if (!packs || !transactions) return;
+  if (!packs || !subscriptions || !transactions) return;
   if (!me.user) {
     packs.innerHTML = '<div class="empty-state">Sign in to buy credits.</div>';
+    subscriptions.innerHTML = '<div class="empty-state">Sign in to subscribe monthly.</div>';
     transactions.innerHTML = '<div class="empty-state">Transactions appear after your first credit purchase.</div>';
     return;
   }
   try {
     const data = await api("/api/billing");
+    updateCreditsFromResponse(data);
     packs.innerHTML = (data.creditPacks || []).map((pack) => `
       <div class="billing-pack ${pack.featured ? "is-featured" : ""}">
         <strong>${escapeHtml(pack.name)}</strong>
@@ -1060,8 +1136,21 @@ async function loadBilling(me = accountState) {
         <button type="button" class="pricing-buy" data-checkout-pack="${escapeHtml(pack.id)}">Buy ${escapeHtml(pack.name)}</button>
       </div>
     `).join("");
+    const currentPlan = data.subscription?.plan || data.user?.subscriptionPlan || "free";
+    const currentStatus = data.subscription?.status || data.user?.subscriptionStatus || "inactive";
+    subscriptions.innerHTML = (data.subscriptionPlans || []).map((plan) => {
+      const isCurrent = currentPlan === plan.id && ["active", "trialing", "past_due"].includes(String(currentStatus).toLowerCase());
+      return `
+        <div class="billing-pack subscription-pack ${plan.featured ? "is-featured" : ""}">
+          <strong>${escapeHtml(plan.name)} ${plan.featured ? '<span class="mini-badge">Best value</span>' : ""}</strong>
+          <span>${Number(plan.credits || 0)} credits/month - ${escapeHtml(formatMonthlyPrice(plan))}</span>
+          <button type="button" class="pricing-buy" data-subscription-plan="${escapeHtml(plan.id)}" ${isCurrent ? "disabled" : ""}>${isCurrent ? "Current plan" : currentPlan === "free" ? "Subscribe" : "Switch plan"}</button>
+        </div>
+      `;
+    }).join("");
     const rows = [
       ...(data.payments || []).map((item) => ({ label: `Payment ${item.reference}`, amount: `+${item.credits} credits`, date: item.createdAt })),
+      ...(data.refills || []).map((item) => ({ label: `Subscription ${titleCasePlan(item.plan)} refill`, amount: `+${item.credits} credits`, date: item.createdAt })),
       ...(data.audit || []).map((item) => ({ label: item.reason, amount: `${item.delta > 0 ? "+" : ""}${item.delta}`, date: item.createdAt }))
     ].slice(0, 20);
     transactions.innerHTML = rows.length ? `
@@ -1078,6 +1167,45 @@ function installCheckoutButtons() {
   document.addEventListener("click", async (event) => {
     if (event.target.closest("[data-close-paywall]") || event.target.classList.contains("paywall-backdrop")) {
       $(".paywall-backdrop")?.remove();
+      return;
+    }
+    const billingView = event.target.closest("[data-billing-view]");
+    if (billingView) {
+      const view = billingView.dataset.billingView;
+      $$("[data-billing-view]").forEach((button) => button.classList.toggle("is-active", button === billingView));
+      $$("[data-billing-panel]").forEach((panel) => panel.classList.toggle("hidden", panel.dataset.billingPanel !== view));
+      return;
+    }
+    const subscriptionButton = event.target.closest("[data-subscription-plan]");
+    if (subscriptionButton) {
+      if (!accountState.user) {
+        location.href = `/signup?next=${encodeURIComponent("/app/billing")}`;
+        return;
+      }
+      subscriptionButton.disabled = true;
+      const original = subscriptionButton.textContent;
+      subscriptionButton.textContent = "Opening checkout...";
+      try {
+        const data = await api("/api/create-subscription-checkout-session", {
+          method: "POST",
+          body: JSON.stringify({ planId: subscriptionButton.dataset.subscriptionPlan })
+        });
+        if (data.url) {
+          location.href = data.url;
+          return;
+        }
+        updateCreditsFromResponse(data);
+        toast(data.unchanged ? "You're already on this plan." : "Subscription plan updated.", "success");
+        loadBilling(accountState);
+      } catch (error) {
+        toast(error.message, "error");
+        if (error.authUrl) {
+          location.href = error.authUrl;
+          return;
+        }
+        subscriptionButton.disabled = false;
+        subscriptionButton.textContent = original;
+      }
       return;
     }
     const button = event.target.closest("[data-checkout-pack]");
