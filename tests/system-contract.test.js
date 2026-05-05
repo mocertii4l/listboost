@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import test from "node:test";
 import assert from "node:assert/strict";
 
@@ -13,6 +13,11 @@ const authUtilsJs = readFileSync(new URL("../public/auth-utils.js", import.meta.
 const indexHtml = readFileSync(new URL("../public/index.html", import.meta.url), "utf8");
 const privacyHtml = readFileSync(new URL("../public/privacy.html", import.meta.url), "utf8");
 const termsHtml = readFileSync(new URL("../public/terms.html", import.meta.url), "utf8");
+const verifyHtml = readFileSync(new URL("../public/verify-email.html", import.meta.url), "utf8");
+const notFoundHtml = readFileSync(new URL("../public/404.html", import.meta.url), "utf8");
+const publicFiles = readdirSync(new URL("../public", import.meta.url), { withFileTypes: true })
+  .filter((entry) => entry.isFile() && /\.(html|js|css)$/.test(entry.name))
+  .map((entry) => [entry.name, readFileSync(new URL(`../public/${entry.name}`, import.meta.url), "utf8")]);
 
 test("canonical domain and checkout routes are present", () => {
   assert.match(serverJs, /listboost\.uk/);
@@ -23,7 +28,7 @@ test("canonical domain and checkout routes are present", () => {
 });
 
 test("new app surfaces include required modules", () => {
-  for (const path of ["/app/notes", "/app/photo", "/app/score", "/app/replies", "/app/history", "/app/billing"]) {
+  for (const path of ["/app/notes", "/app/photo", "/app/score", "/app/replies", "/app/history", "/app/billing", "/app/account"]) {
     assert.match(serverJs, new RegExp(path.replace(/\//g, "\\/")));
   }
   assert.match(appHtml, /id="appRoute"/);
@@ -133,21 +138,69 @@ test("password toggles and public header states are wired", () => {
   assert.match(siteJs, /Log out/);
 });
 
-test("auth routes get correct labels and shared public shell", () => {
+test("auth routes get correct labels and required signup name field", () => {
   assert.match(authHtml, /<h1 id="authHeading">Sign in<\/h1>/);
-  assert.match(authHtml, /<button class="button primary" type="submit">Sign in<\/button>/);
+  assert.match(authHtml, /<label class="signup-name-field hidden">Full name<input name="name" type="text" autocomplete="name" maxlength="80"/);
+  assert.match(authHtml, /<button class="btn btn-primary" type="submit">Sign in<\/button>/);
   assert.match(siteJs, /location\.pathname === "\/signup"/);
   assert.match(siteJs, /heading\) heading\.textContent = isSignup \? "Create account" : "Sign in"/);
-  for (const route of ["/signup", "/login", "/verify-email", "/forgot-password", "/reset-password"]) {
-    assert.match(siteJs, new RegExp(route.replace(/\//g, "\\/")));
+  assert.match(siteJs, /validateFullName/);
+  assert.match(serverJs, /validateName/);
+  assert.match(serverJs, /INSERT INTO users \(id, email, name, password_hash/);
+});
+
+test("verification and account settings are first-class app flows", () => {
+  assert.match(verifyHtml, /Check your email to verify your account/);
+  assert.match(verifyHtml, /class="js-email"/);
+  assert.match(verifyHtml, /id="resendVerification"/);
+  assert.match(verifyHtml, /Wrong email\? Sign out/);
+  assert.match(serverJs, /\/api\/resend-verification/);
+  assert.match(serverJs, /resend-verification:\$\{sessionToken\}/);
+  assert.match(serverJs, /windowMs: 60_000/);
+  assert.match(serverJs, /location: `\/verify-email\?next=/);
+  assert.match(siteJs, /Email verified - welcome/);
+  assert.match(siteJs, /function accountRouteTemplate/);
+  assert.match(siteJs, /\/api\/account\/profile/);
+  assert.match(siteJs, /\/api\/account\/password/);
+});
+
+test("photo upload supports mobile camera and premium output", () => {
+  assert.match(siteJs, /capture="environment"/);
+  assert.match(siteJs, /accept="image\/\*"/);
+  assert.match(siteJs, /Photo Listing/);
+  assert.match(siteJs, /Mobile cameras are supported/);
+  assert.match(serverJs, /\/api\/generate-from-photos/);
+});
+
+test("button system has no legacy button aliases", () => {
+  for (const [name, content] of publicFiles) {
+    assert.doesNotMatch(content, /class="button/);
+    assert.doesNotMatch(content, /\.button/);
+    assert.doesNotMatch(content, /button primary|button secondary|button ghost|button danger/);
   }
+  assert.match(stylesCss, /\.btn-primary/);
+  assert.match(stylesCss, /\.btn-secondary/);
+});
+
+test("copy buttons use the shared toast confirmation", () => {
+  assert.match(siteJs, /data-copy/);
+  assert.match(siteJs, /toastRegion/);
+  assert.match(siteJs, /Copied to clipboard/);
+  assert.match(siteJs, /setTimeout\(\(\) =>/);
+});
+
+test("404 page renders with the site shell", () => {
+  assert.match(notFoundHtml, /Page not found/);
+  assert.match(notFoundHtml, /class="auth-shell"/);
+  assert.match(notFoundHtml, /class="card auth-card"/);
+  assert.match(notFoundHtml, /class="btn btn-primary"/);
 });
 
 test("dark mode contrast keeps app credits readable", () => {
-  assert.match(stylesCss, /:root\[data-theme="dark"\][\s\S]*--color-fg: #f4fffc/);
+  assert.match(stylesCss, /:root\[data-theme="dark"\][\s\S]*--text: #f4fffc/);
   assert.match(stylesCss, /:root\[data-theme="dark"\] \.balance-card h2/);
   assert.match(stylesCss, /:root\[data-theme="dark"\] \.js-credits/);
-  assert.match(stylesCss, /color: var\(--color-fg\)/);
+  assert.match(stylesCss, /color: var\(--text\)/);
 });
 
 test("pricing page renders three buyable packs", () => {

@@ -148,7 +148,7 @@ test("checkout creates a Stripe URL for a valid pack and rejects invalid packs",
 
   const signup = await request(port, "/api/signup", {
     method: "POST",
-    body: JSON.stringify({ email: "buyer@example.com", password: "password123" })
+    body: JSON.stringify({ name: "Buyer Example", email: "buyer@example.com", password: "password123" })
   });
   assert.ok([200, 201].includes(signup.response.status));
   const cookie = signup.response.headers.get("set-cookie");
@@ -185,7 +185,7 @@ test("subscription checkout starts monthly billing and webhook grants refill cre
 
   const signup = await request(port, "/api/signup", {
     method: "POST",
-    body: JSON.stringify({ email: "subscriber@example.com", password: "password123" })
+    body: JSON.stringify({ name: "Subscriber Example", email: "subscriber@example.com", password: "password123" })
   });
   assert.equal(signup.response.status, 200);
   const cookie = signup.response.headers.get("set-cookie");
@@ -271,7 +271,7 @@ test("generation consumes credits and returns a paywall response at zero", async
   try {
     const signup = await request(port, "/api/signup", {
       method: "POST",
-      body: JSON.stringify({ email: "credit-use@example.com", password: "password123" })
+      body: JSON.stringify({ name: "Credit User", email: "credit-use@example.com", password: "password123" })
     });
     assert.equal(signup.response.status, 200);
     const cookie = signup.response.headers.get("set-cookie");
@@ -335,7 +335,7 @@ test("forgot and reset password flow is token based and single use", async () =>
   const port = await listen();
   const signup = await request(port, "/api/signup", {
     method: "POST",
-    body: JSON.stringify({ email: "reset@example.com", password: "oldpass123" })
+    body: JSON.stringify({ name: "Reset Example", email: "reset@example.com", password: "oldpass123" })
   });
   assert.equal(signup.response.status, 200);
   const userId = signup.body.user.id;
