@@ -71,6 +71,7 @@ function iconSvg(name) {
     image: '<rect width="18" height="18" x="3" y="3" rx="2"></rect><circle cx="9" cy="9" r="2"></circle><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"></path>',
     "image-up": '<rect width="18" height="18" x="3" y="3" rx="2"></rect><circle cx="9" cy="9" r="2"></circle><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"></path><path d="M12 12v6"></path><path d="m9 15 3-3 3 3"></path>',
     "list-check": '<path d="m3 17 2 2 4-4"></path><path d="M13 6h8"></path><path d="M13 12h8"></path><path d="M13 18h8"></path><path d="m3 7 2 2 4-4"></path>',
+    "log-out": '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><path d="M16 17l5-5-5-5"></path><path d="M21 12H9"></path>',
     lock: '<rect width="18" height="11" x="3" y="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path>',
     mail: '<rect width="20" height="16" x="2" y="4" rx="2"></rect><path d="m22 7-10 6L2 7"></path>',
     menu: '<path d="M4 6h16"></path><path d="M4 12h16"></path><path d="M4 18h16"></path>',
@@ -252,7 +253,7 @@ function hydrateIconPlaceholders(root = document) {
 }
 
 function publicHeaderTemplate() {
-  // Public marketing header intentionally omits account chrome: js-email and Log out stay app-only.
+  // Public marketing stays anonymous in layout, but the actions reflect session state.
   return `
     <a class="lb-brand" href="/"><img src="/logo.svg" alt="" />ListBoost</a>
     <button class="nav-toggle btn btn-ghost btn-icon" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="publicNav">${iconSvg("menu")}</button>
@@ -263,8 +264,10 @@ function publicHeaderTemplate() {
     </nav>
     <div class="nav-actions">
       <button class="theme-toggle btn btn-ghost" type="button" aria-pressed="false">${iconSvg("moon")}<span>Dark</span></button>
-      <a class="btn btn-ghost nav-login" href="/login">Log in</a>
-      <a class="btn btn-primary nav-start" href="/signup" aria-label="Start free with 5 credits">Start with 5 free credits</a>
+      <a class="btn btn-ghost nav-login js-public-login" href="/login">Log in</a>
+      <a class="btn btn-primary nav-start js-public-start" href="/signup" aria-label="Start free with 5 credits">Start with 5 free credits</a>
+      <a class="btn btn-secondary js-public-app hidden" href="/app">${iconSvg("user")}<span>Open app</span></a>
+      <button class="btn btn-ghost js-public-logout hidden" type="button" data-logout>${iconSvg("log-out")}<span>Sign out</span></button>
     </div>
   `;
 }
@@ -392,8 +395,11 @@ function updateAccountChrome(me = accountState) {
     node.textContent = remaining <= 0 ? "Subscribe or buy credits" : `${remaining} credits - Top up`;
     node.href = "/app/billing";
   });
-  document.body.classList.toggle("signed-in", Boolean(accountState.user));
-  document.body.classList.toggle("signed-out", !accountState.user);
+  const signedIn = Boolean(accountState.user);
+  $$(".js-public-login, .js-public-start").forEach((node) => { node.classList.toggle("hidden", signedIn); });
+  $$(".js-public-app, .js-public-logout").forEach((node) => { node.classList.toggle("hidden", !signedIn); });
+  document.body.classList.toggle("signed-in", signedIn);
+  document.body.classList.toggle("signed-out", !signedIn);
 }
 
 function updateCreditsFromResponse(data = {}) {
@@ -826,6 +832,11 @@ function accountRouteTemplate() {
             <label>New password<input name="newPassword" type="password" autocomplete="new-password" minlength="8" required /><p class="field-error" aria-live="polite"></p></label>
             ${buttonTemplate({ variant: "secondary", label: "Update password", icon: "lock", type: "submit" })}
           </form>
+        </section>
+        <section class="card account-panel">
+          <div class="section-head compact"><p class="eyebrow">Session</p><h2>Signed in on this device</h2></div>
+          <p class="muted">Use this when you are finished or need to switch to another ListBoost account.</p>
+          ${buttonTemplate({ variant: "ghost", label: "Sign out", icon: "log-out", attributes: { "data-logout": true } })}
         </section>
       </div>
     </section>

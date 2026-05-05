@@ -135,7 +135,8 @@ test("password toggles and public header states are wired", () => {
   assert.match(siteJs, /Log in/);
   assert.match(siteJs, /Start free/);
   assert.match(siteJs, /js-email/);
-  assert.match(siteJs, /Log out/);
+  assert.match(siteJs, /Sign out/);
+  assert.match(siteJs, /js-public-logout/);
 });
 
 test("auth routes get correct labels and required signup name field", () => {
