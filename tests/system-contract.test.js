@@ -354,14 +354,49 @@ test("Seller card remains the featured / best-value plan", () => {
   }
 });
 
+test("pricing card layout keeps bullets compact and buttons pinned to the bottom", () => {
+  // The card itself uses flex-column (so margin-top: auto on .pricing-buy works).
+  assert.match(stylesCss, /\.pricing-card\s*\{[^}]*display:\s*flex/);
+  assert.match(stylesCss, /\.pricing-card\s*\{[^}]*flex-direction:\s*column/);
+  // The compare list absorbs vertical space (so cards stay equal height) but its inner
+  // rows must NOT stretch — align-content: start packs them at the top.
+  assert.match(stylesCss, /\.pricing-card \.pricing-compare\s*\{[^}]*flex:\s*1\s+1\s+auto/);
+  assert.match(stylesCss, /\.pricing-card \.pricing-compare\s*\{[^}]*align-content:\s*start/);
+  // Grid must fix row heights to content so 3-bullet cards don't grow gaps to match a 10-bullet card.
+  assert.match(stylesCss, /\.pricing-compare\s*\{[^}]*grid-auto-rows:\s*max-content/);
+  // The buy button uses margin-top: auto to pin to the bottom edge.
+  assert.match(stylesCss, /\.pricing-buy\s*\{[^}]*margin-top:\s*auto/);
+});
+
+test("public UI never shows old launch prices, old limits, or unlimited claims", () => {
+  for (const html of [indexHtml, pricingHtml]) {
+    assert.doesNotMatch(html, /&pound;5\/month\b/);
+    assert.doesNotMatch(html, /&pound;12\/month\b/);
+    assert.doesNotMatch(html, /&pound;25\/month\b/);
+    assert.doesNotMatch(html, /\b100 listings\/month\b/);
+    assert.doesNotMatch(html, /Unlimited listings/i);
+  }
+  // site.js JS-rendered fallbacks and feature lists must not echo old values.
+  assert.doesNotMatch(siteJs, /pricePence:\s*500\b/);
+  assert.doesNotMatch(siteJs, /pricePence:\s*1200\b/);
+  assert.doesNotMatch(siteJs, /pricePence:\s*2500\b/);
+  assert.doesNotMatch(siteJs, /monthlyLimit:\s*100\b/);
+  assert.doesNotMatch(siteJs, /unlimited:\s*true/);
+  assert.doesNotMatch(siteJs, /"Unlimited listings"/);
+});
+
 test("homepage pricing teaser matches the new feature lists", () => {
   const sellerBlock = indexHtml.match(/id="subscribe-seller"[\s\S]*?<\/article>/)[0];
-  assert.match(sellerBlock, /100 listings per month/);
+  assert.match(sellerBlock, /75 listings per month/);
   assert.match(sellerBlock, /Photo upload listing generator/);
   assert.match(sellerBlock, /Listing score checker/);
+  assert.match(sellerBlock, /&pound;14\.99\/month/);
   const eliteBlock = indexHtml.match(/id="subscribe-reseller"[\s\S]*?<\/article>/)[0];
   assert.match(eliteBlock, /<h3>Elite<\/h3>/);
+  assert.match(eliteBlock, /250 listings per month/);
+  assert.match(eliteBlock, /&pound;29\.99\/month/);
   assert.match(eliteBlock, /Reusable listing templates \(coming soon\)/);
+  assert.doesNotMatch(eliteBlock, /Unlimited/);
 });
 
 test("plan id 'reseller' stays stable internally even though display says Elite", () => {
@@ -375,12 +410,13 @@ test("plan id 'reseller' stays stable internally even though display says Elite"
 });
 
 test("billing route benefits list matches the per-plan public spec", () => {
-  // Starter
-  assert.match(siteJs, /starter:\s*\[\s*"Notes-to-listing generator"[\s\S]*?"Titles, descriptions and keywords"[\s\S]*?"20 listings per month"/);
-  // Seller (the 6 features)
-  assert.match(siteJs, /seller:\s*\[\s*"Everything in Starter"[\s\S]*?"100 listings per month"[\s\S]*?"Photo upload listing generator"[\s\S]*?"Price guidance"[\s\S]*?"Buyer reply generator"[\s\S]*?"Listing score checker"/);
-  // Elite (>=10 with honest templates copy)
-  assert.match(siteJs, /reseller:\s*\[[\s\S]*?"Unlimited listings"[\s\S]*?"Reusable listing templates \(coming soon\)"[\s\S]*?"Early access to new selling tools"/);
+  // Starter — 20/month + 3 spec features
+  assert.match(siteJs, /starter:\s*\[\s*"20 listings per month"[\s\S]*?"Notes-to-listing generator"[\s\S]*?"Titles, descriptions and keywords"/);
+  // Seller — 75/month + 6 spec features
+  assert.match(siteJs, /seller:\s*\[\s*"75 listings per month"[\s\S]*?"Everything in Starter"[\s\S]*?"Photo upload listing generator"[\s\S]*?"Price guidance"[\s\S]*?"Buyer reply generator"[\s\S]*?"Listing score checker"/);
+  // Elite — 250/month + honest templates copy + priority support; no unlimited claim
+  assert.match(siteJs, /reseller:\s*\[\s*"250 listings per month"[\s\S]*?"Reusable listing templates \(coming soon\)"[\s\S]*?"Priority support"[\s\S]*?"Early access to new selling tools"/);
+  assert.doesNotMatch(siteJs, /"Unlimited listings"/);
 });
 
 test("generation UI shows progress messages, speed copy and a busy button", () => {
@@ -440,7 +476,7 @@ test("dark mode contrast keeps app usage readable", () => {
   assert.match(stylesCss, /color: var\(--text\)/);
 });
 
-test("pricing page renders Starter / Seller / Elite subscription tiers", () => {
+test("pricing page renders Starter / Seller / Elite subscription tiers with launch pricing", () => {
   for (const plan of ["starter", "seller", "reseller"]) {
     assert.match(pricingHtml, new RegExp(`id="subscribe-${plan}"`));
     assert.match(pricingHtml, new RegExp(`data-subscription-plan="${plan}"`));
@@ -448,39 +484,50 @@ test("pricing page renders Starter / Seller / Elite subscription tiers", () => {
   assert.doesNotMatch(pricingHtml, /data-checkout-pack/);
   assert.doesNotMatch(pricingHtml, /one-time/);
   assert.match(pricingHtml, /Best value/);
-  assert.match(pricingHtml, /&pound;5\/month/);
-  assert.match(pricingHtml, /&pound;12\/month/);
-  assert.match(pricingHtml, /&pound;25\/month/);
+  // New launch prices.
+  assert.match(pricingHtml, /&pound;6\.99\/month/);
+  assert.match(pricingHtml, /&pound;14\.99\/month/);
+  assert.match(pricingHtml, /&pound;29\.99\/month/);
+  // Old prices and unlimited wording must NOT appear in public HTML.
+  assert.doesNotMatch(pricingHtml, /&pound;5\/month/);
+  assert.doesNotMatch(pricingHtml, /&pound;12\/month/);
+  assert.doesNotMatch(pricingHtml, /&pound;25\/month/);
+  assert.doesNotMatch(pricingHtml, /100 listings\/month/);
+  assert.doesNotMatch(pricingHtml, /Unlimited listings/);
+  assert.doesNotMatch(pricingHtml, /<strong>Unlimited<\/strong>/);
   // Plan labels
   assert.match(pricingHtml, /<h3>Starter<\/h3>/);
   assert.match(pricingHtml, /<h3>Seller<\/h3>/);
   assert.match(pricingHtml, /<h3>Elite<\/h3>/);
   assert.match(pricingHtml, /Subscribe Elite/);
   assert.doesNotMatch(pricingHtml, /Subscribe Reseller/);
+  assert.doesNotMatch(pricingHtml, /<h3>Reseller<\/h3>/);
 
   // Starter must show exactly the 3 features from spec.
   const starterBlock = pricingHtml.match(/id="subscribe-starter"[\s\S]*?<\/article>/)[0];
+  assert.match(starterBlock, /20 listings per month/);
   assert.match(starterBlock, /Notes-to-listing generator/);
   assert.match(starterBlock, /Titles, descriptions and keywords/);
-  assert.match(starterBlock, /20 listings per month/);
 
-  // Seller must show all 6 spec features.
+  // Seller must show 75/month + the 6 spec features.
   const sellerBlock = pricingHtml.match(/id="subscribe-seller"[\s\S]*?<\/article>/)[0];
+  assert.match(sellerBlock, /75 listings per month/);
   assert.match(sellerBlock, /Everything in Starter/);
-  assert.match(sellerBlock, /100 listings per month/);
   assert.match(sellerBlock, /Photo upload listing generator/);
   assert.match(sellerBlock, /Price guidance/);
   assert.match(sellerBlock, /Buyer reply generator/);
   assert.match(sellerBlock, /Listing score checker/);
+  assert.doesNotMatch(sellerBlock, /100 listings/);
 
-  // Elite must list ten or more bullets.
+  // Elite must show 250/month + 10+ bullets, and never claim unlimited.
   const eliteBlock = pricingHtml.match(/id="subscribe-reseller"[\s\S]*?<\/article>/)[0];
   const eliteBullets = (eliteBlock.match(/<li>/g) || []).length;
   assert.equal(eliteBullets >= 10, true, `Elite should list 10+ bullets, found ${eliteBullets}`);
-  // Elite features must be honestly phrased (templates are coming-soon).
+  assert.match(eliteBlock, /250 listings per month/);
   assert.match(eliteBlock, /Reusable listing templates \(coming soon\)/);
-  assert.match(eliteBlock, /Unlimited listings/);
   assert.match(eliteBlock, /Best for daily sellers/);
+  assert.match(eliteBlock, /Priority support/);
+  assert.doesNotMatch(eliteBlock, /Unlimited/);
 });
 
 test("example demo uses anonymous live generation endpoint", () => {

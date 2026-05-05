@@ -220,12 +220,16 @@ const FREE_PLAN = {
 };
 
 function buildSubscriptionPlans() {
+  // NOTE: backend plan ids stay stable as starter/seller/reseller (used in Stripe metadata,
+  // session.metadata.planId, webhooks, and the subscription_plan column). The "reseller" id
+  // is presented to users as "Elite" via publicPlanName() in public/site.js. Server-side
+  // pricing here is the source of truth — frontend cannot override it.
   const fallback = [
     {
       id: "starter",
       name: "Starter",
       monthlyLimit: 20,
-      pricePence: 500,
+      pricePence: 699,
       label: "Monthly starter",
       description: "For casual sellers who need the core notes-to-listing generator.",
       priceEnv: "STRIPE_PRICE_STARTER_MONTHLY"
@@ -233,20 +237,20 @@ function buildSubscriptionPlans() {
     {
       id: "seller",
       name: "Seller",
-      monthlyLimit: 100,
-      pricePence: 1200,
+      monthlyLimit: 75,
+      pricePence: 1499,
       label: "Best value",
-      description: "For weekly sellers who want photos, buyer replies, price guidance and listing scores.",
+      description: "For regular sellers who want photos, buyer replies, price guidance and listing scores.",
       featured: true,
       priceEnv: "STRIPE_PRICE_SELLER_MONTHLY"
     },
     {
       id: "reseller",
-      name: "Reseller",
-      monthlyLimit: null,
-      pricePence: 2500,
-      label: "Reseller tools",
-      description: "Unlimited listings, bulk-friendly workflow, reusable templates and priority support.",
+      name: "Elite",
+      monthlyLimit: 250,
+      pricePence: 2999,
+      label: "Elite tools",
+      description: "For serious resellers running larger volumes with priority support.",
       priceEnv: "STRIPE_PRICE_RESELLER_MONTHLY"
     }
   ];

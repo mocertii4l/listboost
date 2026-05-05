@@ -1035,7 +1035,12 @@ select[aria-invalid="true"] {
 }
 
 .pricing-card .pricing-compare {
+  /* Keep the bullets as a compact block but let the ul absorb extra height so that
+     all cards are equal-height with the buy button pinned to the bottom. The inner
+     items must NOT stretch — use align-content: start to pack rows at the top. */
   flex: 1 1 auto;
+  align-content: start;
+  align-self: stretch;
 }
 
 .pricing-card.is-featured,
@@ -1135,6 +1140,7 @@ select[aria-invalid="true"] {
 
 .pricing-compare {
   display: grid;
+  grid-auto-rows: max-content;
   gap: var(--space-2);
   margin: 0;
   padding: 0;
@@ -1145,8 +1151,8 @@ select[aria-invalid="true"] {
   position: relative;
   padding-left: calc(var(--space-6) + var(--space-1));
   color: var(--text);
-  font-size: 15px;
-  line-height: 1.5;
+  font-size: 14px;
+  line-height: 1.45;
 }
 
 .pricing-compare li::before {

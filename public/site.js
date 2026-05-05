@@ -215,27 +215,27 @@ function pricingCardTemplate({ id = "", name = "", monthlyLimit = null, unlimite
 function pricingFeaturesFor(id = "") {
   const features = {
     starter: [
+      "20 listings per month",
       "Notes-to-listing generator",
-      "Titles, descriptions and keywords",
-      "20 listings per month"
+      "Titles, descriptions and keywords"
     ],
     seller: [
+      "75 listings per month",
       "Everything in Starter",
-      "100 listings per month",
       "Photo upload listing generator",
       "Price guidance",
       "Buyer reply generator",
       "Listing score checker"
     ],
     reseller: [
+      "250 listings per month",
       "Everything in Seller",
-      "Unlimited listings",
-      "Built for high-volume sellers",
-      "Reusable listing templates (coming soon)",
+      "Built for serious resellers",
       "Advanced photo checklist",
       "More detailed price guidance",
       "Listing history",
-      "Faster support",
+      "Reusable listing templates (coming soon)",
+      "Priority support",
       "Best for daily sellers",
       "Early access to new selling tools"
     ]
@@ -478,9 +478,9 @@ function formatDate(value) {
 
 function fallbackSubscriptionPlans() {
   return [
-    { id: "starter", name: "Starter", monthlyLimit: 20, pricePence: 500, label: "Monthly starter" },
-    { id: "seller", name: "Seller", monthlyLimit: 100, pricePence: 1200, label: "Best value", featured: true },
-    { id: "reseller", name: "Reseller", monthlyLimit: null, unlimited: true, pricePence: 2500, label: "Reseller tools" }
+    { id: "starter", name: "Starter", monthlyLimit: 20, pricePence: 699, label: "Monthly starter" },
+    { id: "seller", name: "Seller", monthlyLimit: 75, pricePence: 1499, label: "Best value", featured: true },
+    { id: "reseller", name: "Elite", monthlyLimit: 250, pricePence: 2999, label: "Elite tools" }
   ];
 }
 
@@ -1950,27 +1950,27 @@ function planBenefitsFor(planId) {
       "Subscribe to keep going past the free trial"
     ],
     starter: [
+      "20 listings per month",
       "Notes-to-listing generator",
-      "Titles, descriptions and keywords",
-      "20 listings per month"
+      "Titles, descriptions and keywords"
     ],
     seller: [
+      "75 listings per month",
       "Everything in Starter",
-      "100 listings per month",
       "Photo upload listing generator",
       "Price guidance",
       "Buyer reply generator",
       "Listing score checker"
     ],
     reseller: [
+      "250 listings per month",
       "Everything in Seller",
-      "Unlimited listings",
-      "Built for high-volume sellers",
-      "Reusable listing templates (coming soon)",
+      "Built for serious resellers",
       "Advanced photo checklist",
       "More detailed price guidance",
       "Listing history",
-      "Faster support",
+      "Reusable listing templates (coming soon)",
+      "Priority support",
       "Best for daily sellers",
       "Early access to new selling tools"
     ]
@@ -1982,8 +1982,8 @@ function planStrapline(planId) {
   return ({
     free: "Try 3 listings on us, then choose a monthly plan.",
     starter: "Light, monthly plan for casual sellers.",
-    seller: "The full toolkit weekly Vinted sellers need.",
-    reseller: "Unlimited usage and priority support for daily sellers."
+    seller: "The full toolkit regular Vinted sellers need.",
+    reseller: "250 listings a month and priority support for serious resellers."
   })[planId] || "";
 }
 

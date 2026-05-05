@@ -209,7 +209,7 @@ test("subscription checkout starts monthly billing and webhook resets usage on r
         metadata: {
           userId,
           planId: "seller",
-          monthlyLimit: "100",
+          monthlyLimit: "75",
           billingType: "subscription"
         }
       }
@@ -222,9 +222,9 @@ test("subscription checkout starts monthly billing and webhook resets usage on r
   assert.equal(afterStart.body.subscription.plan, "seller");
   assert.equal(afterStart.body.subscription.status, "active");
   assert.equal(afterStart.body.usage.usageThisMonth, 0);
-  assert.equal(afterStart.body.usage.usageLimit, 100);
+  assert.equal(afterStart.body.usage.usageLimit, 75);
   assert.equal(afterStart.body.usage.unlimited, false);
-  assert.equal(afterStart.body.usage.remaining, 100);
+  assert.equal(afterStart.body.usage.remaining, 75);
   assert.equal(afterStart.body.cycles[0].plan, "seller");
 
   // Burn one listing of usage before renewal
@@ -240,7 +240,7 @@ test("subscription checkout starts monthly billing and webhook resets usage on r
     });
     assert.equal(generated.response.status, 200);
     assert.equal(generated.body.usage.usageThisMonth, 1);
-    assert.equal(generated.body.usage.remaining, 99);
+    assert.equal(generated.body.usage.remaining, 74);
   } finally {
     process.env.OPENAI_API_KEY = oldOpenAi;
     if (oldAnthropic) process.env.ANTHROPIC_API_KEY = oldAnthropic;
@@ -260,7 +260,7 @@ test("subscription checkout starts monthly billing and webhook resets usage on r
           metadata: {
             userId,
             planId: "seller",
-            monthlyLimit: "100"
+            monthlyLimit: "75"
           }
         },
         lines: { data: [{ period: { end: 1819843200 } }] }
@@ -272,8 +272,8 @@ test("subscription checkout starts monthly billing and webhook resets usage on r
   const afterRenewal = await request(port, "/api/billing", { headers: { cookie } });
   assert.equal(afterRenewal.response.status, 200);
   assert.equal(afterRenewal.body.usage.usageThisMonth, 0);
-  assert.equal(afterRenewal.body.usage.usageLimit, 100);
-  assert.equal(afterRenewal.body.usage.remaining, 100);
+  assert.equal(afterRenewal.body.usage.usageLimit, 75);
+  assert.equal(afterRenewal.body.usage.remaining, 75);
   assert.equal(afterRenewal.body.cycles.length, 2);
   await close();
 });
@@ -453,7 +453,7 @@ test("duplicate checkout.session.completed does not double-start the billing cyc
           client_reference_id: userId,
           customer: "cus_dupe",
           subscription: "sub_dupe",
-          metadata: { userId, planId: "seller", monthlyLimit: "100", billingType: "subscription" }
+          metadata: { userId, planId: "seller", monthlyLimit: "75", billingType: "subscription" }
         }
       }
     };
@@ -466,7 +466,7 @@ test("duplicate checkout.session.completed does not double-start the billing cyc
     const billing = await request(port, "/api/billing", { headers: { cookie } });
     assert.equal(billing.response.status, 200);
     assert.equal(billing.body.cycles.length, 1, "duplicate session must not create two cycle rows");
-    assert.equal(billing.body.usage.usageLimit, 100);
+    assert.equal(billing.body.usage.usageLimit, 75);
   } finally {
     await close();
   }
@@ -602,7 +602,7 @@ test("subscription deletion reverts the user to the free plan and resets the lim
           client_reference_id: userId,
           customer: "cus_cancel",
           subscription: "sub_cancel",
-          metadata: { userId, planId: "seller", monthlyLimit: "100", billingType: "subscription" }
+          metadata: { userId, planId: "seller", monthlyLimit: "75", billingType: "subscription" }
         }
       }
     });

@@ -18,12 +18,20 @@ test("public pricing surfaces three subscription plans", () => {
   assert.doesNotMatch(indexHtml, /one-time/);
   assert.doesNotMatch(pricingHtml, /one-time/);
   assert.match(serverJs, /monthlyLimit:\s*20/);
-  assert.match(serverJs, /monthlyLimit:\s*100/);
-  assert.match(serverJs, /monthlyLimit:\s*null/);
-  assert.match(serverJs, /pricePence:\s*500/);
-  assert.match(serverJs, /pricePence:\s*1200/);
-  assert.match(serverJs, /pricePence:\s*2500/);
+  assert.match(serverJs, /monthlyLimit:\s*75/);
+  assert.match(serverJs, /monthlyLimit:\s*250/);
+  assert.match(serverJs, /pricePence:\s*699/);
+  assert.match(serverJs, /pricePence:\s*1499/);
+  assert.match(serverJs, /pricePence:\s*2999/);
   assert.match(serverJs, /FREE_PLAN[\s\S]*monthlyLimit:\s*3/);
+  // Old prices and unlimited tier must not exist anywhere in server.js.
+  assert.doesNotMatch(serverJs, /pricePence:\s*500\b/);
+  assert.doesNotMatch(serverJs, /pricePence:\s*1200\b/);
+  assert.doesNotMatch(serverJs, /pricePence:\s*2500\b/);
+  assert.doesNotMatch(serverJs, /monthlyLimit:\s*100\b/);
+  // The Reseller plan id must not declare a null (unlimited) monthlyLimit anymore.
+  const sellerLine = (serverJs.match(/id:\s*"reseller"[\s\S]*?\}/m) || [""])[0];
+  assert.doesNotMatch(sellerLine, /monthlyLimit:\s*null/);
   assert.doesNotMatch(indexHtml, /4242 4242 4242 4242/);
   assert.doesNotMatch(indexHtml, /Test card/i);
 });
