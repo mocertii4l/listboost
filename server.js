@@ -210,34 +210,43 @@ function publicCreditPacks() {
   }));
 }
 
+const FREE_PLAN = {
+  id: "free",
+  name: "Free",
+  monthlyLimit: 3,
+  pricePence: 0,
+  label: "Free trial",
+  description: "Generate up to 3 listings to try ListBoost. Subscribe to keep going."
+};
+
 function buildSubscriptionPlans() {
   const fallback = [
     {
       id: "starter",
       name: "Starter",
-      credits: 50,
+      monthlyLimit: 20,
       pricePence: 500,
       label: "Monthly starter",
-      description: "For casual sellers who want notes-to-listing and a steady monthly credit refill.",
+      description: "For casual sellers who need the core notes-to-listing generator.",
       priceEnv: "STRIPE_PRICE_STARTER_MONTHLY"
     },
     {
       id: "seller",
       name: "Seller",
-      credits: 150,
+      monthlyLimit: 100,
       pricePence: 1200,
       label: "Best value",
-      description: "For weekly sellers who want photo listing, buyer replies and listing checks included.",
+      description: "For weekly sellers who want photos, buyer replies, price guidance and listing scores.",
       featured: true,
       priceEnv: "STRIPE_PRICE_SELLER_MONTHLY"
     },
     {
       id: "reseller",
       name: "Reseller",
-      credits: 400,
+      monthlyLimit: null,
       pricePence: 2500,
       label: "Reseller tools",
-      description: "For side-hustle sellers who need bulk workflow, templates and priority support.",
+      description: "Unlimited listings, bulk-friendly workflow, reusable templates and priority support.",
       priceEnv: "STRIPE_PRICE_RESELLER_MONTHLY"
     }
   ];
@@ -251,7 +260,7 @@ function buildSubscriptionPlans() {
       .map((plan) => ({
         id: String(plan.id || "").trim().toLowerCase(),
         name: String(plan.name || "").trim(),
-        credits: Number(plan.credits),
+        monthlyLimit: plan.monthlyLimit == null ? null : Number(plan.monthlyLimit),
         pricePence: Number(plan.pricePence),
         label: String(plan.label || "").trim(),
         description: String(plan.description || "").trim(),
@@ -259,12 +268,23 @@ function buildSubscriptionPlans() {
         priceEnv: String(plan.priceEnv || "").trim(),
         priceId: String(plan.priceId || "").trim()
       }))
-      .filter((plan) => plan.id && plan.name && Number.isFinite(plan.credits) && plan.credits > 0 && Number.isFinite(plan.pricePence) && plan.pricePence > 0);
+      .filter((plan) => plan.id && plan.name && Number.isFinite(plan.pricePence) && plan.pricePence > 0);
     return clean.length ? clean.map(withSubscriptionPriceId) : fallback.map(withSubscriptionPriceId);
   } catch {
     console.warn("[launch-check] SUBSCRIPTION_PLANS_JSON is invalid. Using default subscription plans.");
     return fallback.map(withSubscriptionPriceId);
   }
+}
+
+function planForId(planId) {
+  const id = String(planId || "free").trim().toLowerCase();
+  if (id === "free") return FREE_PLAN;
+  return findSubscriptionPlan(id) || FREE_PLAN;
+}
+
+function planLimitFor(planId) {
+  const plan = planForId(planId);
+  return plan.monthlyLimit == null ? null : Number(plan.monthlyLimit);
 }
 
 function withSubscriptionPriceId(plan) {
@@ -278,7 +298,8 @@ function publicSubscriptionPlans() {
   return subscriptionPlans.map((plan) => ({
     id: plan.id,
     name: plan.name,
-    credits: plan.credits,
+    monthlyLimit: plan.monthlyLimit,
+    unlimited: plan.monthlyLimit == null,
     pricePence: plan.pricePence,
     price: `GBP ${(plan.pricePence / 100).toFixed(2).replace(/\.00$/, "")}`,
     interval: "month",
@@ -302,13 +323,15 @@ function findSubscriptionPlan(planId) {
 
 function publicSubscriptionForUser(user) {
   const planId = user?.subscription_plan || "free";
-  const plan = findSubscriptionPlan(planId);
+  const plan = planForId(planId);
   return {
     plan: planId,
-    planName: plan ? plan.name : "Free",
+    planName: plan.name,
     status: user?.subscription_status || "inactive",
-    credits: Number(user?.subscription_credits || 0),
-    nextCreditRefill: user?.next_credit_refill || null,
+    monthlyLimit: plan.monthlyLimit,
+    unlimited: plan.monthlyLimit == null,
+    usageThisMonth: Number(user?.usage_this_month || 0),
+    billingPeriodEnd: user?.billing_period_end || user?.next_credit_refill || null,
     stripeSubscriptionId: user?.stripe_subscription_id || null
   };
 }
@@ -361,7 +384,7 @@ function subscriptionLineItem(plan) {
       currency: "gbp",
       product_data: {
         name: `ListBoost ${plan.name}`,
-        description: plan.description || "Monthly ListBoost credits for Vinted sellers."
+        description: plan.description || "Monthly ListBoost subscription for Vinted sellers."
       },
       recurring: { interval: "month" },
       unit_amount: plan.pricePence
@@ -375,6 +398,7 @@ async function createSubscriptionCheckoutSession({ user, plan }) {
     return { url: `https://checkout.stripe.test/subscription/${plan.id}` };
   }
 
+  const limitLabel = plan.monthlyLimit == null ? "unlimited" : String(plan.monthlyLimit);
   return stripe.checkout.sessions.create({
     mode: "subscription",
     client_reference_id: user.id,
@@ -383,14 +407,14 @@ async function createSubscriptionCheckoutSession({ user, plan }) {
     metadata: {
       userId: user.id,
       planId: plan.id,
-      credits: String(plan.credits),
+      monthlyLimit: limitLabel,
       billingType: "subscription"
     },
     subscription_data: {
       metadata: {
         userId: user.id,
         planId: plan.id,
-        credits: String(plan.credits)
+        monthlyLimit: limitLabel
       }
     },
     line_items: [subscriptionLineItem(plan)],
@@ -501,7 +525,10 @@ const columnAdditions = [
   ["users", "subscription_credits", "INTEGER NOT NULL DEFAULT 0"],
   ["users", "next_credit_refill", "TEXT"],
   ["users", "stripe_customer_id", "TEXT"],
-  ["users", "stripe_subscription_id", "TEXT"]
+  ["users", "stripe_subscription_id", "TEXT"],
+  ["users", "usage_this_month", "INTEGER NOT NULL DEFAULT 0"],
+  ["users", "usage_limit", "INTEGER NOT NULL DEFAULT 3"],
+  ["users", "billing_period_end", "TEXT"]
 ];
 for (const [table, column, type] of columnAdditions) {
   const existing = db.prepare(`PRAGMA table_info(${table})`).all();
@@ -731,38 +758,45 @@ function getCredits(usage, visitorId) {
   };
 }
 
-function getAccountCredits(user) {
-  const free = Number(user.free_credits || 0);
-  const paid = Number(user.paid_credits || 0);
-  const subscription = Number(user.subscription_credits || 0);
-  const used = Number(user.used_credits || 0);
-  const total = free + paid + subscription;
+function getAccountUsage(user) {
+  const planId = user.subscription_plan || "free";
+  const plan = planForId(planId);
+  const usedRaw = Number(user.usage_this_month || 0);
+  const limitFromUser = user.usage_limit;
+  const planLimit = plan.monthlyLimit;
+  const limit = (limitFromUser == null) ? planLimit : Number(limitFromUser);
+  const unlimited = limit == null;
+  const used = Math.max(0, usedRaw);
+  const remaining = unlimited ? null : Math.max(Number(limit) - used, 0);
   return {
-    freeCredits: free,
-    paidCredits: paid,
-    subscriptionCredits: subscription,
-    totalCredits: total,
-    used,
-    remaining: Math.max(total - used, 0),
-    packSize: creditPackSize,
-    packPricePence: creditPackPricePence,
-    subscriptionPlan: user.subscription_plan || "free",
+    plan: planId,
+    planName: plan.name,
     subscriptionStatus: user.subscription_status || "inactive",
-    nextCreditRefill: user.next_credit_refill || null
+    usageThisMonth: used,
+    usageLimit: unlimited ? null : Number(limit),
+    unlimited,
+    remaining,
+    billingPeriodEnd: user.billing_period_end || user.next_credit_refill || null
   };
 }
 
 function publicUser(user) {
-  return user ? {
+  if (!user) return null;
+  const usage = getAccountUsage(user);
+  return {
     id: user.id,
     name: user.name || "",
     email: user.email,
     emailVerified: Boolean(user.email_verified),
-    subscriptionPlan: user.subscription_plan || "free",
-    subscriptionStatus: user.subscription_status || "inactive",
-    subscriptionCredits: Number(user.subscription_credits || 0),
-    nextCreditRefill: user.next_credit_refill || null
-  } : null;
+    plan: usage.plan,
+    planName: usage.planName,
+    subscriptionPlan: usage.plan,
+    subscriptionStatus: usage.subscriptionStatus,
+    usageThisMonth: usage.usageThisMonth,
+    usageLimit: usage.usageLimit,
+    unlimited: usage.unlimited,
+    billingPeriodEnd: usage.billingPeriodEnd
+  };
 }
 
 function getAiProvider() {
@@ -811,7 +845,7 @@ function logLaunchChecks() {
   console.log(`[launch-check] DATA_DIR raw=${JSON.stringify(dataDirDiagnostics.raw)} trimmed=${JSON.stringify(dataDirDiagnostics.trimmed)} resolved=${dataDirDiagnostics.dataDir} exists=${dataDirDiagnostics.exists} writable=${dataDirDiagnostics.writable}`);
   if (isProduction && !appUrl.startsWith("https://")) warnings.push("APP_URL should be an https:// production URL.");
   if (!checks.openaiConfigured && !checks.anthropicConfigured) warnings.push("No AI API key configured. App will run in demo mode.");
-  if (stripe && !stripeWebhookSecret) warnings.push("STRIPE_WEBHOOK_SECRET is missing. Paid credits will remain pending until the webhook is configured.");
+  if (stripe && !stripeWebhookSecret) warnings.push("STRIPE_WEBHOOK_SECRET is missing. Subscriptions will remain pending until the webhook is configured.");
   if (requireEmailVerification && !resendApiKey) warnings.push("RESEND_API_KEY is missing. Verification links will only be logged, not emailed.");
   if (!adminEmail || !adminPassword) warnings.push("ADMIN_EMAIL / ADMIN_PASSWORD not set. /admin will return 401.");
   for (const warning of warnings) console.warn(`[launch-check] ${warning}`);
@@ -1143,7 +1177,7 @@ function ensureVerified(user) {
 
 function recordGeneration(user, result, savedInput) {
   const now = new Date().toISOString();
-  db.prepare("UPDATE users SET used_credits = used_credits + 1, updated_at = ? WHERE id = ?").run(now, user.id);
+  db.prepare("UPDATE users SET usage_this_month = usage_this_month + 1, updated_at = ? WHERE id = ?").run(now, user.id);
   const persisted = savedInput ? { ...result, _input: savedInput } : result;
   db.prepare("INSERT INTO generations (id, user_id, title, score, result_json, created_at) VALUES (?, ?, ?, ?, ?, ?)").run(
     randomUUID(),
@@ -1153,7 +1187,6 @@ function recordGeneration(user, result, savedInput) {
     JSON.stringify(persisted),
     now
   );
-  recordAudit(user.id, "system:generation", -1, "Listing generation");
   return db.prepare("SELECT * FROM users WHERE id = ?").get(user.id);
 }
 
@@ -1209,9 +1242,9 @@ async function handleGenerateFromPhotos(req, res) {
     const sellerMode = sellerModes.has(body.sellerMode) ? body.sellerMode : "clearout";
     const negotiationGoal = negotiationGoals.has(body.negotiationGoal) ? body.negotiationGoal : "friendly";
 
-    const credits = getAccountCredits(user);
-    if (credits.remaining <= 0) {
-      json(res, 402, { error: "You have used your free listings. Upgrade to keep generating.", credits }, visitor.headers);
+    const usage = getAccountUsage(user);
+    if (!usage.unlimited && usage.remaining <= 0) {
+      json(res, 402, { error: "Upgrade your plan to continue generating listings", usage }, visitor.headers);
       return;
     }
 
@@ -1230,19 +1263,19 @@ async function handleGenerateFromPhotos(req, res) {
     }
 
     if (!looksLikeListing(result)) {
-      json(res, 502, { error: "The model returned an unexpected response. No credit was used. Try again." }, visitor.headers);
+      json(res, 502, { error: "The model returned an unexpected response. No listing was counted. Try again." }, visitor.headers);
       return;
     }
 
     const updatedUser = recordGeneration(user, result, { source: "photos", ...input });
-    json(res, 200, { ...result, provider, source: "photos", credits: getAccountCredits(updatedUser), user: publicUser(updatedUser) }, visitor.headers);
+    json(res, 200, { ...result, provider, source: "photos", usage: getAccountUsage(updatedUser), user: publicUser(updatedUser) }, visitor.headers);
   } catch (error) {
     console.error(error);
     if (error && error.message === "Request is too large.") {
       json(res, 413, { error: "Photos are too large. Try fewer or smaller photos." }, visitor.headers);
       return;
     }
-    json(res, 502, { error: "Could not build a listing from these photos. No credit was used. Try again or add a clearer photo." }, visitor.headers);
+    json(res, 502, { error: "Could not build a listing from these photos. No listing was counted. Try again or add a clearer photo." }, visitor.headers);
   }
 }
 
@@ -1283,9 +1316,9 @@ async function handleGenerate(req, res) {
       return;
     }
 
-    const credits = getAccountCredits(user);
-    if (credits.remaining <= 0) {
-      json(res, 402, { error: "You have used your free listings. Upgrade to keep generating.", credits }, visitor.headers);
+    const usage = getAccountUsage(user);
+    if (!usage.unlimited && usage.remaining <= 0) {
+      json(res, 402, { error: "Upgrade your plan to continue generating listings", usage }, visitor.headers);
       return;
     }
 
@@ -1304,15 +1337,15 @@ async function handleGenerate(req, res) {
     }
 
     if (!looksLikeListing(result)) {
-      json(res, 502, { error: "The model returned an unexpected response. No credit was used. Try again." }, visitor.headers);
+      json(res, 502, { error: "The model returned an unexpected response. No listing was counted. Try again." }, visitor.headers);
       return;
     }
 
     const updatedUser = recordGeneration(user, result, { source: "notes", ...input });
-    json(res, 200, { ...result, provider, credits: getAccountCredits(updatedUser), user: publicUser(updatedUser) }, visitor.headers);
+    json(res, 200, { ...result, provider, usage: getAccountUsage(updatedUser), user: publicUser(updatedUser) }, visitor.headers);
   } catch (error) {
     console.error(error);
-    json(res, 502, { error: "Could not improve this listing. No credit was used. Check your API key or try again." }, visitor.headers);
+    json(res, 502, { error: "Could not improve this listing. No listing was counted. Check your API key or try again." }, visitor.headers);
   }
 }
 
@@ -1370,24 +1403,20 @@ async function handleMe(req, res) {
   if (!user) {
     json(res, 200, {
       user: null,
-      credits: {
-        freeCredits,
-        paidCredits: 0,
-        subscriptionCredits: 0,
-        totalCredits: freeCredits,
-        used: 0,
-        remaining: 0,
-        packSize: creditPackSize,
-        packPricePence: creditPackPricePence,
-        subscriptionPlan: "free",
+      usage: {
+        plan: "free",
+        planName: "Free",
         subscriptionStatus: "inactive",
-        nextCreditRefill: null
+        usageThisMonth: 0,
+        usageLimit: FREE_PLAN.monthlyLimit,
+        unlimited: false,
+        remaining: FREE_PLAN.monthlyLimit,
+        billingPeriodEnd: null
       },
       stripeReady: Boolean(stripe),
       aiProvider: getAiProvider(),
       appUrl,
       adminEnabled: Boolean(adminEmail && adminPassword),
-      creditPacks: publicCreditPacks(),
       subscriptionPlans: publicSubscriptionPlans(),
       emailVerified: false,
       verificationRequired: requireEmailVerification
@@ -1397,12 +1426,11 @@ async function handleMe(req, res) {
 
   json(res, 200, {
     user: publicUser(user),
-    credits: getAccountCredits(user),
+    usage: getAccountUsage(user),
     stripeReady: Boolean(stripe),
     aiProvider: getAiProvider(),
     appUrl,
     adminEnabled: Boolean(adminEmail && adminPassword),
-    creditPacks: publicCreditPacks(),
     subscriptionPlans: publicSubscriptionPlans(),
     subscription: publicSubscriptionForUser(user),
     emailVerified: Boolean(user.email_verified),
@@ -1494,18 +1522,6 @@ async function handleBilling(req, res) {
     return;
   }
 
-  const payments = db.prepare(`
-    SELECT stripe_session_id, credits, processed_at
-    FROM payments
-    WHERE user_id = ?
-    ORDER BY processed_at DESC
-    LIMIT 20
-  `).all(user.id).map((row) => ({
-    type: "payment",
-    reference: row.stripe_session_id,
-    credits: row.credits,
-    createdAt: row.processed_at
-  }));
   const audit = db.prepare(`
     SELECT actor, delta, reason, created_at
     FROM credit_audit
@@ -1513,35 +1529,32 @@ async function handleBilling(req, res) {
     ORDER BY created_at DESC
     LIMIT 50
   `).all(user.id).map((row) => ({
-    type: "credit-audit",
+    type: "audit",
     actor: row.actor,
     delta: row.delta,
     reason: row.reason,
     createdAt: row.created_at
   }));
-  const refills = db.prepare(`
-    SELECT stripe_invoice_id, stripe_subscription_id, plan, credits, processed_at
+  const cycles = db.prepare(`
+    SELECT stripe_invoice_id, stripe_subscription_id, plan, processed_at
     FROM subscription_refills
     WHERE user_id = ?
     ORDER BY processed_at DESC
     LIMIT 20
   `).all(user.id).map((row) => ({
-    type: "subscription-refill",
+    type: "billing-cycle",
     reference: row.stripe_invoice_id,
     subscriptionId: row.stripe_subscription_id,
     plan: row.plan,
-    credits: row.credits,
     createdAt: row.processed_at
   }));
 
   json(res, 200, {
     user: publicUser(user),
-    credits: getAccountCredits(user),
+    usage: getAccountUsage(user),
     subscription: publicSubscriptionForUser(user),
-    creditPacks: publicCreditPacks(),
     subscriptionPlans: publicSubscriptionPlans(),
-    payments,
-    refills,
+    cycles,
     audit
   }, visitor.headers);
 }
@@ -1628,9 +1641,9 @@ async function handleRegenerate(req, res, id) {
       return;
     }
 
-    const credits = getAccountCredits(user);
-    if (credits.remaining <= 0) {
-      json(res, 402, { error: "You have used your free listings. Upgrade to keep generating.", credits }, visitor.headers);
+    const usage = getAccountUsage(user);
+    if (!usage.unlimited && usage.remaining <= 0) {
+      json(res, 402, { error: "Upgrade your plan to continue generating listings", usage }, visitor.headers);
       return;
     }
 
@@ -1663,54 +1676,30 @@ async function handleRegenerate(req, res, id) {
     }
 
     if (!looksLikeListing(result)) {
-      json(res, 502, { error: "The model returned an unexpected response. No credit was used. Try again." }, visitor.headers);
+      json(res, 502, { error: "The model returned an unexpected response. No listing was counted. Try again." }, visitor.headers);
       return;
     }
 
     const updatedUser = recordGeneration(user, result, { source: "notes", regenerated_from: row.id, ...input });
-    json(res, 200, { ...result, provider, regenerated: true, credits: getAccountCredits(updatedUser), user: publicUser(updatedUser) }, visitor.headers);
+    json(res, 200, { ...result, provider, regenerated: true, usage: getAccountUsage(updatedUser), user: publicUser(updatedUser) }, visitor.headers);
   } catch (error) {
     console.error(error);
-    json(res, 502, { error: "Could not regenerate this listing. No credit was used. Try again." }, visitor.headers);
+    json(res, 502, { error: "Could not regenerate this listing. No listing was counted. Try again." }, visitor.headers);
   }
 }
 
-async function handleCheckout(req, res, forcedPackId = "") {
+async function handleLegacyCreditPack(req, res, forcedPackId = "") {
   const visitor = getVisitor(req);
-  const user = getUserBySession(req);
   const isRouteCheckout = Boolean(forcedPackId);
-
-  if (!user) {
-    const next = forcedPackId ? `/checkout/${encodeURIComponent(forcedPackId)}` : "/pricing";
-    json(res, 401, { error: "Create an account or sign in before buying credits.", authUrl: `/signup?next=${encodeURIComponent(next)}` }, visitor.headers);
+  if (isRouteCheckout) {
+    res.writeHead(303, { location: "/pricing", ...visitor.headers });
+    res.end();
     return;
   }
-
-  if (!stripe) {
-    json(res, 503, { error: "Stripe is not connected yet. Add STRIPE_SECRET_KEY to .env and restart the app." }, visitor.headers);
-    return;
-  }
-
-  try {
-    const body = forcedPackId ? { packId: forcedPackId } : JSON.parse(await readBody(req, 20_000) || "{}");
-    const requestedPackId = String(body.packId || "").trim().toLowerCase();
-    const pack = findCreditPack(requestedPackId);
-    if (!pack) {
-      json(res, 400, { error: "Unknown credit pack. Please choose Starter, Seller or Reseller." }, visitor.headers);
-      return;
-    }
-
-    const session = await createCheckoutSession({ user, pack });
-    if (isRouteCheckout) {
-      res.writeHead(303, { location: session.url, ...visitor.headers });
-      res.end();
-      return;
-    }
-    json(res, 200, { url: session.url, packId: pack.id }, visitor.headers);
-  } catch (error) {
-    console.error(error);
-    json(res, 500, { error: "Could not start Stripe Checkout." }, visitor.headers);
-  }
+  json(res, 410, {
+    error: "ListBoost no longer sells one-time credit packs. Choose a monthly plan from /pricing.",
+    pricingUrl: "/pricing"
+  }, visitor.headers);
 }
 
 function hasMutableSubscription(user) {
@@ -1730,7 +1719,7 @@ async function changeStripeSubscriptionPlan({ user, plan }) {
       ...(subscription.metadata || {}),
       userId: user.id,
       planId: plan.id,
-      credits: String(plan.credits)
+      monthlyLimit: plan.monthlyLimit == null ? "unlimited" : String(plan.monthlyLimit)
     }
   });
   syncSubscriptionFields({
@@ -1739,7 +1728,7 @@ async function changeStripeSubscriptionPlan({ user, plan }) {
     subscriptionId: stripeId(updated.id),
     plan,
     status: updated.status || "active",
-    nextCreditRefill: subscriptionPeriodEnd(updated) || user.next_credit_refill || nextMonthIso()
+    billingPeriodEnd: subscriptionPeriodEnd(updated) || user.billing_period_end || user.next_credit_refill || nextMonthIso()
   });
   recordAudit(user.id, "stripe:subscription.updated", 0, `Subscription switched to ${plan.name}`);
   return db.prepare("SELECT * FROM users WHERE id = ?").get(user.id);
@@ -1773,7 +1762,7 @@ async function handleSubscriptionCheckout(req, res) {
         updated: true,
         unchanged: true,
         planId: plan.id,
-        credits: getAccountCredits(user),
+        usage: getAccountUsage(user),
         subscription: publicSubscriptionForUser(user),
         user: publicUser(user)
       }, visitor.headers);
@@ -1785,7 +1774,7 @@ async function handleSubscriptionCheckout(req, res) {
       json(res, 200, {
         updated: true,
         planId: plan.id,
-        credits: getAccountCredits(updatedUser),
+        usage: getAccountUsage(updatedUser),
         subscription: publicSubscriptionForUser(updatedUser),
         user: publicUser(updatedUser)
       }, visitor.headers);
@@ -1842,12 +1831,11 @@ async function handleCheckoutSuccess(req, res) {
   }
 
   const fresh = db.prepare("SELECT * FROM users WHERE id = ?").get(user.id);
-  const granted = db.prepare("SELECT credits FROM payments WHERE stripe_session_id = ? AND user_id = ?").get(sessionId, user.id);
-  const subscriptionGrant = db.prepare("SELECT credits FROM subscription_refills WHERE stripe_invoice_id = ? AND user_id = ?").get(`checkout:${sessionId}`, user.id);
+  const subscriptionGrant = db.prepare("SELECT processed_at FROM subscription_refills WHERE stripe_invoice_id = ? AND user_id = ?").get(`checkout:${sessionId}`, user.id);
   json(res, 200, {
     ok: true,
-    pending: !granted && !subscriptionGrant,
-    credits: getAccountCredits(fresh),
+    pending: !subscriptionGrant,
+    usage: getAccountUsage(fresh),
     subscription: publicSubscriptionForUser(fresh),
     user: publicUser(fresh)
   }, visitor.headers);
@@ -1921,18 +1909,31 @@ function findUserForStripeSubscription({ userId, subscriptionId, customerId }) {
   return null;
 }
 
-function syncSubscriptionFields({ userId, customerId, subscriptionId, plan, status = "active", nextCreditRefill }) {
+function syncSubscriptionFields({ userId, customerId, subscriptionId, plan, status = "active", billingPeriodEnd }) {
   const now = new Date().toISOString();
+  const periodEnd = billingPeriodEnd || nextMonthIso();
   db.prepare(`
     UPDATE users
     SET subscription_plan = ?,
         subscription_status = ?,
+        usage_limit = ?,
+        billing_period_end = ?,
         next_credit_refill = ?,
         stripe_customer_id = COALESCE(?, stripe_customer_id),
         stripe_subscription_id = COALESCE(?, stripe_subscription_id),
         updated_at = ?
     WHERE id = ?
-  `).run(plan.id, status, nextCreditRefill || nextMonthIso(), customerId || null, subscriptionId || null, now, userId);
+  `).run(
+    plan.id,
+    status,
+    plan.monthlyLimit == null ? null : Number(plan.monthlyLimit),
+    periodEnd,
+    periodEnd,
+    customerId || null,
+    subscriptionId || null,
+    now,
+    userId
+  );
 }
 
 function clearSubscriptionFields(userId, status = "canceled") {
@@ -1941,33 +1942,38 @@ function clearSubscriptionFields(userId, status = "canceled") {
     UPDATE users
     SET subscription_plan = 'free',
         subscription_status = ?,
+        usage_limit = ?,
+        billing_period_end = NULL,
         next_credit_refill = NULL,
         stripe_subscription_id = NULL,
         updated_at = ?
     WHERE id = ?
-  `).run(status, now, userId);
+  `).run(status, FREE_PLAN.monthlyLimit, now, userId);
 }
 
-function grantSubscriptionCreditsOnce({ grantId, userId, subscriptionId, plan, credits, nextCreditRefill, source }) {
+function startBillingCycleOnce({ grantId, userId, subscriptionId, plan, billingPeriodEnd, source }) {
   const existing = db.prepare("SELECT stripe_invoice_id FROM subscription_refills WHERE stripe_invoice_id = ?").get(grantId);
   if (existing) return false;
   const now = new Date().toISOString();
-  const amount = Number(credits || plan.credits || 0);
+  const periodEnd = billingPeriodEnd || nextMonthIso();
+  const limit = plan.monthlyLimit == null ? null : Number(plan.monthlyLimit);
   db.prepare(`
     INSERT INTO subscription_refills (stripe_invoice_id, stripe_subscription_id, user_id, plan, credits, processed_at)
     VALUES (?, ?, ?, ?, ?, ?)
-  `).run(grantId, subscriptionId || null, userId, plan.id, amount, now);
+  `).run(grantId, subscriptionId || null, userId, plan.id, limit == null ? 0 : limit, now);
   db.prepare(`
     UPDATE users
     SET subscription_plan = ?,
         subscription_status = 'active',
-        subscription_credits = subscription_credits + ?,
+        usage_this_month = 0,
+        usage_limit = ?,
+        billing_period_end = ?,
         next_credit_refill = ?,
         stripe_subscription_id = COALESCE(?, stripe_subscription_id),
         updated_at = ?
     WHERE id = ?
-  `).run(plan.id, amount, nextCreditRefill || nextMonthIso(), subscriptionId || null, now, userId);
-  recordAudit(userId, source || "stripe:subscription", amount, `Subscription credits for ${plan.name}`);
+  `).run(plan.id, limit, periodEnd, periodEnd, subscriptionId || null, now, userId);
+  recordAudit(userId, source || "stripe:subscription", 0, `Billing cycle started on ${plan.name}`);
   return true;
 }
 
@@ -1981,21 +1987,20 @@ async function activateSubscriptionFromCheckout(session) {
   const customerId = stripeId(session.customer);
   const subscription = await fetchStripeSubscription(subscriptionId);
   const status = subscription?.status || "active";
-  const nextCreditRefill = subscriptionPeriodEnd(subscription) || nextMonthIso();
+  const billingPeriodEnd = subscriptionPeriodEnd(subscription) || nextMonthIso();
   const user = findUserForStripeSubscription({ userId, subscriptionId, customerId });
   if (!user) {
     console.warn(`Webhook: subscription checkout for unknown user ${userId} (session ${session.id})`);
     return false;
   }
 
-  syncSubscriptionFields({ userId: user.id, customerId, subscriptionId, plan, status, nextCreditRefill });
-  grantSubscriptionCreditsOnce({
+  syncSubscriptionFields({ userId: user.id, customerId, subscriptionId, plan, status, billingPeriodEnd });
+  startBillingCycleOnce({
     grantId: `checkout:${session.id}`,
     userId: user.id,
     subscriptionId,
     plan,
-    credits: plan.credits,
-    nextCreditRefill,
+    billingPeriodEnd,
     source: "stripe:subscription-start"
   });
   return true;
@@ -2016,24 +2021,23 @@ async function grantRenewalCreditsFromInvoice(invoice) {
   const plan = findSubscriptionPlan(metadata.planId) || findSubscriptionPlan(user.subscription_plan);
   if (!plan) return false;
 
-  const nextCreditRefill = invoicePeriodEnd(invoice) || nextMonthIso();
+  const billingPeriodEnd = invoicePeriodEnd(invoice) || nextMonthIso();
   syncSubscriptionFields({
     userId: user.id,
     customerId,
     subscriptionId,
     plan,
     status: "active",
-    nextCreditRefill
+    billingPeriodEnd
   });
 
   if (invoice.billing_reason === "subscription_create") return false;
-  return grantSubscriptionCreditsOnce({
+  return startBillingCycleOnce({
     grantId: `invoice:${invoice.id}`,
     userId: user.id,
     subscriptionId,
     plan,
-    credits: Number(metadata.credits || plan.credits),
-    nextCreditRefill,
+    billingPeriodEnd,
     source: "stripe:invoice.paid"
   });
 }
@@ -2056,14 +2060,14 @@ function updateSubscriptionFromStripeObject(subscription, deleted = false) {
 
   const plan = findSubscriptionPlan(subscription.metadata?.planId) || findSubscriptionPlan(user.subscription_plan);
   if (!plan) return false;
-  const nextCreditRefill = subscriptionPeriodEnd(subscription) || user.next_credit_refill || nextMonthIso();
+  const billingPeriodEnd = subscriptionPeriodEnd(subscription) || user.billing_period_end || user.next_credit_refill || nextMonthIso();
   syncSubscriptionFields({
     userId: user.id,
     customerId,
     subscriptionId,
     plan,
     status: subscription.status || "active",
-    nextCreditRefill
+    billingPeriodEnd
   });
   return true;
 }
@@ -2198,16 +2202,7 @@ async function handleStripeWebhook(req, res) {
       if (session.mode === "subscription" || session.metadata?.billingType === "subscription") {
         await activateSubscriptionFromCheckout(session);
       } else {
-        const userId = session.metadata?.userId || session.client_reference_id;
-        const credits = Number(session.metadata?.credits || creditPackSize);
-        if (session.payment_status === "paid" && userId && credits > 0) {
-          const userExists = db.prepare("SELECT id FROM users WHERE id = ?").get(userId);
-          if (userExists) {
-            grantCreditsFromPayment({ sessionId: session.id, userId, credits, source: "stripe:webhook" });
-          } else {
-            console.warn(`Webhook: paid session for unknown user ${userId} (session ${session.id})`);
-          }
-        }
+        console.warn(`Webhook: ignoring non-subscription session ${session.id} (one-time packs are no longer sold).`);
       }
     } else if (event.type === "invoice.paid") {
       await grantRenewalCreditsFromInvoice(event.data.object);
@@ -2472,7 +2467,7 @@ async function handleUpdateProfile(req, res) {
     json(res, 200, {
       ok: true,
       user: publicUser(nextUser),
-      credits: getAccountCredits(nextUser),
+      usage: getAccountUsage(nextUser),
       verificationRequired: requireEmailVerification && emailChanged,
       verificationEmailDelivered: verificationDelivery?.delivered ?? null,
       verificationEmailError: verificationDelivery?.error || null
@@ -2564,12 +2559,8 @@ async function handleAdminPage(req, res) {
   if (!requireAdmin(req, res)) return;
 
   const users = db.prepare(`
-    SELECT id, email, free_credits, paid_credits, used_credits, email_verified, created_at, updated_at
+    SELECT id, email, subscription_plan, subscription_status, usage_this_month, usage_limit, billing_period_end, email_verified, created_at, updated_at
     FROM users ORDER BY created_at DESC LIMIT 200
-  `).all();
-  const payments = db.prepare(`
-    SELECT stripe_session_id, user_id, credits, processed_at
-    FROM payments ORDER BY processed_at DESC LIMIT 50
   `).all();
   const generations = db.prepare(`
     SELECT id, user_id, title, score, created_at
@@ -2582,41 +2573,37 @@ async function handleAdminPage(req, res) {
   const summary = db.prepare(`
     SELECT
       COUNT(*) AS totalUsers,
-      SUM(CASE WHEN paid_credits > 0 THEN 1 ELSE 0 END) AS paidUsers,
-      SUM(free_credits + paid_credits) AS creditsGranted,
-      SUM(used_credits) AS creditsUsed
+      SUM(CASE WHEN subscription_status = 'active' THEN 1 ELSE 0 END) AS activeSubscribers,
+      SUM(usage_this_month) AS listingsThisCycle
     FROM users
   `).get();
-  const recentPayments = db.prepare(`
-    SELECT credits
-    FROM payments
-    WHERE processed_at >= datetime('now', '-30 days')
+  const planCounts = db.prepare(`
+    SELECT subscription_plan AS plan, COUNT(*) AS count FROM users GROUP BY subscription_plan
   `).all();
-  const recentRevenuePence = recentPayments.reduce((sum, row) => sum + pricePenceForCredits(row.credits), 0);
+  const planSummary = planCounts.map((row) => `${escapeHtml(row.plan)}: ${row.count}`).join(", ");
 
-  const userRows = users.map((u) => `
+  const userRows = users.map((u) => {
+    const limitDisplay = u.usage_limit == null ? "&infin;" : String(u.usage_limit);
+    return `
     <tr data-user-row>
       <td><code>${escapeHtml(u.id.slice(0, 8))}</code></td>
       <td>${escapeHtml(u.email)}</td>
       <td>${u.email_verified ? "yes" : "no"}</td>
-      <td>${u.free_credits}</td>
-      <td>${u.paid_credits}</td>
-      <td>${u.used_credits}</td>
-      <td>${Math.max((u.free_credits + u.paid_credits) - u.used_credits, 0)}</td>
+      <td>${escapeHtml(u.subscription_plan || "free")}</td>
+      <td>${escapeHtml(u.subscription_status || "inactive")}</td>
+      <td>${u.usage_this_month || 0} / ${limitDisplay}</td>
+      <td>${escapeHtml(u.billing_period_end || "-")}</td>
       <td>
         <form method="post" action="/admin/credits">
           <input type="hidden" name="userId" value="${escapeHtml(u.id)}" />
-          <input type="number" name="delta" required style="width:64px" placeholder="±" />
+          <input type="number" name="delta" required style="width:64px" placeholder="usage delta" />
           <input type="text" name="reason" required style="width:160px" placeholder="reason" />
-          <button type="submit">Adjust</button>
+          <button type="submit">Adjust usage</button>
         </form>
       </td>
     </tr>
-  `).join("");
-
-  const paymentRows = payments.map((p) => `
-    <tr><td><a href="https://dashboard.stripe.com/test/checkout/sessions/${escapeHtml(p.stripe_session_id)}" rel="noreferrer"><code>${escapeHtml(p.stripe_session_id)}</code></a></td><td><code>${escapeHtml(p.user_id.slice(0, 8))}</code></td><td>${p.credits}</td><td>${escapeHtml(p.processed_at)}</td></tr>
-  `).join("");
+  `;
+  }).join("");
 
   const genRows = generations.map((g) => `
     <tr><td>${escapeHtml(g.created_at)}</td><td><code>${escapeHtml(g.user_id.slice(0, 8))}</code></td><td>${escapeHtml(g.title || "")}</td><td>${g.score || 0}</td></tr>
@@ -2660,20 +2647,17 @@ async function handleAdminPage(req, res) {
   <main id="main">
   <section class="summary">
     <div class="card"><span>Total users</span><strong>${summary.totalUsers || 0}</strong></div>
-    <div class="card"><span>Paid users</span><strong>${summary.paidUsers || 0}</strong></div>
-    <div class="card"><span>Last-30d revenue</span><strong>${formatPence(recentRevenuePence)}</strong></div>
-    <div class="card"><span>Credits granted</span><strong>${summary.creditsGranted || 0}</strong></div>
-    <div class="card"><span>Credits used</span><strong>${summary.creditsUsed || 0}</strong></div>
+    <div class="card"><span>Active subscribers</span><strong>${summary.activeSubscribers || 0}</strong></div>
+    <div class="card"><span>Listings this cycle</span><strong>${summary.listingsThisCycle || 0}</strong></div>
+    <div class="card" style="grid-column: span 2"><span>Plan distribution</span><strong>${planSummary || "free: 0"}</strong></div>
   </section>
   <h2>Users (latest 200)</h2>
   <div class="table-tools"><label>Search users <input id="userSearch" type="search" placeholder="email" /></label><div id="userPager"></div></div>
-  <table id="usersTable"><thead><tr><th>id</th><th>email</th><th>verified</th><th>free</th><th>paid</th><th>used</th><th>remaining</th><th>adjust</th></tr></thead>
+  <table id="usersTable"><thead><tr><th>id</th><th>email</th><th>verified</th><th>plan</th><th>status</th><th>usage</th><th>cycle ends</th><th>adjust usage</th></tr></thead>
   <tbody>${userRows}</tbody></table>
-  <h2>Payments (latest 50)</h2>
-  <table><thead><tr><th>session</th><th>user</th><th>credits</th><th>at</th></tr></thead><tbody>${paymentRows}</tbody></table>
   <h2>Recent generations (50)</h2>
   <table><thead><tr><th>at</th><th>user</th><th>title</th><th>score</th></tr></thead><tbody>${genRows}</tbody></table>
-  <h2>Credit audit (latest 50)</h2>
+  <h2>Audit (latest 50)</h2>
   <table><thead><tr><th>at</th><th>user</th><th>actor</th><th>delta</th><th>reason</th></tr></thead><tbody>${auditRows}</tbody></table>
   </main>
   <script>
@@ -2751,12 +2735,8 @@ async function handleAdminCreditsAdjust(req, res) {
   }
 
   const now = new Date().toISOString();
-  if (delta > 0) {
-    db.prepare("UPDATE users SET paid_credits = paid_credits + ?, updated_at = ? WHERE id = ?").run(delta, now, userId);
-  } else {
-    const removed = Math.min(-delta, user.paid_credits);
-    db.prepare("UPDATE users SET paid_credits = paid_credits - ?, updated_at = ? WHERE id = ?").run(removed, now, userId);
-  }
+  const next = Math.max(0, Number(user.usage_this_month || 0) + delta);
+  db.prepare("UPDATE users SET usage_this_month = ?, updated_at = ? WHERE id = ?").run(next, now, userId);
   recordAudit(userId, `admin:${adminEmail}`, delta, reason);
 
   res.writeHead(303, { location: "/admin?adjusted=1" });
@@ -2800,23 +2780,12 @@ async function handleSignup(req, res) {
       return;
     }
 
-    const legacyUsage = await loadUsage();
-    const legacyCredits = getCredits(legacyUsage, visitor.id);
-    const startingCredits = Math.max(freeCredits, Number(legacyCredits.remaining || 0));
-    const startingFreeCredits = Math.min(freeCredits, startingCredits);
-    const startingPaidCredits = Math.max(startingCredits - startingFreeCredits, 0);
-
     const now = new Date().toISOString();
     const userId = randomUUID();
     db.prepare(`
-      INSERT INTO users (id, email, name, password_hash, free_credits, paid_credits, used_credits, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, 0, 0, ?, ?)
-    `).run(userId, email, nameResult.name, hashPassword(password), startingFreeCredits, now, now);
-
-    if (startingPaidCredits > 0) {
-      db.prepare("UPDATE users SET paid_credits = ?, updated_at = ? WHERE id = ?")
-        .run(startingPaidCredits, now, userId);
-    }
+      INSERT INTO users (id, email, name, password_hash, usage_this_month, usage_limit, created_at, updated_at)
+      VALUES (?, ?, ?, ?, 0, ?, ?, ?)
+    `).run(userId, email, nameResult.name, hashPassword(password), FREE_PLAN.monthlyLimit, now, now);
 
     const user = db.prepare("SELECT * FROM users WHERE id = ?").get(userId);
     let verificationDelivery = { delivered: false };
@@ -2833,12 +2802,11 @@ async function handleSignup(req, res) {
     const token = createSession(userId);
     json(res, 200, {
       user: publicUser(user),
-      credits: getAccountCredits(user),
+      usage: getAccountUsage(user),
       stripeReady: Boolean(stripe),
       aiProvider: getAiProvider(),
       appUrl,
       adminEnabled: Boolean(adminEmail && adminPassword),
-      creditPacks: publicCreditPacks(),
       subscriptionPlans: publicSubscriptionPlans(),
       subscription: publicSubscriptionForUser(user),
       emailVerified: Boolean(user.email_verified),
@@ -2887,12 +2855,11 @@ async function handleLogin(req, res) {
     const token = createSession(user.id);
     json(res, 200, {
       user: publicUser(user),
-      credits: getAccountCredits(user),
+      usage: getAccountUsage(user),
       stripeReady: Boolean(stripe),
       aiProvider: getAiProvider(),
       appUrl,
       adminEnabled: Boolean(adminEmail && adminPassword),
-      creditPacks: publicCreditPacks(),
       subscriptionPlans: publicSubscriptionPlans(),
       subscription: publicSubscriptionForUser(user),
       emailVerified: Boolean(user.email_verified),
@@ -3097,7 +3064,7 @@ const server = createServer((req, res) => {
   }
 
   if (req.method === "POST" && req.url === "/api/create-checkout-session") {
-    handleCheckout(req, res);
+    handleLegacyCreditPack(req, res);
     return;
   }
 
@@ -3123,7 +3090,7 @@ const server = createServer((req, res) => {
         res.end();
         return;
       }
-      handleCheckout(req, res, checkoutMatch[1]);
+      handleLegacyCreditPack(req, res, checkoutMatch[1]);
       return;
     }
   }

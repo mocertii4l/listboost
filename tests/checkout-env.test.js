@@ -23,11 +23,6 @@ process.env.SUPPORT_EMAIL = " support@listboost.uk\n";
 process.env.ADMIN_EMAIL = " admin@listboost.uk\n";
 process.env.ADMIN_PASSWORD = " secret\n";
 process.env.REQUIRE_EMAIL_VERIFICATION = "false";
-process.env.CREDIT_PACKS_JSON = JSON.stringify([
-  { id: "starter", name: "Starter", credits: 50, pricePence: 700, label: "Flexible top-up", description: "Starter pack" },
-  { id: "seller", name: "Seller", credits: 150, pricePence: 1800, label: "Popular top-up", description: "Seller pack", featured: true },
-  { id: "reseller", name: "Reseller", credits: 400, pricePence: 4500, label: "Bulk top-up", description: "Reseller pack" }
-]);
 
 const moduleUnderTest = await import("../server.js");
 const {
@@ -137,13 +132,11 @@ test("DATA_DIR resolution does not silently fall back", () => {
 });
 
 test("checkout success and cancel URLs are fixed from APP_URL", () => {
-  const checkoutBlock = serverJs.match(/async function createCheckoutSession[\s\S]*?\n}\n/)?.[0] || "";
   assert.match(serverJs, /success_url:\s*`\$\{appUrl\}\/checkout\/success\?session_id=\{CHECKOUT_SESSION_ID\}`/);
   assert.match(serverJs, /cancel_url:\s*`\$\{appUrl\}\/checkout\/cancel`/);
-  assert.doesNotMatch(checkoutBlock, /referer|referrer/i);
 });
 
-test("checkout creates a Stripe URL for a valid pack and rejects invalid packs", async () => {
+test("legacy one-time-pack endpoints are gone or return a redirect", async () => {
   const port = await listen();
 
   const signup = await request(port, "/api/signup", {
@@ -154,33 +147,24 @@ test("checkout creates a Stripe URL for a valid pack and rejects invalid packs",
   const cookie = signup.response.headers.get("set-cookie");
   assert.match(cookie, /lb_session=/);
 
-  const valid = await request(port, "/api/create-checkout-session", {
+  const legacy = await request(port, "/api/create-checkout-session", {
     method: "POST",
     headers: { cookie },
     body: JSON.stringify({ packId: "starter" })
   });
-  assert.equal(valid.response.status, 200);
-  assert.equal(valid.body.packId, "starter");
-  assert.match(valid.body.url, /^https:\/\/checkout\.stripe\.test\/session\/starter$/);
+  assert.equal(legacy.response.status, 410);
+  assert.match(legacy.body.error, /no longer sells one-time/i);
 
   const route = await request(port, "/checkout/seller", {
     method: "GET",
     headers: { cookie }
   });
   assert.equal(route.response.status, 303);
-  assert.equal(route.response.headers.get("location"), "https://checkout.stripe.test/session/seller");
-
-  const invalid = await request(port, "/api/create-checkout-session", {
-    method: "POST",
-    headers: { cookie },
-    body: JSON.stringify({ packId: "not-real" })
-  });
-  assert.equal(invalid.response.status, 400);
-  assert.match(invalid.body.error, /Unknown credit pack/);
+  assert.equal(route.response.headers.get("location"), "/pricing");
   await close();
 });
 
-test("subscription checkout starts monthly billing and webhook grants refill credits", async () => {
+test("subscription checkout starts monthly billing and webhook resets usage on renewal", async () => {
   const port = await listen();
 
   const signup = await request(port, "/api/signup", {
@@ -215,7 +199,7 @@ test("subscription checkout starts monthly billing and webhook grants refill cre
         metadata: {
           userId,
           planId: "seller",
-          credits: "150",
+          monthlyLimit: "100",
           billingType: "subscription"
         }
       }
@@ -227,9 +211,31 @@ test("subscription checkout starts monthly billing and webhook grants refill cre
   assert.equal(afterStart.response.status, 200);
   assert.equal(afterStart.body.subscription.plan, "seller");
   assert.equal(afterStart.body.subscription.status, "active");
-  assert.equal(afterStart.body.credits.subscriptionCredits, 150);
-  assert.equal(afterStart.body.credits.remaining, 153);
-  assert.equal(afterStart.body.refills[0].credits, 150);
+  assert.equal(afterStart.body.usage.usageThisMonth, 0);
+  assert.equal(afterStart.body.usage.usageLimit, 100);
+  assert.equal(afterStart.body.usage.unlimited, false);
+  assert.equal(afterStart.body.usage.remaining, 100);
+  assert.equal(afterStart.body.cycles[0].plan, "seller");
+
+  // Burn one listing of usage before renewal
+  const oldOpenAi = process.env.OPENAI_API_KEY;
+  const oldAnthropic = process.env.ANTHROPIC_API_KEY;
+  delete process.env.OPENAI_API_KEY;
+  delete process.env.ANTHROPIC_API_KEY;
+  try {
+    const generated = await request(port, "/api/generate", {
+      method: "POST",
+      headers: { cookie },
+      body: JSON.stringify({ itemDetails: "Black Zara dress size 10 worn twice good condition" })
+    });
+    assert.equal(generated.response.status, 200);
+    assert.equal(generated.body.usage.usageThisMonth, 1);
+    assert.equal(generated.body.usage.remaining, 99);
+  } finally {
+    process.env.OPENAI_API_KEY = oldOpenAi;
+    if (oldAnthropic) process.env.ANTHROPIC_API_KEY = oldAnthropic;
+    else delete process.env.ANTHROPIC_API_KEY;
+  }
 
   const renewalEvent = await stripeWebhook(port, {
     id: "evt_subscription_renewal",
@@ -244,7 +250,7 @@ test("subscription checkout starts monthly billing and webhook grants refill cre
           metadata: {
             userId,
             planId: "seller",
-            credits: "150"
+            monthlyLimit: "100"
           }
         },
         lines: { data: [{ period: { end: 1819843200 } }] }
@@ -255,13 +261,14 @@ test("subscription checkout starts monthly billing and webhook grants refill cre
 
   const afterRenewal = await request(port, "/api/billing", { headers: { cookie } });
   assert.equal(afterRenewal.response.status, 200);
-  assert.equal(afterRenewal.body.credits.subscriptionCredits, 300);
-  assert.equal(afterRenewal.body.credits.remaining, 303);
-  assert.equal(afterRenewal.body.refills.length, 2);
+  assert.equal(afterRenewal.body.usage.usageThisMonth, 0);
+  assert.equal(afterRenewal.body.usage.usageLimit, 100);
+  assert.equal(afterRenewal.body.usage.remaining, 100);
+  assert.equal(afterRenewal.body.cycles.length, 2);
   await close();
 });
 
-test("generation consumes credits and returns a paywall response at zero", async () => {
+test("generation increments usage and returns a paywall once the monthly limit is hit", async () => {
   const port = await listen();
   const oldOpenAi = process.env.OPENAI_API_KEY;
   const oldAnthropic = process.env.ANTHROPIC_API_KEY;
@@ -271,7 +278,7 @@ test("generation consumes credits and returns a paywall response at zero", async
   try {
     const signup = await request(port, "/api/signup", {
       method: "POST",
-      body: JSON.stringify({ name: "Credit User", email: "credit-use@example.com", password: "password123" })
+      body: JSON.stringify({ name: "Usage User", email: "usage-trial@example.com", password: "password123" })
     });
     assert.equal(signup.response.status, 200);
     const cookie = signup.response.headers.get("set-cookie");
@@ -288,7 +295,8 @@ test("generation consumes credits and returns a paywall response at zero", async
         })
       });
       assert.equal(generated.response.status, 200);
-      assert.equal(generated.body.credits.remaining, 2 - index);
+      assert.equal(generated.body.usage.usageThisMonth, index + 1);
+      assert.equal(generated.body.usage.remaining, 3 - (index + 1));
       assert.match(generated.body.title, /Zara|dress|Vinted|Black/i);
     }
 
@@ -298,7 +306,9 @@ test("generation consumes credits and returns a paywall response at zero", async
       body: JSON.stringify({ itemDetails: "Black Zara dress size 10 good condition" })
     });
     assert.equal(blocked.response.status, 402);
-    assert.equal(blocked.body.credits.remaining, 0);
+    assert.match(blocked.body.error, /Upgrade your plan to continue generating listings/);
+    assert.equal(blocked.body.usage.remaining, 0);
+    assert.equal(blocked.body.usage.usageThisMonth, 3);
   } finally {
     process.env.OPENAI_API_KEY = oldOpenAi;
     if (oldAnthropic) process.env.ANTHROPIC_API_KEY = oldAnthropic;

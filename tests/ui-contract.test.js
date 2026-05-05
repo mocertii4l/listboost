@@ -3,47 +3,48 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 const indexHtml = readFileSync(new URL("../public/index.html", import.meta.url), "utf8");
-const appJs = readFileSync(new URL("../public/app.js", import.meta.url), "utf8");
+const pricingHtml = readFileSync(new URL("../public/pricing.html", import.meta.url), "utf8");
 const siteJs = readFileSync(new URL("../public/site.js", import.meta.url), "utf8");
 const stylesCss = readFileSync(new URL("../public/styles.css", import.meta.url), "utf8");
 const serverJs = readFileSync(new URL("../server.js", import.meta.url), "utf8");
 
-test("public pricing shows multiple live credit packs", () => {
-  assert.match(indexHtml, /data-pack-id="starter"/);
-  assert.match(indexHtml, /data-pack-id="seller"/);
-  assert.match(indexHtml, /data-pack-id="reseller"/);
-  assert.match(serverJs, /credits:\s*50/);
-  assert.match(serverJs, /credits:\s*150/);
-  assert.match(serverJs, /credits:\s*400/);
-  assert.match(serverJs, /pricePence:\s*700/);
-  assert.match(serverJs, /pricePence:\s*1800/);
-  assert.match(serverJs, /pricePence:\s*4500/);
+test("public pricing surfaces three subscription plans", () => {
+  for (const plan of ["starter", "seller", "reseller"]) {
+    assert.match(indexHtml, new RegExp(`data-subscription-plan="${plan}"`));
+    assert.match(pricingHtml, new RegExp(`data-subscription-plan="${plan}"`));
+  }
+  assert.doesNotMatch(indexHtml, /data-checkout-pack/);
+  assert.doesNotMatch(pricingHtml, /data-checkout-pack/);
+  assert.doesNotMatch(indexHtml, /one-time/);
+  assert.doesNotMatch(pricingHtml, /one-time/);
+  assert.match(serverJs, /monthlyLimit:\s*20/);
+  assert.match(serverJs, /monthlyLimit:\s*100/);
+  assert.match(serverJs, /monthlyLimit:\s*null/);
   assert.match(serverJs, /pricePence:\s*500/);
   assert.match(serverJs, /pricePence:\s*1200/);
   assert.match(serverJs, /pricePence:\s*2500/);
-  assert.match(serverJs, /const freeCredits = Math\.min\(Math\.max\(Number\(process\.env\.FREE_CREDITS \|\| 3\), 0\), 3\)/);
-  assert.match(serverJs, /function enforceCreditPackEconomics/);
+  assert.match(serverJs, /FREE_PLAN[\s\S]*monthlyLimit:\s*3/);
   assert.doesNotMatch(indexHtml, /4242 4242 4242 4242/);
   assert.doesNotMatch(indexHtml, /Test card/i);
 });
 
-test("checkout sends the selected pack to the backend", () => {
-  assert.match(appJs, /buyCredits\(packId\)/);
-  assert.match(appJs, /JSON\.stringify\(\{ packId \}\)/);
-  assert.match(serverJs, /requestedPackId/);
-  assert.match(serverJs, /packId: pack\.id/);
+test("subscription checkout sends planId to the backend", () => {
+  assert.match(siteJs, /data-subscription-plan/);
+  assert.match(siteJs, /JSON\.stringify\(\{ planId: subscriptionButton\.dataset\.subscriptionPlan \}\)/);
+  assert.match(serverJs, /requestedPlanId/);
+  assert.match(serverJs, /planId: plan\.id/);
 });
 
-test("account bootstrap exposes pricing and environment metadata", () => {
-  assert.match(serverJs, /creditPacks: publicCreditPacks\(\)/);
+test("account bootstrap exposes subscription plans and environment metadata", () => {
+  assert.match(serverJs, /subscriptionPlans: publicSubscriptionPlans\(\)/);
   assert.match(serverJs, /adminEnabled: Boolean\(adminEmail && adminPassword\)/);
-  assert.match(appJs, /updateEnvironmentLinks\(data\)/);
-  assert.match(appJs, /renderPricingPacks\(data\.creditPacks \|\| \[\]\)/);
+  assert.match(siteJs, /renderSubscriptionPlansGrid/);
+  assert.match(siteJs, /getSubscriptionPlans/);
 });
 
 test("homepage renders premium marketing structure", () => {
   assert.match(indexHtml, /Turn messy item notes into sell-ready Vinted listings in seconds/);
-  assert.match(indexHtml, /Start with 3 free credits/);
+  assert.match(indexHtml, /Start with 3 free listings/);
   assert.match(indexHtml, /Try the demo/);
   assert.match(indexHtml, /data-listing-card="hero"/);
   assert.match(indexHtml, /id="before-after"/);

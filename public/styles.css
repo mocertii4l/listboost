@@ -1513,6 +1513,7 @@ input[readonly] {
 
 .balance-card h2,
 .js-credits,
+.js-usage,
 .js-current-plan,
 .js-subscription-status,
 .js-next-refill {
@@ -2006,7 +2007,8 @@ body.confetti::after {
 }
 
 :root[data-theme="dark"] .balance-card h2,
-:root[data-theme="dark"] .js-credits {
+:root[data-theme="dark"] .js-credits,
+:root[data-theme="dark"] .js-usage {
   color: var(--text);
 }
 

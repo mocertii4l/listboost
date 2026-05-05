@@ -4,7 +4,7 @@ const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
 
 const toastRegion = $("#toastRegion");
-let accountState = { user: null, credits: null };
+let accountState = { user: null, usage: null };
 let globalCopyHandlerInstalled = false;
 let appNavigationInstalled = false;
 let themeToggleInstalled = false;
@@ -183,56 +183,47 @@ function demoResultTemplate(data = {}, inputText = "") {
   `;
 }
 
-function pricingCardTemplate({ variant = "one-time", id = "", name = "", credits = 0, pricePence = 0, label = "", featured = false, description = "", ctaLabel = "", current = false } = {}) {
-  const isSubscription = variant === "subscription";
-  const isOneTime = variant === "one-time";
-  const cardId = isSubscription ? `subscribe-${id}` : id;
-  const price = isSubscription ? formatMonthlyPrice({ pricePence }) : `${formatPrice(pricePence)} one-time`;
-  const creditLabel = isSubscription ? "credits/month" : "credits";
-  const compare = pricingFeaturesFor(id, variant);
-  const buttonAttrs = isSubscription
-    ? { "data-subscription-plan": id }
-    : { "data-checkout-pack": id, "data-pack-id": id };
-  const buttonLabel = ctaLabel || (current ? "Current plan" : isSubscription ? `Subscribe ${name}` : `Buy ${name}`);
+function pricingCardTemplate({ id = "", name = "", monthlyLimit = null, unlimited = false, pricePence = 0, label = "", featured = false, description = "", ctaLabel = "", current = false } = {}) {
+  const cardId = `subscribe-${id}`;
+  const price = formatMonthlyPrice({ pricePence });
+  const isUnlimited = unlimited || monthlyLimit == null;
+  const limitDisplay = isUnlimited ? "Unlimited" : String(Number(monthlyLimit || 0));
+  const limitSub = isUnlimited ? "listings/month" : "listings/month";
+  const compare = pricingFeaturesFor(id);
+  const buttonAttrs = { "data-subscription-plan": id };
+  const buttonLabel = ctaLabel || (current ? "Current plan" : `Subscribe ${name}`);
   return `
-    <article class="pricing-card ${variant} ${isSubscription ? "subscription-card" : ""} ${featured ? "is-featured featured" : ""}" id="${escapeHtml(cardId)}">
-      <span class="badge ${featured ? "badge-brand" : ""}">${escapeHtml(featured ? "Best value" : label || (isSubscription ? "Monthly" : "One-time"))}</span>
+    <article class="pricing-card subscription ${featured ? "is-featured featured" : ""}" id="${escapeHtml(cardId)}">
+      <span class="badge ${featured ? "badge-brand" : ""}">${escapeHtml(featured ? "Best value" : label || "Monthly")}</span>
       <h3>${escapeHtml(name)}</h3>
-      <p class="pricing-price"><strong>${Number(credits || 0)}</strong><span>${escapeHtml(creditLabel)}</span></p>
+      <p class="pricing-price"><strong>${escapeHtml(limitDisplay)}</strong><span>${escapeHtml(limitSub)}</span></p>
       <p class="pricing-meta">${escapeHtml(price)}</p>
-      <p class="pricing-copy">${escapeHtml(description || (isSubscription ? "Fresh credits every month for consistent Vinted listing." : "Credits for listings, price guidance and buyer replies."))}</p>
+      <p class="pricing-copy">${escapeHtml(description || "Monthly subscription with included Vinted listing tools.")}</p>
       <ul class="pricing-compare">${compare.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
       ${buttonTemplate({ variant: featured ? "primary" : "secondary", label: buttonLabel, className: "pricing-buy", attributes: buttonAttrs, disabled: current })}
     </article>
   `;
 }
 
-function pricingFeaturesFor(id = "", variant = "one-time") {
-  if (variant === "one-time") {
-    return [
-      "Same credit amount as monthly plans",
-      "No monthly seller tools unlocked",
-      "Flexible top-up when you need it"
-    ];
-  }
+function pricingFeaturesFor(id = "") {
   const features = {
     starter: [
       "Notes-to-listing generator",
       "Titles, descriptions and keywords",
-      "Basic saved history"
+      "Up to 20 listings per month"
     ],
     seller: [
       "Everything in Starter",
       "Photo upload and buyer replies",
-      "Price guidance and listing score"
+      "Price guidance, listing score, up to 100/month"
     ],
     reseller: [
       "Everything in Seller",
-      "Bulk-friendly workflow and reusable templates",
-      "Priority support for serious sellers"
+      "Unlimited monthly listings",
+      "Bulk workflow, reusable templates, priority support"
     ]
   };
-  return features[id] || ["Monthly credit refill", "Switch plans from billing", "Cancel any time"];
+  return features[id] || ["Monthly subscription", "Switch plans from billing", "Cancel any time"];
 }
 
 function authShellTemplate({ heading = "", subtext = "", body = "" } = {}) {
@@ -301,7 +292,7 @@ function publicHeaderTemplate() {
     </nav>
     <div class="nav-actions">
       <a class="btn btn-ghost nav-login js-public-login" href="/login">Log in</a>
-      <a class="btn btn-primary nav-start js-public-start" href="/signup" aria-label="Start free with 3 credits">Start with 3 free credits</a>
+      <a class="btn btn-primary nav-start js-public-start" href="/signup" aria-label="Start free with 3 listings">Start free - 3 listings</a>
       <a class="btn btn-secondary js-public-app hidden" href="/app">${iconSvg("user")}<span>Open app</span></a>
       <button class="btn btn-ghost js-public-logout hidden" type="button" data-logout>${iconSvg("log-out")}<span>Sign out</span></button>
     </div>
@@ -399,26 +390,12 @@ function formatDate(value) {
   return new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric" }).format(date);
 }
 
-function fallbackCreditPacks() {
-  return [
-    { id: "starter", name: "Starter", credits: 50, pricePence: 700, label: "Flexible top-up" },
-    { id: "seller", name: "Seller", credits: 150, pricePence: 1800, label: "Popular top-up", featured: true },
-    { id: "reseller", name: "Reseller", credits: 400, pricePence: 4500, label: "Bulk top-up" }
-  ];
-}
-
 function fallbackSubscriptionPlans() {
   return [
-    { id: "starter", name: "Starter", credits: 50, pricePence: 500, label: "Monthly starter" },
-    { id: "seller", name: "Seller", credits: 150, pricePence: 1200, label: "Best value", featured: true },
-    { id: "reseller", name: "Reseller", credits: 400, pricePence: 2500, label: "Reseller tools" }
+    { id: "starter", name: "Starter", monthlyLimit: 20, pricePence: 500, label: "Monthly starter" },
+    { id: "seller", name: "Seller", monthlyLimit: 100, pricePence: 1200, label: "Best value", featured: true },
+    { id: "reseller", name: "Reseller", monthlyLimit: null, unlimited: true, pricePence: 2500, label: "Reseller tools" }
   ];
-}
-
-function getCreditPacks() {
-  return Array.isArray(accountState.creditPacks) && accountState.creditPacks.length
-    ? accountState.creditPacks
-    : fallbackCreditPacks();
 }
 
 function getSubscriptionPlans() {
@@ -427,25 +404,30 @@ function getSubscriptionPlans() {
     : fallbackSubscriptionPlans();
 }
 
+function formatUsageText(usage) {
+  if (!usage) return "Loading usage";
+  if (usage.unlimited) return `${Number(usage.usageThisMonth || 0)} listings used (unlimited)`;
+  const limit = Number(usage.usageLimit || 0);
+  const used = Number(usage.usageThisMonth || 0);
+  return `${used} / ${limit} listings used`;
+}
+
 function updateAccountChrome(me = accountState) {
   accountState = { ...accountState, ...me };
-  const remaining = Number(accountState.credits?.remaining || 0);
+  const usage = accountState.usage || {};
   const plan = accountState.subscription || accountState.user || {};
   const displayName = accountState.user?.name || accountState.user?.email || "Account";
   const initials = displayName.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase() || "LB";
+  const planLabel = usage.planName || plan.planName || titleCasePlan(usage.plan || plan.subscriptionPlan || plan.plan || "Free");
+  const statusLabel = titleCasePlan(usage.subscriptionStatus || plan.subscriptionStatus || plan.status || "Inactive");
+  const cycleEnd = usage.billingPeriodEnd || plan.billingPeriodEnd || null;
   $$(".js-name").forEach((node) => { node.textContent = displayName; });
   $$(".js-email").forEach((node) => { node.textContent = accountState.user?.email || "Signed out"; });
   $$(".js-avatar-initials").forEach((node) => { node.textContent = initials; });
-  $$(".js-credits").forEach((node) => { node.textContent = `${remaining} credits remaining`; });
-  $$(".js-current-plan").forEach((node) => { node.textContent = plan.planName || titleCasePlan(plan.subscriptionPlan || plan.plan || "Free"); });
-  $$(".js-subscription-status").forEach((node) => { node.textContent = titleCasePlan(plan.subscriptionStatus || plan.status || "Inactive"); });
-  $$(".js-next-refill").forEach((node) => { node.textContent = plan.nextCreditRefill ? formatDate(plan.nextCreditRefill) : "No refill scheduled"; });
-  $$(".low-credit-cta").forEach((node) => {
-    const show = Boolean(accountState.user) && remaining < 10;
-    node.classList.toggle("hidden", !show);
-    node.textContent = remaining <= 0 ? "Subscribe or buy credits" : `${remaining} credits - Top up`;
-    node.href = "/app/billing";
-  });
+  $$(".js-usage").forEach((node) => { node.textContent = formatUsageText(usage); });
+  $$(".js-current-plan").forEach((node) => { node.textContent = planLabel; });
+  $$(".js-subscription-status").forEach((node) => { node.textContent = statusLabel; });
+  $$(".js-next-refill").forEach((node) => { node.textContent = cycleEnd ? formatDate(cycleEnd) : "No active subscription"; });
   const signedIn = Boolean(accountState.user);
   $$(".js-public-login, .js-public-start").forEach((node) => { node.classList.toggle("hidden", signedIn); });
   $$(".js-public-app, .js-public-logout").forEach((node) => { node.classList.toggle("hidden", !signedIn); });
@@ -453,12 +435,11 @@ function updateAccountChrome(me = accountState) {
   document.body.classList.toggle("signed-out", !signedIn);
 }
 
-function updateCreditsFromResponse(data = {}) {
-  if (!data.credits && !data.user) return;
+function updateUsageFromResponse(data = {}) {
+  if (!data.usage && !data.user) return;
   updateAccountChrome({
     user: data.user || accountState.user,
-    credits: data.credits || accountState.credits,
-    creditPacks: data.creditPacks || accountState.creditPacks,
+    usage: data.usage || accountState.usage,
     subscriptionPlans: data.subscriptionPlans || accountState.subscriptionPlans,
     subscription: data.subscription || accountState.subscription
   });
@@ -479,28 +460,18 @@ function momentumMessage(count) {
   return count <= 1 ? "You've generated 1 listing today" : "You're on a roll - keep going";
 }
 
-function renderPacks(packs) {
+function renderSubscriptionPlansGrid() {
   const grid = $("#packGrid");
-  if (!grid || !Array.isArray(packs)) return;
-  const creditCards = packs.map((pack) => pricingCardTemplate({
-    variant: "one-time",
-    ...pack,
-    ctaLabel: `Buy ${pack.name}`
-  })).join("");
+  if (!grid) return;
   const subscriptionCards = getSubscriptionPlans().map((plan) => pricingCardTemplate({
-    variant: "subscription",
     ...plan,
     label: plan.featured ? "Best value" : plan.label || "Monthly",
     ctaLabel: plan.featured ? "Subscribe monthly" : `Subscribe ${plan.name}`
   })).join("");
   grid.innerHTML = `
     <div class="pricing-mode-section recommended" data-pricing-panel="subscriptions">
-      <div class="section-head compact"><p class="eyebrow">Subscribe monthly</p><h2>Recommended for active sellers</h2></div>
+      <div class="section-head compact"><p class="eyebrow">Subscribe monthly</p><h2>Pick the plan that fits your listing volume</h2></div>
       <div class="pricing-grid">${subscriptionCards}</div>
-    </div>
-    <div class="pricing-mode-section" data-pricing-panel="credits">
-      <div class="section-head compact"><p class="eyebrow">Buy credits</p><h2>One-time packs</h2></div>
-      <div class="pricing-grid">${creditCards}</div>
     </div>
   `;
 }
@@ -516,7 +487,7 @@ async function bootstrap() {
   try {
     const me = await api("/api/me");
     accountState = me;
-    renderPacks(me.creditPacks || []);
+    renderSubscriptionPlansGrid();
     updateAccountChrome(me);
     hydrateAppRoute(me);
     if (location.pathname === "/verify-email" && me.user?.emailVerified) {
@@ -551,7 +522,7 @@ function installAuthMode() {
   const nameInput = authForm.elements.name;
   authForm.dataset.mode = isSignup ? "signup" : "login";
   if (heading) heading.textContent = isSignup ? "Create account" : "Sign in";
-  if (intro) intro.textContent = isSignup ? "Get 3 free credits - no card needed." : "Your credits, history and listings stay with this account.";
+  if (intro) intro.textContent = isSignup ? "Try 3 free listings on us - no card needed." : "Your subscription, history and listings stay with this account.";
   if (button) button.textContent = isSignup ? "Create account" : "Sign in";
   if (nameField) nameField.classList.toggle("hidden", !isSignup);
   if (nameInput) nameInput.required = isSignup;
@@ -673,10 +644,10 @@ function dashboardRouteTemplate() {
       ${appTrustStrip()}
       <div class="dashboard-row dashboard-top-row">
         <article class="card balance-card compact-balance">
-          <span class="badge">${iconSvg("wallet")} Credit balance</span>
-          <h2 class="js-credits">Loading credits</h2>
-          <p class="muted js-next-refill">No refill scheduled</p>
-          ${buttonTemplate({ variant: "secondary", label: "Top up", icon: "credit-card", href: "/app/billing" })}
+          <span class="badge">${iconSvg("wallet")} This month's usage</span>
+          <h2 class="js-usage">Loading usage</h2>
+          <p class="muted js-next-refill">No active subscription</p>
+          ${buttonTemplate({ variant: "secondary", label: "Manage plan", icon: "credit-card", href: "/app/billing" })}
         </article>
         <article class="card plan-card">
           <span class="badge">${iconSvg("repeat")} Current plan</span>
@@ -739,7 +710,7 @@ function notesRouteTemplate() {
           </div>
           <div class="generator-meta">
             <span id="notesCharCount">0 characters</span>
-            <span class="credit-cost">${iconSvg("credit-card")} This uses 1 credit</span>
+            <span class="usage-cost">${iconSvg("file-text")} <span class="js-usage">Loading usage</span></span>
           </div>
           <div class="generator-actions">
             <button class="btn btn-primary generator-cta" type="submit">Generate sell-ready listing</button>
@@ -835,7 +806,7 @@ function historyRouteTemplate() {
 function billingRouteTemplate() {
   return `
     <section class="billing-route" data-route="billing">
-      ${routeHeader("Billing", "Plan and credits", "Manage monthly credits, one-time packs and recent credit activity.")}
+      ${routeHeader("Billing", "Plan and usage", "Manage your monthly subscription and see this cycle's listing usage.")}
       <div class="billing-overview">
         <article class="card card-elevated billing-summary-card">
           <span class="badge badge-brand">${iconSvg("repeat")} Current plan</span>
@@ -843,22 +814,14 @@ function billingRouteTemplate() {
           <p class="muted">Subscription status: <span class="js-subscription-status">Inactive</span></p>
           <button class="btn btn-secondary" type="button" data-manage-subscription>${iconSvg("user-cog")}<span>Manage subscription</span></button>
         </article>
-        <article class="card balance-card"><span class="badge">${iconSvg("wallet")} Credits remaining</span><h2 class="js-credits">Loading credits</h2><p class="muted">One credit creates one listing package or buyer reply.</p></article>
-        <article class="card balance-card"><span class="badge">${iconSvg("calendar")} Next refill</span><h2 class="js-next-refill">No refill scheduled</h2><p class="muted">Monthly plans refill on renewal.</p></article>
-      </div>
-      <div class="billing-toggle" role="tablist" aria-label="Billing options">
-        <button class="is-active" type="button" data-billing-view="subscriptions">Subscribe monthly</button>
-        <button type="button" data-billing-view="credits">Buy credits</button>
+        <article class="card balance-card"><span class="badge">${iconSvg("wallet")} Listings used this month</span><h2 class="js-usage">Loading usage</h2><p class="muted">Usage resets at the start of every billing cycle.</p></article>
+        <article class="card balance-card"><span class="badge">${iconSvg("calendar")} Cycle ends</span><h2 class="js-next-refill">No active subscription</h2><p class="muted">Subscribe monthly to keep generating listings.</p></article>
       </div>
       <section class="billing-panel" data-billing-panel="subscriptions">
         <div class="section-head compact"><p class="eyebrow">Recommended</p><h2>Monthly plans</h2></div>
         <div class="pricing-grid" id="billingSubscriptions">${loadingTemplate("Loading monthly plans...")}</div>
       </section>
-      <section class="billing-panel hidden" data-billing-panel="credits">
-        <div class="section-head compact"><p class="eyebrow">Flexible top-ups</p><h2>One-time packs</h2></div>
-        <div class="pricing-grid" id="billingPacks">${loadingTemplate("Loading credit packs...")}</div>
-      </section>
-      <section class="card billing-activity"><h3>Recent credit activity</h3><div id="billingTransactions">${loadingTemplate("Loading transactions...")}</div></section>
+      <section class="card billing-activity"><h3>Recent billing activity</h3><div id="billingTransactions">${loadingTemplate("Loading transactions...")}</div></section>
     </section>
   `;
 }
@@ -923,7 +886,7 @@ function hydrateAccountSettings(me = accountState) {
 
 async function loadDashboardHistory(me = accountState) {
   $$(".js-first-run").forEach((node) => {
-    node.classList.toggle("hidden", Number(me.credits?.used || 0) > 0);
+    node.classList.toggle("hidden", Number(me.usage?.usageThisMonth || 0) > 0);
   });
   const list = $("#dashboardHistory");
   if (!list) return;
@@ -1212,7 +1175,7 @@ function installForms() {
           method: "POST",
           body: JSON.stringify(Object.fromEntries(new FormData(profileForm)))
         });
-        updateCreditsFromResponse(data);
+        updateUsageFromResponse(data);
         toast("Profile saved.", "success");
         if (data.verificationRequired) location.href = "/verify-email";
       } catch (error) {
@@ -1384,8 +1347,8 @@ function outputTemplate(data = {}, options = {}) {
   const photoItems = data.photoChecklist?.length ? data.photoChecklist : ["Front photo in natural light", "Label or size close-up", "Any flaws shown clearly", "Back view"];
   const reply = buyerReplyText(data);
   const allCopy = listingCopyText({ ...data, photoChecklist: photoItems });
-  const creditNote = options.creditUsed ? `<p class="credit-feedback">${options.creditUsed} credit used</p>` : "";
-  const demoCta = options.demo ? '<a class="btn btn-primary result-cta" href="/signup">Create free account and get 3 free credits</a>' : "";
+  const usageNote = options.usageNote ? `<p class="credit-feedback">${escapeHtml(options.usageNote)}</p>` : "";
+  const demoCta = options.demo ? '<a class="btn btn-primary result-cta" href="/signup">Create free account - 3 listings on us</a>' : "";
   const inputText = options.inputText || data.input?.itemDetails || "";
   const momentumNote = options.momentumCount ? `<p class="momentum-feedback">${escapeHtml(momentumMessage(options.momentumCount))}</p>` : "";
 
@@ -1395,7 +1358,7 @@ function outputTemplate(data = {}, options = {}) {
         <div>
           <span class="badge badge-brand">${iconSvg("check-circle")} Ready</span>
           <h2>Your listing is ready</h2>
-          ${creditNote}
+          ${usageNote}
           ${momentumNote}
         </div>
         <div class="result-summary-actions">
@@ -1476,33 +1439,32 @@ function installCopyFeedback() {
 
 function showPaywallModal() {
   $(".paywall-backdrop")?.remove();
-  const packs = getCreditPacks();
   const plans = getSubscriptionPlans();
-  const createdCount = Number(accountState.credits?.used || 0);
+  const createdCount = Number(accountState.usage?.usageThisMonth || 0);
   const featuredPlan = plans.find((plan) => plan.featured) || plans[0];
   document.body.insertAdjacentHTML("beforeend", `
     <div class="paywall-backdrop" role="presentation">
       <section class="paywall-modal" role="dialog" aria-modal="true" aria-labelledby="paywallTitle">
         <button class="paywall-close" type="button" data-close-paywall aria-label="Close">x</button>
-        <p class="badge">Credits</p>
-        <h2 id="paywallTitle">You're out of credits</h2>
-        <p class="paywall-proof">You've created ${createdCount} ${createdCount === 1 ? "listing" : "listings"} already.</p>
-        <p class="muted">Most sellers subscribe to keep listing faster</p>
+        <p class="badge">Subscription</p>
+        <h2 id="paywallTitle">Upgrade your plan to continue generating listings</h2>
+        <p class="paywall-proof">You've created ${createdCount} ${createdCount === 1 ? "listing" : "listings"} this cycle.</p>
+        <p class="muted">Pick the monthly plan that matches your listing volume.</p>
         ${featuredPlan ? `
           <article class="paywall-pack is-featured is-dominant subscription-paywall">
             <span>Recommended monthly</span>
-            <strong>${escapeHtml(featuredPlan.name)} - ${Number(featuredPlan.credits || 0)} credits/month</strong>
+            <strong>${escapeHtml(featuredPlan.name)} - ${featuredPlan.unlimited || featuredPlan.monthlyLimit == null ? "Unlimited" : Number(featuredPlan.monthlyLimit || 0)} listings/month</strong>
             <p>${escapeHtml(formatMonthlyPrice(featuredPlan))}</p>
             <button type="button" class="pricing-buy" data-subscription-plan="${escapeHtml(featuredPlan.id)}">Subscribe monthly</button>
           </article>
         ` : ""}
         <div class="paywall-packs">
-          ${packs.map((pack) => `
-            <article class="paywall-pack ${pack.featured || Number(pack.credits) === 150 ? "is-featured" : ""}">
-              <span>${escapeHtml(Number(pack.credits) === 150 ? "Best one-time pack" : pack.label || "")}</span>
-              <strong>${Number(pack.credits || 0)} credits</strong>
-              <p>${escapeHtml(formatPrice(pack.pricePence))}</p>
-              <button type="button" class="pricing-buy" data-checkout-pack="${escapeHtml(pack.id)}">Buy credits</button>
+          ${plans.filter((plan) => !featuredPlan || plan.id !== featuredPlan.id).map((plan) => `
+            <article class="paywall-pack">
+              <span>${escapeHtml(plan.label || "Monthly")}</span>
+              <strong>${plan.unlimited || plan.monthlyLimit == null ? "Unlimited" : Number(plan.monthlyLimit || 0)} listings/month</strong>
+              <p>${escapeHtml(formatMonthlyPrice(plan))}</p>
+              <button type="button" class="pricing-buy" data-subscription-plan="${escapeHtml(plan.id)}">Subscribe ${escapeHtml(plan.name)}</button>
             </article>
           `).join("")}
         </div>
@@ -1513,8 +1475,10 @@ function showPaywallModal() {
 }
 
 function handleGenerationError(error) {
-  if (error?.status === 402 || Number(error?.credits?.remaining) <= 0) {
-    updateCreditsFromResponse(error);
+  const usage = error?.usage;
+  const overLimit = error?.status === 402 || (usage && !usage.unlimited && Number(usage.remaining || 0) <= 0);
+  if (overLimit) {
+    updateUsageFromResponse(error);
     showPaywallModal();
   }
   toast(error.message, "error");
@@ -1552,10 +1516,10 @@ function installAppTools() {
       try {
         const formPayload = Object.fromEntries(new FormData(notesForm));
         const data = await api("/api/generate", { method: "POST", body: JSON.stringify(formPayload) });
-        updateCreditsFromResponse(data);
+        updateUsageFromResponse(data);
         const momentumCount = recordGenerationMomentum();
-        out.innerHTML = outputTemplate(data, { creditUsed: 1, inputText: formPayload.itemDetails, momentumCount });
-        toast("Generated. 1 credit used.", "success");
+        out.innerHTML = outputTemplate(data, { usageNote: formatUsageText(data.usage), inputText: formPayload.itemDetails, momentumCount });
+        toast("Listing generated.", "success");
       } catch (error) {
         out.innerHTML = emptyStateTemplate({
           icon: "x",
@@ -1591,10 +1555,10 @@ function installAppTools() {
             negotiationGoal: "friendly"
           })
         });
-        updateCreditsFromResponse(data);
+        updateUsageFromResponse(data);
         const momentumCount = recordGenerationMomentum();
-        out.innerHTML = outputTemplate(data, { creditUsed: 1, inputText: formData.get("notes") || "Photo upload", momentumCount });
-        toast("Generated from photos. 1 credit used.", "success");
+        out.innerHTML = outputTemplate(data, { usageNote: formatUsageText(data.usage), inputText: formData.get("notes") || "Photo upload", momentumCount });
+        toast("Generated from photos.", "success");
       } catch (error) {
         out.innerHTML = emptyStateTemplate({ icon: "x", heading: "Photo generation paused", body: error.message });
         handleGenerationError(error);
@@ -1620,10 +1584,10 @@ function installAppTools() {
             negotiationGoal: "friendly"
           })
         });
-        updateCreditsFromResponse(data);
+        updateUsageFromResponse(data);
         const momentumCount = recordGenerationMomentum();
-        out.innerHTML = outputTemplate(data, { creditUsed: 1, inputText: `${formData.get("title") || ""}\n${formData.get("description") || ""}`.trim(), momentumCount });
-        toast("Scored listing. 1 credit used.", "success");
+        out.innerHTML = outputTemplate(data, { usageNote: formatUsageText(data.usage), inputText: `${formData.get("title") || ""}\n${formData.get("description") || ""}`.trim(), momentumCount });
+        toast("Listing scored.", "success");
       } catch (error) {
         out.innerHTML = emptyStateTemplate({ icon: "x", heading: "Score paused", body: error.message });
         handleGenerationError(error);
@@ -1651,9 +1615,9 @@ function installAppTools() {
           })
         });
         const reply = data.buyerQuestionReply || (data.buyerReplies || [])[0] || "Reply generated.";
-        updateCreditsFromResponse(data);
+        updateUsageFromResponse(data);
         out.innerHTML = `<section class="output-card reply-block"><h3>Suggested reply</h3><p>${escapeHtml(reply)}</p>${copyButton("Copy reply", reply)}</section>`;
-        toast("Reply generated. 1 credit used.", "success");
+        toast("Reply generated.", "success");
       } catch (error) {
         out.innerHTML = emptyStateTemplate({ icon: "x", heading: "Reply paused", body: error.message });
         handleGenerationError(error);
@@ -1742,30 +1706,22 @@ async function loadAppHistory(page = 1) {
 }
 
 async function loadBilling(me = accountState) {
-  const packs = $("#billingPacks");
   const subscriptions = $("#billingSubscriptions");
   const transactions = $("#billingTransactions");
-  if (!packs || !subscriptions || !transactions) return;
+  if (!subscriptions || !transactions) return;
   if (!me.user) {
-    packs.innerHTML = '<div class="empty-state">Sign in to buy credits.</div>';
     subscriptions.innerHTML = '<div class="empty-state">Sign in to subscribe monthly.</div>';
-    transactions.innerHTML = '<div class="empty-state">Transactions appear after your first credit purchase.</div>';
+    transactions.innerHTML = '<div class="empty-state">Billing activity appears after your first subscription.</div>';
     return;
   }
   try {
     const data = await api("/api/billing");
-    updateCreditsFromResponse(data);
-    packs.innerHTML = (data.creditPacks || []).map((pack) => pricingCardTemplate({
-      variant: "one-time",
-      ...pack,
-      ctaLabel: `Buy ${pack.name}`
-    })).join("");
-    const currentPlan = data.subscription?.plan || data.user?.subscriptionPlan || "free";
+    updateUsageFromResponse(data);
+    const currentPlan = data.subscription?.plan || data.user?.plan || "free";
     const currentStatus = data.subscription?.status || data.user?.subscriptionStatus || "inactive";
     subscriptions.innerHTML = (data.subscriptionPlans || []).map((plan) => {
       const isCurrent = currentPlan === plan.id && ["active", "trialing", "past_due"].includes(String(currentStatus).toLowerCase());
       return pricingCardTemplate({
-        variant: "subscription",
         ...plan,
         current: isCurrent,
         label: plan.featured ? "Best value" : plan.label || "Monthly",
@@ -1773,15 +1729,14 @@ async function loadBilling(me = accountState) {
       });
     }).join("");
     const rows = [
-      ...(data.payments || []).map((item) => ({ label: `Payment ${item.reference}`, amount: `+${item.credits} credits`, date: item.createdAt })),
-      ...(data.refills || []).map((item) => ({ label: `Subscription ${titleCasePlan(item.plan)} refill`, amount: `+${item.credits} credits`, date: item.createdAt })),
-      ...(data.audit || []).map((item) => ({ label: item.reason, amount: `${item.delta > 0 ? "+" : ""}${item.delta}`, date: item.createdAt }))
+      ...(data.cycles || []).map((item) => ({ label: `${titleCasePlan(item.plan)} billing cycle`, amount: "Reset", date: item.createdAt })),
+      ...(data.audit || []).map((item) => ({ label: item.reason, amount: item.actor, date: item.createdAt }))
     ].slice(0, 20);
     transactions.innerHTML = rows.length ? `
       <div class="transaction-list">
         ${rows.map((row) => `<div><span>${escapeHtml(row.label)}</span><strong>${escapeHtml(row.amount)}</strong><time>${escapeHtml(row.date)}</time></div>`).join("")}
       </div>
-    ` : emptyStateTemplate({ icon: "wallet", heading: "No transactions yet", body: "Credit purchases, monthly refills and adjustments will appear here." });
+    ` : emptyStateTemplate({ icon: "wallet", heading: "No activity yet", body: "Subscription cycles and plan changes appear here." });
   } catch (error) {
     transactions.innerHTML = emptyStateTemplate({ icon: "x", heading: "Billing could not load", body: error.message });
   }
@@ -1840,7 +1795,7 @@ function installCheckoutButtons() {
           location.href = data.url;
           return;
         }
-        updateCreditsFromResponse(data);
+        updateUsageFromResponse(data);
         toast(data.unchanged ? "You're already on this plan." : "Subscription plan updated.", "success");
         loadBilling(accountState);
       } catch (error) {
@@ -1852,32 +1807,6 @@ function installCheckoutButtons() {
         subscriptionButton.disabled = false;
         subscriptionButton.textContent = original;
       }
-      return;
-    }
-    const button = event.target.closest("[data-checkout-pack]");
-    if (!button) return;
-    if (!accountState.user) {
-      const packId = button.dataset.checkoutPack || "";
-      location.href = `/signup?next=${encodeURIComponent(`/pricing#${packId}`)}`;
-      return;
-    }
-    button.disabled = true;
-    const original = button.textContent;
-    button.textContent = "Opening checkout...";
-    try {
-      const data = await api("/api/create-checkout-session", {
-        method: "POST",
-        body: JSON.stringify({ packId: button.dataset.checkoutPack })
-      });
-      location.href = data.url;
-    } catch (error) {
-      toast(error.message, "error");
-      if (error.authUrl) {
-        location.href = error.authUrl;
-        return;
-      }
-      button.disabled = false;
-      button.textContent = original;
     }
   });
 }
@@ -1899,26 +1828,25 @@ function installCheckoutSuccess() {
     return;
   }
   let attempts = 0;
-  const startingCredits = Number(accountState.credits?.remaining || 0);
   const timer = setInterval(async () => {
     attempts += 1;
     try {
       const data = await api(`/api/checkout/success?session_id=${encodeURIComponent(sessionId)}`);
-      updateCreditsFromResponse(data);
-      const delta = Math.max(0, Number(data.credits.remaining || 0) - startingCredits);
-      if (!data.pending || delta > 0 || attempts >= 15) {
+      updateUsageFromResponse(data);
+      const planName = data.subscription?.planName || data.user?.planName || "your plan";
+      if (!data.pending || attempts >= 15) {
         clearInterval(timer);
-        if (delta > 0 || !data.pending) {
-          status.innerHTML = `<strong>Credits added.</strong><span>+${delta || 50} credits. Your balance is updated.</span>`;
+        if (!data.pending) {
+          status.innerHTML = `<strong>Subscription active.</strong><span>You're on ${escapeHtml(planName)}. Usage resets each cycle.</span>`;
           document.body.classList.add("confetti");
         } else {
-          status.innerHTML = "<strong>Credits not appearing yet?</strong><span>Email support@listboost.uk with your purchase reference.</span>";
+          status.innerHTML = "<strong>Subscription not active yet?</strong><span>Email support@listboost.uk with your reference.</span>";
         }
       }
     } catch {
       if (attempts >= 15) {
         clearInterval(timer);
-        status.innerHTML = "Payment received. If credits do not appear shortly, contact support@listboost.uk.";
+        status.innerHTML = "Payment received. If your subscription is not active shortly, contact support@listboost.uk.";
       }
     }
   }, 2000);

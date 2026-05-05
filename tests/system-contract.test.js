@@ -38,7 +38,7 @@ test("new app surfaces include required modules", () => {
   assert.match(siteJs, /function repliesRouteTemplate/);
   assert.match(siteJs, /Buyer reply tools/);
   assert.match(siteJs, /function billingRouteTemplate/);
-  assert.match(siteJs, /Recent credit activity/);
+  assert.match(siteJs, /Recent billing activity/);
   assert.match(siteJs, /installCheckoutSuccess/);
   assert.match(siteJs, /theme-toggle/);
 });
@@ -57,21 +57,21 @@ test("app route templates isolate feature content and expose active nav", () => 
   assert.match(serverJs, /handleBilling/);
 });
 
-test("app generator flow is guided, copyable and credit aware", () => {
+test("app generator flow is guided, copyable and usage aware", () => {
   assert.match(siteJs, /class="notes-route"/);
   assert.match(siteJs, /class="notes-layout"/);
   assert.match(siteJs, /id="notesInput"/);
   assert.match(siteJs, /Example: Zara navy satin midi dress/);
   assert.match(siteJs, /example-chip/);
   assert.match(siteJs, /notesCharCount/);
-  assert.match(siteJs, /This uses 1 credit/);
+  assert.match(siteJs, /class="js-usage"/);
   assert.match(siteJs, /Generate sell-ready listing/);
   assert.match(siteJs, /Generating your listing/);
   assert.match(siteJs, /results-skeleton/);
   assert.match(siteJs, /Copy all/);
   assert.match(siteJs, /Save to history/);
-  assert.match(siteJs, /credit used/);
-  assert.match(siteJs, /You're out of credits/);
+  assert.match(siteJs, /formatUsageText/);
+  assert.match(siteJs, /Upgrade your plan to continue generating listings/);
   assert.match(siteJs, /showPaywallModal/);
   assert.match(siteJs, /No Vinted login required/);
   assert.match(siteJs, /Copy and paste manually/);
@@ -100,12 +100,12 @@ test("copy feedback nudges users toward listing", () => {
   assert.match(siteJs, /You're ready to list this item/);
 });
 
-test("zero-credit paywall shows upgrade psychology", () => {
+test("usage-limit paywall pushes subscription upgrade", () => {
   assert.match(siteJs, /You've created/);
-  assert.match(siteJs, /Most sellers subscribe to keep listing faster/);
+  assert.match(siteJs, /Pick the monthly plan that matches your listing volume/);
   assert.match(siteJs, /Recommended monthly/);
   assert.match(siteJs, /data-subscription-plan/);
-  assert.match(siteJs, /Number\(pack\.credits\) === 150/);
+  assert.match(siteJs, /Upgrade your plan to continue generating listings/);
   assert.match(siteJs, /is-dominant/);
   assert.match(stylesCss, /\.paywall-pack\.is-dominant/);
   assert.match(stylesCss, /\.paywall-proof/);
@@ -134,7 +134,7 @@ test("password toggles and public header states are wired", () => {
   assert.match(authUtilsJs, /Hide password/);
   assert.match(siteJs, /togglePasswordVisibility/);
   assert.match(siteJs, /Log in/);
-  assert.match(siteJs, /Start free/);
+  assert.match(siteJs, /Start free - 3 listings/);
   assert.match(siteJs, /js-email/);
   assert.match(siteJs, /Sign out/);
   assert.match(siteJs, /js-public-logout/);
@@ -202,29 +202,30 @@ test("404 page renders with the site shell", () => {
   assert.match(notFoundHtml, /class="btn btn-primary"/);
 });
 
-test("dark mode contrast keeps app credits readable", () => {
+test("dark mode contrast keeps app usage readable", () => {
   assert.match(stylesCss, /:root\[data-theme="dark"\][\s\S]*--text: #f4fffc/);
   assert.match(stylesCss, /:root\[data-theme="dark"\] \.balance-card h2/);
-  assert.match(stylesCss, /:root\[data-theme="dark"\] \.js-credits/);
+  assert.match(stylesCss, /:root\[data-theme="dark"\] \.js-usage/);
   assert.match(stylesCss, /color: var\(--text\)/);
 });
 
-test("pricing page renders three buyable packs", () => {
-  for (const pack of ["starter", "seller", "reseller"]) {
-    assert.match(pricingHtml, new RegExp(`id="${pack}"`));
-    assert.match(pricingHtml, new RegExp(`data-checkout-pack="${pack}"`));
-    assert.match(pricingHtml, new RegExp(`data-subscription-plan="${pack}"`));
+test("pricing page renders subscription tiers only", () => {
+  for (const plan of ["starter", "seller", "reseller"]) {
+    assert.match(pricingHtml, new RegExp(`id="subscribe-${plan}"`));
+    assert.match(pricingHtml, new RegExp(`data-subscription-plan="${plan}"`));
   }
-  assert.match(pricingHtml, /50/);
-  assert.match(pricingHtml, /150/);
-  assert.match(pricingHtml, /400/);
+  assert.doesNotMatch(pricingHtml, /data-checkout-pack/);
+  assert.doesNotMatch(pricingHtml, /one-time/);
+  assert.match(pricingHtml, /20/);
+  assert.match(pricingHtml, /100/);
+  assert.match(pricingHtml, /Unlimited/);
   assert.match(pricingHtml, /Best value/);
   assert.match(pricingHtml, /Subscribe monthly/);
   assert.match(pricingHtml, /Photo upload and buyer replies/);
-  assert.match(pricingHtml, /Priority support for serious sellers/);
-  assert.match(pricingHtml, /&pound;7 one-time/);
-  assert.match(pricingHtml, /&pound;18 one-time/);
-  assert.match(pricingHtml, /&pound;45 one-time/);
+  assert.match(pricingHtml, /priority support/i);
+  assert.match(pricingHtml, /&pound;5\/month/);
+  assert.match(pricingHtml, /&pound;12\/month/);
+  assert.match(pricingHtml, /&pound;25\/month/);
 });
 
 test("example demo uses anonymous live generation endpoint", () => {
@@ -234,31 +235,31 @@ test("example demo uses anonymous live generation endpoint", () => {
   assert.match(exampleHtml, /No Vinted login/);
   assert.match(exampleHtml, /No card needed/);
   assert.match(exampleHtml, /Copy &amp; paste manually/);
-  assert.match(exampleHtml, /Create free account · 3 free credits/);
+  assert.match(exampleHtml, /Create free account · 3 free listings/);
   assert.match(serverJs, /handleDemoGenerate/);
   assert.match(serverJs, /\/api\/demo-generate/);
   assert.match(siteJs, /\/api\/demo-generate/);
-  assert.match(siteJs, /Create free account and get 3 free credits/);
+  assert.match(siteJs, /Create free account - 3 listings on us/);
   assert.match(siteJs, /demoInput/);
   assert.doesNotMatch(siteJs, /Generated output appears here[\s\S]*api\/generate/);
 });
 
-test("subscription billing surfaces monthly plans and refill status", () => {
+test("subscription billing surfaces monthly plans and usage status", () => {
   assert.match(serverJs, /mode:\s*"subscription"/);
   assert.match(serverJs, /subscription_plan/);
   assert.match(serverJs, /subscription_status/);
-  assert.match(serverJs, /subscription_credits/);
-  assert.match(serverJs, /next_credit_refill/);
+  assert.match(serverJs, /usage_this_month/);
+  assert.match(serverJs, /usage_limit/);
+  assert.match(serverJs, /billing_period_end/);
   assert.match(serverJs, /checkout\.session\.completed/);
   assert.match(serverJs, /invoice\.paid/);
   assert.match(serverJs, /customer\.subscription\.updated/);
   assert.match(serverJs, /customer\.subscription\.deleted/);
   assert.match(siteJs, /Current plan/);
   assert.match(siteJs, /Subscription status/);
-  assert.match(siteJs, /Credits remaining/);
-  assert.match(siteJs, /Next refill/);
+  assert.match(siteJs, /Listings used this month/);
+  assert.match(siteJs, /Cycle ends/);
   assert.match(siteJs, /Subscribe monthly/);
-  assert.match(stylesCss, /\.billing-toggle/);
 });
 
 test("public pages include social metadata and legal pages use shared shell", () => {
