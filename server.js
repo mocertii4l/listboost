@@ -369,10 +369,22 @@ async function createSubscriptionCheckoutSession({ user, plan }) {
     cancel_url: `${appUrl}/checkout/cancel`
   });
 }
+
+async function createBillingPortalSession({ user }) {
+  if (process.env.STRIPE_MOCK_CHECKOUT === "true") {
+    return { url: "https://billing.stripe.test/portal" };
+  }
+
+  return stripe.billingPortal.sessions.create({
+    customer: user.stripe_customer_id,
+    return_url: `${appUrl}/app/billing`
+  });
+}
 db.exec(`
   CREATE TABLE IF NOT EXISTS users (
     id TEXT PRIMARY KEY,
     email TEXT NOT NULL UNIQUE,
+    name TEXT NOT NULL DEFAULT '',
     password_hash TEXT NOT NULL,
     free_credits INTEGER NOT NULL DEFAULT ${freeCredits},
     paid_credits INTEGER NOT NULL DEFAULT 0,
@@ -453,6 +465,7 @@ db.exec(`
 const columnAdditions = [
   ["generations", "score", "INTEGER"],
   ["generations", "result_json", "TEXT"],
+  ["users", "name", "TEXT NOT NULL DEFAULT ''"],
   ["users", "email_verified", "INTEGER NOT NULL DEFAULT 0"],
   ["users", "subscription_plan", "TEXT NOT NULL DEFAULT 'free'"],
   ["users", "subscription_status", "TEXT NOT NULL DEFAULT 'inactive'"],
@@ -577,7 +590,7 @@ setInterval(() => {
 }, 60_000).unref?.();
 
 function tooManyRequests(res, visitor, retryAfterSec, message) {
-  json(res, 429, { error: message || "Too many requests. Try again shortly." }, {
+  json(res, 429, { error: message || "Too many requests. Try again shortly.", retryAfterSec }, {
     ...visitor.headers,
     "retry-after": String(retryAfterSec)
   });
@@ -599,6 +612,16 @@ function getVisitor(req) {
 
 function normalizeEmail(email) {
   return String(email || "").trim().toLowerCase();
+}
+
+function validateName(name) {
+  const raw = String(name == null ? "" : name);
+  const trimmed = raw.trim();
+  if (!trimmed) return { error: "Enter your full name." };
+  if (raw !== trimmed) return { error: "Remove spaces before or after your name." };
+  const normalised = trimmed.replace(/\s+/g, " ");
+  if (normalised.length > 80) return { error: "Name must be 80 characters or fewer." };
+  return { name: normalised };
 }
 
 function isValidEmail(email) {
@@ -703,6 +726,7 @@ function getAccountCredits(user) {
 function publicUser(user) {
   return user ? {
     id: user.id,
+    name: user.name || "",
     email: user.email,
     emailVerified: Boolean(user.email_verified),
     subscriptionPlan: user.subscription_plan || "free",
@@ -1747,6 +1771,31 @@ async function handleSubscriptionCheckout(req, res) {
   }
 }
 
+async function handleBillingPortal(req, res) {
+  const visitor = getVisitor(req);
+  const user = getUserBySession(req);
+  if (!user) {
+    json(res, 401, { error: "Sign in to manage billing.", authUrl: `/signup?next=${encodeURIComponent("/app/billing")}` }, visitor.headers);
+    return;
+  }
+  if (!stripe) {
+    json(res, 503, { error: "Stripe is not connected yet." }, visitor.headers);
+    return;
+  }
+  if (!user.stripe_customer_id && process.env.STRIPE_MOCK_CHECKOUT !== "true") {
+    json(res, 400, { error: "Start a subscription before opening the billing portal." }, visitor.headers);
+    return;
+  }
+
+  try {
+    const session = await createBillingPortalSession({ user });
+    json(res, 200, { url: session.url }, visitor.headers);
+  } catch (error) {
+    console.error("[stripe] billing portal session failed:", error);
+    json(res, 500, { error: "Could not open billing portal." }, visitor.headers);
+  }
+}
+
 async function handleCheckoutSuccess(req, res) {
   const visitor = getVisitor(req);
   const user = getUserBySession(req);
@@ -2151,6 +2200,8 @@ function createVerificationToken(userId) {
   const token = randomBytes(24).toString("hex");
   const now = new Date();
   const expires = new Date(now.getTime() + 1000 * 60 * 60 * 24);
+  db.prepare("UPDATE email_verifications SET used_at = ? WHERE user_id = ? AND used_at IS NULL")
+    .run(now.toISOString(), userId);
   db.prepare(
     "INSERT INTO email_verifications (token, user_id, created_at, expires_at) VALUES (?, ?, ?, ?)"
   ).run(token, userId, now.toISOString(), expires.toISOString());
@@ -2211,7 +2262,7 @@ async function handleVerifyEmail(req, res) {
   const url = new URL(req.url, `http://${req.headers.host}`);
   const token = url.searchParams.get("token") || "";
   if (!token) {
-    res.writeHead(302, { ...visitor.headers, location: "/?verify=missing" });
+    res.writeHead(302, { ...visitor.headers, location: "/verify-email?status=missing" });
     res.end();
     return;
   }
@@ -2220,7 +2271,7 @@ async function handleVerifyEmail(req, res) {
     "SELECT * FROM email_verifications WHERE token = ? AND expires_at > ? AND used_at IS NULL"
   ).get(token, new Date().toISOString());
   if (!row) {
-    res.writeHead(302, { ...visitor.headers, location: "/?verify=invalid" });
+    res.writeHead(302, { ...visitor.headers, location: "/verify-email?status=invalid" });
     res.end();
     return;
   }
@@ -2229,7 +2280,7 @@ async function handleVerifyEmail(req, res) {
   db.prepare("UPDATE users SET email_verified = 1, updated_at = ? WHERE id = ?").run(now, row.user_id);
   db.prepare("UPDATE email_verifications SET used_at = ? WHERE token = ?").run(now, token);
 
-  res.writeHead(302, { ...visitor.headers, location: "/?verify=success" });
+  res.writeHead(302, { ...visitor.headers, location: "/app?verified=1" });
   res.end();
 }
 
@@ -2245,10 +2296,10 @@ async function handleResendVerification(req, res) {
     return;
   }
 
-  const ip = getClientIp(req);
-  const limit = rateLimit(`resend:${user.id}:${ip}`, { max: 3, windowMs: 5 * 60_000 });
+  const sessionToken = parseCookies(req).lb_session || user.id;
+  const limit = rateLimit(`resend-verification:${sessionToken}`, { max: 1, windowMs: 60_000 });
   if (!limit.ok) {
-    tooManyRequests(res, visitor, limit.retryAfterSec, "Wait a few minutes before requesting another verification email.");
+    tooManyRequests(res, visitor, limit.retryAfterSec, "Wait 60 seconds before requesting another verification email.");
     return;
   }
 
@@ -2257,7 +2308,7 @@ async function handleResendVerification(req, res) {
     const delivery = await sendVerificationEmail(user, token);
     json(res, 200, { ok: true, delivered: delivery.delivered }, visitor.headers);
   } catch (error) {
-    console.error(error);
+    console.error("[email] verification send failed:", error);
     json(res, 502, { error: "Could not send verification email. Try again in a moment." }, visitor.headers);
   }
 }
@@ -2281,13 +2332,13 @@ async function handleForgotPassword(req, res) {
         try {
           await sendPasswordResetEmail(user, token);
         } catch (error) {
-          console.error(error);
+          console.error("[email] password reset send failed:", error);
         }
       }
     }
     json(res, 200, { ok: true, message: "If an account exists for that email, we'll send reset instructions." }, visitor.headers);
   } catch (error) {
-    console.error(error);
+    console.error("[email] password reset request failed:", error);
     json(res, 200, { ok: true, message: "If an account exists for that email, we'll send reset instructions." }, visitor.headers);
   }
 }
@@ -2336,6 +2387,99 @@ async function handleResetPassword(req, res) {
   } catch (error) {
     console.error(error);
     json(res, 500, { error: "Could not reset password. Try again." }, visitor.headers);
+  }
+}
+
+async function handleUpdateProfile(req, res) {
+  const visitor = getVisitor(req);
+  const user = getUserBySession(req);
+  if (!user) {
+    json(res, 401, { error: "Sign in to update your account." }, visitor.headers);
+    return;
+  }
+
+  try {
+    const body = JSON.parse(await readBody(req, 30_000) || "{}");
+    const nameResult = validateName(body.name);
+    const email = normalizeEmail(body.email || user.email);
+    if (nameResult.error) {
+      json(res, 400, { error: nameResult.error, field: "name" }, visitor.headers);
+      return;
+    }
+    if (!isValidEmail(email)) {
+      json(res, 400, { error: "Enter a valid email address.", field: "email" }, visitor.headers);
+      return;
+    }
+
+    const emailChanged = email !== user.email;
+    const now = new Date().toISOString();
+    db.prepare(`
+      UPDATE users
+      SET name = ?, email = ?, email_verified = ?, updated_at = ?
+      WHERE id = ?
+    `).run(nameResult.name, email, emailChanged ? 0 : Number(user.email_verified || 0), now, user.id);
+
+    const nextUser = db.prepare("SELECT * FROM users WHERE id = ?").get(user.id);
+    let verificationDelivery = null;
+    if (emailChanged && requireEmailVerification) {
+      const token = createVerificationToken(user.id);
+      try {
+        verificationDelivery = await sendVerificationEmail(nextUser, token);
+      } catch (error) {
+        console.error("[email] verification send failed after email change:", error);
+        verificationDelivery = { delivered: false, error: "Could not send verification email. Use resend from the verification page." };
+      }
+    }
+
+    recordAudit(user.id, "user:profile", 0, emailChanged ? "Account email updated" : "Account profile updated");
+    json(res, 200, {
+      ok: true,
+      user: publicUser(nextUser),
+      credits: getAccountCredits(nextUser),
+      verificationRequired: requireEmailVerification && emailChanged,
+      verificationEmailDelivered: verificationDelivery?.delivered ?? null,
+      verificationEmailError: verificationDelivery?.error || null
+    }, visitor.headers);
+  } catch (error) {
+    if (error.code === "SQLITE_CONSTRAINT_UNIQUE") {
+      json(res, 409, { error: "An account with this email already exists.", field: "email" }, visitor.headers);
+      return;
+    }
+    console.error("[account] profile update failed:", error);
+    json(res, 500, { error: "Could not update your account." }, visitor.headers);
+  }
+}
+
+async function handleUpdatePassword(req, res) {
+  const visitor = getVisitor(req);
+  const user = getUserBySession(req);
+  if (!user) {
+    json(res, 401, { error: "Sign in to update your password." }, visitor.headers);
+    return;
+  }
+
+  try {
+    const body = JSON.parse(await readBody(req, 30_000) || "{}");
+    const currentPassword = String(body.currentPassword || "");
+    const newPassword = String(body.newPassword || "");
+
+    if (!verifyPassword(currentPassword, user.password_hash)) {
+      json(res, 400, { error: "Current password is incorrect.", field: "currentPassword" }, visitor.headers);
+      return;
+    }
+    if (newPassword.length < 8) {
+      json(res, 400, { error: "New password must be at least 8 characters.", field: "newPassword" }, visitor.headers);
+      return;
+    }
+
+    const now = new Date().toISOString();
+    db.prepare("UPDATE users SET password_hash = ?, updated_at = ? WHERE id = ?")
+      .run(hashPassword(newPassword), now, user.id);
+    recordAudit(user.id, "user:password", 0, "Password changed from account settings");
+    json(res, 200, { ok: true }, visitor.headers);
+  } catch (error) {
+    console.error("[account] password update failed:", error);
+    json(res, 500, { error: "Could not update your password." }, visitor.headers);
   }
 }
 
@@ -2594,16 +2738,22 @@ async function handleSignup(req, res) {
 
   try {
     const body = JSON.parse(await readBody(req) || "{}");
+    const nameResult = validateName(body.name);
     const email = normalizeEmail(body.email);
     const password = String(body.password || "");
 
+    if (nameResult.error) {
+      json(res, 400, { error: nameResult.error, field: "name" }, visitor.headers);
+      return;
+    }
+
     if (!isValidEmail(email)) {
-      json(res, 400, { error: "Enter a valid email address." }, visitor.headers);
+      json(res, 400, { error: "Enter a valid email address.", field: "email" }, visitor.headers);
       return;
     }
 
     if (password.length < 8) {
-      json(res, 400, { error: "Password must be at least 8 characters." }, visitor.headers);
+      json(res, 400, { error: "Password must be at least 8 characters.", field: "password" }, visitor.headers);
       return;
     }
 
@@ -2622,9 +2772,9 @@ async function handleSignup(req, res) {
     const now = new Date().toISOString();
     const userId = randomUUID();
     db.prepare(`
-      INSERT INTO users (id, email, password_hash, free_credits, paid_credits, used_credits, created_at, updated_at)
-      VALUES (?, ?, ?, ?, 0, 0, ?, ?)
-    `).run(userId, email, hashPassword(password), startingFreeCredits, now, now);
+      INSERT INTO users (id, email, name, password_hash, free_credits, paid_credits, used_credits, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, 0, 0, ?, ?)
+    `).run(userId, email, nameResult.name, hashPassword(password), startingFreeCredits, now, now);
 
     if (startingPaidCredits > 0) {
       db.prepare("UPDATE users SET paid_credits = ?, updated_at = ? WHERE id = ?")
@@ -2638,7 +2788,7 @@ async function handleSignup(req, res) {
       try {
         verificationDelivery = await sendVerificationEmail(user, verificationToken);
       } catch (error) {
-        console.error(error);
+        console.error("[email] verification send failed during signup:", error);
         verificationDelivery = { delivered: false, error: "Verification email could not be sent. Use resend after signing in." };
       }
     }
@@ -2741,6 +2891,7 @@ const prettyRoutes = {
   "/app/replies": "/app.html",
   "/app/history": "/app.html",
   "/app/billing": "/app.html",
+  "/app/account": "/app.html",
   "/checkout/success": "/checkout-success.html",
   "/checkout/cancel": "/checkout-cancel.html",
   "/privacy": "/privacy.html",
@@ -2751,6 +2902,20 @@ const prettyRoutes = {
 
 async function serveStatic(req, res) {
   const url = new URL(req.url, `http://${req.headers.host}`);
+  if (url.pathname === "/app" || url.pathname.startsWith("/app/")) {
+    const visitor = getVisitor(req);
+    const user = getUserBySession(req);
+    if (!user) {
+      res.writeHead(302, { ...visitor.headers, location: `/login?next=${encodeURIComponent(`${url.pathname}${url.search}`)}` });
+      res.end();
+      return;
+    }
+    if (!ensureVerified(user)) {
+      res.writeHead(302, { ...visitor.headers, location: `/verify-email?next=${encodeURIComponent(`${url.pathname}${url.search}`)}` });
+      res.end();
+      return;
+    }
+  }
   const requestPath = prettyRoutes[url.pathname] || url.pathname;
   const safePath = normalize(requestPath).replace(/^(\.\.[/\\])+/, "");
   const filePath = join(publicDir, safePath);
@@ -2830,7 +2995,17 @@ const server = createServer((req, res) => {
     return;
   }
 
-  if (req.method === "GET" && req.url.startsWith("/verify")) {
+  if (req.method === "POST" && req.url === "/api/account/profile") {
+    handleUpdateProfile(req, res);
+    return;
+  }
+
+  if (req.method === "POST" && req.url === "/api/account/password") {
+    handleUpdatePassword(req, res);
+    return;
+  }
+
+  if (req.method === "GET" && (req.url === "/verify" || req.url.startsWith("/verify?"))) {
     handleVerifyEmail(req, res);
     return;
   }
@@ -2890,6 +3065,11 @@ const server = createServer((req, res) => {
 
   if (req.method === "POST" && req.url === "/api/create-subscription-checkout-session") {
     handleSubscriptionCheckout(req, res);
+    return;
+  }
+
+  if (req.method === "POST" && req.url === "/api/create-billing-portal-session") {
+    handleBillingPortal(req, res);
     return;
   }
 

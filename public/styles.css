@@ -451,7 +451,6 @@ small {
    ================================================================= */
 
 .btn,
-.button,
 .pricing-buy,
 .copy-button,
 .history-button,
@@ -481,7 +480,6 @@ button[data-close-paywall] {
 }
 
 .btn:hover,
-.button:hover,
 .pricing-buy:hover,
 .copy-button:hover,
 .history-button:hover,
@@ -491,7 +489,6 @@ button[data-close-paywall] {
 }
 
 .btn:hover:not(:disabled),
-.button:hover:not(:disabled),
 .pricing-buy:hover:not(:disabled),
 .copy-button:hover:not(:disabled),
 .history-button:hover:not(:disabled),
@@ -501,17 +498,16 @@ button[data-close-paywall] {
 }
 
 .btn:active:not(:disabled),
-.button:active:not(:disabled),
 .pricing-buy:active:not(:disabled),
 .copy-button:active:not(:disabled),
 .history-button:active:not(:disabled),
 .nav-toggle:active:not(:disabled),
 .theme-toggle:active:not(:disabled) {
-  transform: translateY(0);
+  transform: translateY(0) scale(0.98);
+  box-shadow: inset 0 var(--space-1) var(--space-2) color-mix(in srgb, var(--text) 12%, transparent);
 }
 
 .btn:disabled,
-.button:disabled,
 .pricing-buy:disabled,
 .copy-button:disabled,
 .history-button:disabled,
@@ -521,7 +517,6 @@ button:disabled {
 }
 
 .btn-primary,
-.button.primary,
 .pricing-buy,
 .generator-cta {
   color: var(--card);
@@ -531,7 +526,6 @@ button:disabled {
 }
 
 .btn-primary:hover:not(:disabled),
-.button.primary:hover:not(:disabled),
 .pricing-buy:hover:not(:disabled),
 .generator-cta:hover:not(:disabled) {
   color: var(--card);
@@ -540,22 +534,19 @@ button:disabled {
   box-shadow: var(--shadow-lg);
 }
 
-.btn-secondary,
-.button.secondary {
+.btn-secondary {
   color: var(--text);
   background: var(--card);
   border-color: var(--border-strong);
   box-shadow: var(--shadow-sm);
 }
 
-.btn-secondary:hover:not(:disabled),
-.button.secondary:hover:not(:disabled) {
+.btn-secondary:hover:not(:disabled) {
   border-color: var(--primary);
   box-shadow: var(--shadow-md);
 }
 
 .btn-ghost,
-.button.ghost,
 .theme-toggle,
 .nav-toggle {
   color: var(--text-muted);
@@ -565,15 +556,13 @@ button:disabled {
 }
 
 .btn-ghost:hover:not(:disabled),
-.button.ghost:hover:not(:disabled),
 .theme-toggle:hover:not(:disabled),
 .nav-toggle:hover:not(:disabled) {
   color: var(--text);
   background: var(--bg-subtle);
 }
 
-.btn-danger,
-.button.danger {
+.btn-danger {
   color: var(--card);
   background: var(--danger);
   border-color: var(--danger);
@@ -596,7 +585,6 @@ button:disabled {
 
 .icon,
 .btn svg,
-.button svg,
 .copy-button svg,
 .listing-card svg {
   width: calc(var(--space-4) + var(--space-1));
@@ -761,6 +749,23 @@ textarea,
 input::placeholder,
 textarea::placeholder {
   color: var(--text-subtle);
+}
+
+input[type="file"]::file-selector-button {
+  min-height: calc(var(--space-8) + var(--space-2));
+  margin-right: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--primary);
+  border-radius: var(--radius-sm);
+  color: var(--card);
+  background: var(--primary);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+input[type="file"]::file-selector-button:hover {
+  background: var(--primary-hover);
 }
 
 .input[aria-invalid="true"],
@@ -1310,8 +1315,156 @@ select[aria-invalid="true"] {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
+.dashboard-row,
+.account-grid {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.dashboard-top-row {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: stretch;
+  margin-block: var(--space-6);
+}
+
+.dashboard-top-row .card,
+.account-panel {
+  display: grid;
+  align-content: start;
+  gap: var(--space-4);
+}
+
+.welcome-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-6);
+  margin-block: var(--space-6);
+}
+
+.compact-balance h2,
+.plan-card h2,
+.quick-action-card h2,
+.billing-summary-card h2 {
+  margin: 0;
+  font-size: 28px;
+  line-height: 1.2;
+}
+
+.feature-tile-grid {
+  margin-block: var(--space-6);
+}
+
 .feature-tile {
   color: var(--text);
+}
+
+.tile-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: auto;
+  color: var(--primary-hover);
+  font-weight: 700;
+}
+
+.tile-link svg {
+  width: calc(var(--space-4) + var(--space-1));
+  height: calc(var(--space-4) + var(--space-1));
+}
+
+.dashboard-activity,
+.billing-activity {
+  margin-top: var(--space-6);
+}
+
+.dashboard-activity-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: var(--space-4);
+}
+
+.compact-history-card {
+  padding: var(--space-4);
+}
+
+.account-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+}
+
+.account-panel form,
+.form-grid {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.form-grid.two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.avatar-menu {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: calc(var(--space-8) + var(--space-4));
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  color: var(--text);
+  background: var(--card);
+}
+
+.avatar-menu:hover {
+  text-decoration: none;
+  border-color: var(--primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.avatar-circle {
+  display: grid;
+  place-items: center;
+  width: var(--space-8);
+  height: var(--space-8);
+  border-radius: var(--radius-xl);
+  color: var(--card);
+  background: var(--primary);
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.avatar-copy {
+  display: grid;
+  line-height: 1.2;
+}
+
+.avatar-copy small {
+  max-width: calc(var(--space-24) * 2);
+  overflow: hidden;
+  color: var(--text-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.photo-dropzone {
+  display: grid;
+  place-items: center;
+  gap: var(--space-2);
+  padding: var(--space-8);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-lg);
+  background: var(--bg-subtle);
+  text-align: center;
+  cursor: pointer;
+}
+
+.photo-dropzone:hover {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+}
+
+.photo-dropzone input {
+  width: 100%;
 }
 
 .balance-card h2,
@@ -1580,11 +1733,12 @@ select[aria-invalid="true"] {
 }
 
 .billing-overview {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: 1.2fr 1fr 1fr;
   margin-bottom: var(--space-6);
 }
 
-.billing-toggle {
+.billing-toggle,
+.pricing-tabs {
   display: inline-grid;
   grid-template-columns: repeat(2, minmax(130px, 1fr));
   gap: var(--space-1);
@@ -1595,17 +1749,27 @@ select[aria-invalid="true"] {
   background: var(--bg-subtle);
 }
 
-.billing-toggle button {
+.billing-toggle button,
+.pricing-tabs button {
   border-radius: var(--radius-sm);
   color: var(--text-muted);
   background: transparent;
   box-shadow: none;
 }
 
-.billing-toggle button.is-active {
+.billing-toggle button.is-active,
+.pricing-tabs button.is-active {
   color: var(--text);
   background: var(--card);
   box-shadow: var(--shadow-sm);
+}
+
+.pricing-tabs {
+  margin-top: var(--space-6);
+}
+
+.is-muted-panel {
+  opacity: 0.58;
 }
 
 .billing-grid {
@@ -1789,8 +1953,6 @@ body.confetti::after {
   color: var(--text);
 }
 
-/* Legacy contract marker for pre-rebuild tests: --color-fg: #f4fffc; color: var(--color-fg); */
-
 @keyframes confetti {
   from {
     opacity: 1;
@@ -1829,7 +1991,9 @@ body.confetti::after {
 
   .dashboard-grid,
   .billing-overview,
-  .billing-grid {
+  .billing-grid,
+  .dashboard-top-row,
+  .account-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -1938,6 +2102,8 @@ body.confetti::after {
 
   .pricing-grid,
   .dashboard-grid,
+  .dashboard-top-row,
+  .account-grid,
   .feature-grid,
   .benefit-grid,
   .step-grid,
@@ -1953,10 +2119,7 @@ body.confetti::after {
   }
 
   .hero-cta .btn,
-  .hero-cta .button,
   .demo-strip .btn,
-  .demo-strip .button,
-  .generator-actions .button,
   .generator-actions .btn,
   .result-summary-actions .copy-button {
     width: 100%;
@@ -1986,6 +2149,19 @@ body.confetti::after {
     backdrop-filter: blur(16px);
   }
 
+  .welcome-card {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .avatar-copy {
+    display: none;
+  }
+
+  .form-grid.two {
+    grid-template-columns: 1fr;
+  }
+
   .demo-page {
     padding-bottom: calc(var(--space-24) + env(safe-area-inset-bottom));
   }
@@ -2009,7 +2185,6 @@ body.confetti::after {
   }
 
   .nav-actions .btn,
-  .nav-actions .button,
   .nav-actions .theme-toggle {
     flex: 1 1 auto;
   }

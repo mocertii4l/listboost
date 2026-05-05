@@ -60,6 +60,8 @@ function iconSvg(name) {
   const icons = {
     "arrow-right": '<path d="M5 12h14"></path><path d="m13 6 6 6-6 6"></path>',
     "badge-pound": '<path d="M6 18h12"></path><path d="M8 12h7"></path><path d="M10 18c2-3 2-9 0-12"></path><path d="M10 6h5"></path>',
+    camera: '<path d="M14.5 4h-5L8 6H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-3z"></path><circle cx="12" cy="13" r="3"></circle>',
+    calendar: '<path d="M8 2v4"></path><path d="M16 2v4"></path><rect width="18" height="18" x="3" y="4" rx="2"></rect><path d="M3 10h18"></path>',
     check: '<path d="m5 12 4 4L19 6"></path>',
     "check-circle": '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><path d="m9 11 3 3L22 4"></path>',
     copy: '<rect width="14" height="14" x="8" y="8" rx="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path>',
@@ -67,7 +69,10 @@ function iconSvg(name) {
     "file-text": '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><path d="M14 2v6h6"></path><path d="M16 13H8"></path><path d="M16 17H8"></path><path d="M10 9H8"></path>',
     history: '<path d="M3 12a9 9 0 1 0 3-6.7"></path><path d="M3 3v6h6"></path><path d="M12 7v5l4 2"></path>',
     image: '<rect width="18" height="18" x="3" y="3" rx="2"></rect><circle cx="9" cy="9" r="2"></circle><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"></path>',
+    "image-up": '<rect width="18" height="18" x="3" y="3" rx="2"></rect><circle cx="9" cy="9" r="2"></circle><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"></path><path d="M12 12v6"></path><path d="m9 15 3-3 3 3"></path>',
     "list-check": '<path d="m3 17 2 2 4-4"></path><path d="M13 6h8"></path><path d="M13 12h8"></path><path d="M13 18h8"></path><path d="m3 7 2 2 4-4"></path>',
+    lock: '<rect width="18" height="11" x="3" y="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path>',
+    mail: '<rect width="20" height="16" x="2" y="4" rx="2"></rect><path d="m22 7-10 6L2 7"></path>',
     menu: '<path d="M4 6h16"></path><path d="M4 12h16"></path><path d="M4 18h16"></path>',
     "message-circle": '<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22z"></path>',
     moon: '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>',
@@ -78,6 +83,9 @@ function iconSvg(name) {
     sparkles: '<path d="M9.9 10.8 8 17l-1.9-6.2L0 9l6.1-1.8L8 1l1.9 6.2L16 9z"></path><path d="M19 17.5 18 21l-1-3.5-3.5-1 3.5-1 1-3.5 1 3.5 3.5 1z"></path>',
     sun: '<circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path>',
     tag: '<path d="M12.6 2H4a2 2 0 0 0-2 2v8.6a2 2 0 0 0 .6 1.4l7.4 7.4a2 2 0 0 0 2.8 0l8.6-8.6a2 2 0 0 0 0-2.8L14 2.6A2 2 0 0 0 12.6 2Z"></path><circle cx="7.5" cy="7.5" r=".5"></circle>',
+    user: '<path d="M20 21a8 8 0 0 0-16 0"></path><circle cx="12" cy="7" r="4"></circle>',
+    "user-cog": '<circle cx="18" cy="15" r="3"></circle><path d="m19.5 12.4.3-.7"></path><path d="m16.2 18.3.3-.7"></path><path d="m20.4 16.5.7.3"></path><path d="m14.9 13.2.7.3"></path><path d="M20 21a8 8 0 0 0-16 0"></path><circle cx="12" cy="7" r="4"></circle>',
+    upload: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="m17 8-5-5-5 5"></path><path d="M12 3v12"></path>',
     wallet: '<path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3v3a1 1 0 0 1-1 1H5a2 2 0 0 1-2-2V5"></path><path d="M18 12h.01"></path>',
     x: '<path d="M18 6 6 18"></path><path d="m6 6 12 12"></path>'
   };
@@ -268,11 +276,6 @@ function installPublicShell() {
     "/example",
     "/privacy",
     "/terms",
-    "/signup",
-    "/login",
-    "/verify-email",
-    "/forgot-password",
-    "/reset-password",
     "/checkout/success",
     "/checkout/cancel"
   ].includes(location.pathname);
@@ -374,7 +377,11 @@ function updateAccountChrome(me = accountState) {
   accountState = { ...accountState, ...me };
   const remaining = Number(accountState.credits?.remaining || 0);
   const plan = accountState.subscription || accountState.user || {};
+  const displayName = accountState.user?.name || accountState.user?.email || "Account";
+  const initials = displayName.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase() || "LB";
+  $$(".js-name").forEach((node) => { node.textContent = displayName; });
   $$(".js-email").forEach((node) => { node.textContent = accountState.user?.email || "Signed out"; });
+  $$(".js-avatar-initials").forEach((node) => { node.textContent = initials; });
   $$(".js-credits").forEach((node) => { node.textContent = `${remaining} credits remaining`; });
   $$(".js-current-plan").forEach((node) => { node.textContent = plan.planName || titleCasePlan(plan.subscriptionPlan || plan.plan || "Free"); });
   $$(".js-subscription-status").forEach((node) => { node.textContent = titleCasePlan(plan.subscriptionStatus || plan.status || "Inactive"); });
@@ -382,7 +389,7 @@ function updateAccountChrome(me = accountState) {
   $$(".low-credit-cta").forEach((node) => {
     const show = Boolean(accountState.user) && remaining < 10;
     node.classList.toggle("hidden", !show);
-    node.textContent = remaining <= 0 ? "Subscribe or buy credits" : `Only ${remaining} credits left - top up`;
+    node.textContent = remaining <= 0 ? "Subscribe or buy credits" : `${remaining} credits - Top up`;
     node.href = "/app/billing";
   });
   document.body.classList.toggle("signed-in", Boolean(accountState.user));
@@ -430,13 +437,13 @@ function renderPacks(packs) {
     ctaLabel: plan.featured ? "Subscribe monthly" : `Subscribe ${plan.name}`
   })).join("");
   grid.innerHTML = `
-    <div class="pricing-mode-section">
-      <div class="section-head compact"><p class="eyebrow">Buy credits</p><h2>One-time packs</h2></div>
-      <div class="pricing-grid">${creditCards}</div>
-    </div>
-    <div class="pricing-mode-section recommended">
+    <div class="pricing-mode-section recommended" data-pricing-panel="subscriptions">
       <div class="section-head compact"><p class="eyebrow">Subscribe monthly</p><h2>Recommended for active sellers</h2></div>
       <div class="pricing-grid">${subscriptionCards}</div>
+    </div>
+    <div class="pricing-mode-section" data-pricing-panel="credits">
+      <div class="section-head compact"><p class="eyebrow">Buy credits</p><h2>One-time packs</h2></div>
+      <div class="pricing-grid">${creditCards}</div>
     </div>
   `;
 }
@@ -455,6 +462,14 @@ async function bootstrap() {
     renderPacks(me.creditPacks || []);
     updateAccountChrome(me);
     hydrateAppRoute(me);
+    if (location.pathname === "/verify-email" && me.user?.emailVerified) {
+      location.href = "/app?verified=1";
+      return;
+    }
+    if (location.pathname === "/app" && new URLSearchParams(location.search).get("verified") === "1") {
+      toast("Email verified - welcome", "success");
+      history.replaceState({}, "", "/app");
+    }
   } catch {
     toast("Could not load account state.", "error");
   }
@@ -472,11 +487,17 @@ function installAuthMode() {
   if (!authForm) return;
   const isSignup = location.pathname === "/signup";
   const heading = $("#authHeading");
+  const intro = $("#authIntro");
   const button = authForm.querySelector("button[type=submit]");
   const links = $("#authLinks");
+  const nameField = $(".signup-name-field", authForm);
+  const nameInput = authForm.elements.name;
   authForm.dataset.mode = isSignup ? "signup" : "login";
   if (heading) heading.textContent = isSignup ? "Create account" : "Sign in";
+  if (intro) intro.textContent = isSignup ? "Get 5 free credits - no card needed." : "Your credits, history and listings stay with this account.";
   if (button) button.textContent = isSignup ? "Create account" : "Sign in";
+  if (nameField) nameField.classList.toggle("hidden", !isSignup);
+  if (nameInput) nameInput.required = isSignup;
   if (links) {
     links.innerHTML = isSignup
       ? '<a href="/login">Already have an account? Log in</a>'
@@ -500,7 +521,9 @@ function navigateApp(path, push = true) {
   }
   renderAppRoute();
   installAppNav();
+  installForms();
   installAppTools();
+  installPasswordToggles();
   hydrateAppRoute(accountState);
   updateAccountChrome(accountState);
   $("#main")?.scrollIntoView({ block: "start" });
@@ -532,14 +555,14 @@ function escapeHtml(value) {
 function appRouteName() {
   if (!location.pathname.startsWith("/app")) return "";
   const name = location.pathname.replace(/^\/app\/?/, "") || "dashboard";
-  return ["dashboard", "notes", "photo", "score", "replies", "history", "billing"].includes(name) ? name : "dashboard";
+  return ["dashboard", "notes", "photo", "score", "replies", "history", "billing", "account"].includes(name) ? name : "dashboard";
 }
 
 const appFeatureTiles = [
-  ["notes", "Notes", "Turn rough item notes into a complete listing.", "/app/notes"],
-  ["replies", "Replies", "Write buyer replies for offers and questions.", "/app/replies"],
-  ["history", "History", "Search and reopen saved listing packages.", "/app/history"],
-  ["billing", "Billing", "Manage credits, subscriptions and recent transactions.", "/app/billing"]
+  ["file-text", "Notes to listing", "Turn rough notes into a complete Vinted listing.", "/app/notes", "Open Notes"],
+  ["camera", "Photo Listing", "Upload or take item photos from your phone.", "/app/photo", "Open Photo"],
+  ["check-circle", "Listing Score", "Check a draft listing before it goes live.", "/app/score", "Open Score"],
+  ["message-circle", "Buyer Replies", "Answer offers and questions in your seller tone.", "/app/replies", "Open Replies"]
 ];
 
 function renderAppRoute() {
@@ -553,7 +576,8 @@ function renderAppRoute() {
     score: scoreRouteTemplate,
     replies: repliesRouteTemplate,
     history: historyRouteTemplate,
-    billing: billingRouteTemplate
+    billing: billingRouteTemplate,
+    account: accountRouteTemplate
   };
   root.innerHTML = templates[route]();
   document.body.dataset.appRoute = route;
@@ -575,13 +599,59 @@ function appTrustStrip() {
 
 function dashboardRouteTemplate() {
   return `
-    <section data-route="dashboard">
-      ${routeHeader("Dashboard", "Your ListBoost workspace", "Choose the workflow you need. Your credits and history stay with your account.")}
+    <section class="dashboard-route" data-route="dashboard">
+      <header class="route-head dashboard-head">
+        <h1>Your ListBoost workspace</h1>
+        <p class="muted">Generate Vinted listings, buyer replies and pricing guidance from one clean place.</p>
+      </header>
+      <section class="card card-elevated welcome-card js-first-run">
+        <div>
+          <span class="badge badge-brand">${iconSvg("sparkles")} Welcome to ListBoost</span>
+          <h2>Generate your first listing in 30 seconds</h2>
+          <p class="muted">Start with notes or upload a photo from your phone. You will get title, description, keywords, pricing and copy buttons.</p>
+        </div>
+        ${buttonTemplate({ variant: "primary", label: "Generate a listing", icon: "arrow-right", href: "/app/notes" })}
+      </section>
       ${appTrustStrip()}
-      <div class="dashboard-grid route-grid">
-        <article class="card balance-card"><span class="badge">Balance</span><h2 class="js-credits">Loading credits</h2><p class="muted js-email">Loading account</p><a class="button primary" href="/app/notes">Generate listing</a></article>
-        ${appFeatureTiles.map(([, title, copy, href]) => `<a class="card feature-tile" href="${href}"><h3>${title}</h3><p>${copy}</p></a>`).join("")}
+      <div class="dashboard-row dashboard-top-row">
+        <article class="card balance-card compact-balance">
+          <span class="badge">${iconSvg("wallet")} Credit balance</span>
+          <h2 class="js-credits">Loading credits</h2>
+          <p class="muted js-next-refill">No refill scheduled</p>
+          ${buttonTemplate({ variant: "secondary", label: "Top up", icon: "credit-card", href: "/app/billing" })}
+        </article>
+        <article class="card plan-card">
+          <span class="badge">${iconSvg("repeat")} Current plan</span>
+          <h2 class="js-current-plan">Free</h2>
+          <p class="muted"><span class="js-subscription-status">Inactive</span> subscription</p>
+          ${buttonTemplate({ variant: "secondary", label: "View billing", icon: "arrow-right", href: "/app/billing" })}
+        </article>
+        <article class="card card-elevated quick-action-card">
+          <span class="badge badge-brand">${iconSvg("sparkles")} Quick action</span>
+          <h2>Generate a listing</h2>
+          <p class="muted">Paste notes and get a sell-ready Vinted listing package.</p>
+          ${buttonTemplate({ variant: "primary", label: "Open generator", icon: "arrow-right", href: "/app/notes" })}
+        </article>
       </div>
+      <div class="dashboard-grid route-grid feature-tile-grid">
+        ${appFeatureTiles.map(([icon, title, copy, href, cta]) => `
+          <a class="card card-interactive feature-tile" href="${href}">
+            <div class="feature-icon">${iconSvg(icon)}</div>
+            <h3>${title}</h3>
+            <p>${copy}</p>
+            <span class="tile-link">${cta} ${iconSvg("arrow-right")}</span>
+          </a>
+        `).join("")}
+      </div>
+      <section class="card dashboard-activity">
+        <div class="section-head compact"><p class="eyebrow">Recent activity</p><h2>Latest listing packages</h2></div>
+        <div class="history-list" id="dashboardHistory">
+          ${loadingTemplate("Loading recent listings...")}
+        </div>
+        <div class="dashboard-activity-actions">
+          ${buttonTemplate({ variant: "secondary", label: "View history", icon: "history", href: "/app/history" })}
+        </div>
+      </section>
     </section>
   `;
 }
@@ -632,18 +702,32 @@ function notesRouteTemplate() {
 
 function photoRouteTemplate() {
   return `
-    <section class="tool-layout" data-route="photo">
-      <form class="card sticky-form" id="photoRouteForm">
-        <span class="badge">Photo</span>
-        <h1>Generate from photos</h1>
-        <label>Photos<input name="photos" type="file" accept="image/*" multiple /></label>
-        <label>Category<select name="category"><option>Clothing</option><option>Shoes</option><option>Bags</option><option>Accessories</option></select></label>
-        <label>Size<input name="size" placeholder="UK 10, M, EU 39" /></label>
+    <section class="tool-layout photo-route" data-route="photo">
+      <form class="card generator-panel sticky-form" id="photoRouteForm">
+        <span class="badge badge-brand">${iconSvg("camera")} Photo Listing</span>
+        <h1>List from item photos</h1>
+        <p class="muted">Upload photos or take a fresh picture on your phone. Add the details the camera cannot see, then generate the same premium listing package.</p>
+        <label class="photo-dropzone" for="photoInput">
+          <span class="feature-icon">${iconSvg("image-up")}</span>
+          <strong>Upload or take photos</strong>
+          <span class="muted">Up to 4 images. Mobile cameras are supported.</span>
+          <input id="photoInput" name="photos" type="file" accept="image/*" capture="environment" multiple required />
+        </label>
+        <div class="form-grid two">
+          <label>Category<select name="category"><option>Clothing</option><option>Shoes</option><option>Bags</option><option>Accessories</option></select></label>
+          <label>Size<input name="size" placeholder="UK 10, M, EU 39" /></label>
+        </div>
         <label>Condition<input name="condition" placeholder="Good condition, worn once" /></label>
-        <label>Notes<textarea name="notes" placeholder="Optional: brand, flaws, postage details..."></textarea></label>
-        <button class="button primary" type="submit">Generate from photos</button>
+        <label>Notes<textarea name="notes" placeholder="Optional: brand, flaws, measurements, postage details..."></textarea></label>
+        <button class="btn btn-primary generator-cta" type="submit">${iconSvg("sparkles")}<span>Generate from photos</span></button>
       </form>
-      <section class="output-stack" id="photoRouteOutput"><div class="empty-state">Upload up to four photos to generate a listing.</div></section>
+      <section class="output-stack results-panel" id="photoRouteOutput">
+        ${emptyStateTemplate({
+          icon: "camera",
+          heading: "Photo listing output will appear here",
+          body: "Use your phone camera or photo library, then copy every generated section."
+        })}
+      </section>
     </section>
   `;
 }
@@ -656,7 +740,7 @@ function scoreRouteTemplate() {
         <h1>Check a listing</h1>
         <label>Current title<input name="title" placeholder="Zara black midi dress UK 10" /></label>
         <label>Current description<textarea name="description" required placeholder="Paste the current listing description..."></textarea></label>
-        <button class="button primary" type="submit">Score listing</button>
+        <button class="btn btn-primary" type="submit">Score listing</button>
       </form>
       <section class="output-stack" id="scoreOutputPanel"><div class="empty-state">Score, fixes and missing details appear here.</div></section>
     </section>
@@ -672,7 +756,7 @@ function repliesRouteTemplate() {
         <p class="muted">Generate replies from your listings.</p>
         <label>Item context<textarea name="itemDetails" required placeholder="Item, condition, price, postage options..."></textarea></label>
         <label>Buyer message<textarea name="buyerQuestion" required placeholder="Paste the buyer's offer or question..."></textarea></label>
-        <button class="button primary" type="submit">Write reply</button>
+        <button class="btn btn-primary" type="submit">Write reply</button>
       </form>
       <section class="output-stack" id="replyOutput"><div class="empty-state">Generate replies from your listings</div></section>
     </section>
@@ -692,22 +776,57 @@ function historyRouteTemplate() {
 
 function billingRouteTemplate() {
   return `
-    <section data-route="billing">
+    <section class="billing-route" data-route="billing">
       ${routeHeader("Billing", "Plan and credits", "Manage monthly credits, one-time packs and recent credit activity.")}
       <div class="billing-overview">
-        <article class="card balance-card"><span class="badge">Current plan</span><h2 class="js-current-plan">Free</h2><p class="muted">Status and plan changes update after Stripe confirms them.</p></article>
-        <article class="card balance-card"><span class="badge">Subscription status</span><h2 class="js-subscription-status">Inactive</h2><p class="muted">Active monthly plans refill automatically.</p></article>
-        <article class="card balance-card"><span class="badge">Credits remaining</span><h2 class="js-credits">Loading credits</h2><p class="muted">One credit creates one listing package or buyer reply.</p></article>
-        <article class="card balance-card"><span class="badge">Next refill</span><h2 class="js-next-refill">No refill scheduled</h2><p class="muted">Monthly plans refill on renewal.</p></article>
+        <article class="card card-elevated billing-summary-card">
+          <span class="badge badge-brand">${iconSvg("repeat")} Current plan</span>
+          <h2 class="js-current-plan">Free</h2>
+          <p class="muted">Subscription status: <span class="js-subscription-status">Inactive</span></p>
+          <button class="btn btn-secondary" type="button" data-manage-subscription>${iconSvg("user-cog")}<span>Manage subscription</span></button>
+        </article>
+        <article class="card balance-card"><span class="badge">${iconSvg("wallet")} Credits remaining</span><h2 class="js-credits">Loading credits</h2><p class="muted">One credit creates one listing package or buyer reply.</p></article>
+        <article class="card balance-card"><span class="badge">${iconSvg("calendar")} Next refill</span><h2 class="js-next-refill">No refill scheduled</h2><p class="muted">Monthly plans refill on renewal.</p></article>
       </div>
       <div class="billing-toggle" role="tablist" aria-label="Billing options">
-        <button class="is-active" type="button" data-billing-view="credits">Buy credits</button>
-        <button type="button" data-billing-view="subscriptions">Subscribe monthly</button>
+        <button class="is-active" type="button" data-billing-view="subscriptions">Subscribe monthly</button>
+        <button type="button" data-billing-view="credits">Buy credits</button>
       </div>
-      <div class="dashboard-grid route-grid billing-grid">
-        <article class="card billing-panel" data-billing-panel="credits"><h3>One-time packs</h3><div class="billing-packs" id="billingPacks"><div class="skeleton">Loading packs...</div></div></article>
-        <article class="card billing-panel hidden" data-billing-panel="subscriptions"><h3>Monthly plans</h3><div class="billing-packs" id="billingSubscriptions"><div class="skeleton">Loading plans...</div></div></article>
-        <article class="card"><h3>Recent credit activity</h3><div id="billingTransactions"><div class="skeleton">Loading transactions...</div></div></article>
+      <section class="billing-panel" data-billing-panel="subscriptions">
+        <div class="section-head compact"><p class="eyebrow">Recommended</p><h2>Monthly plans</h2></div>
+        <div class="pricing-grid" id="billingSubscriptions">${loadingTemplate("Loading monthly plans...")}</div>
+      </section>
+      <section class="billing-panel hidden" data-billing-panel="credits">
+        <div class="section-head compact"><p class="eyebrow">Flexible top-ups</p><h2>One-time packs</h2></div>
+        <div class="pricing-grid" id="billingPacks">${loadingTemplate("Loading credit packs...")}</div>
+      </section>
+      <section class="card billing-activity"><h3>Recent credit activity</h3><div id="billingTransactions">${loadingTemplate("Loading transactions...")}</div></section>
+    </section>
+  `;
+}
+
+function accountRouteTemplate() {
+  return `
+    <section class="account-route" data-route="account">
+      ${routeHeader("Account", "Profile and security", "Update the details attached to your ListBoost account.")}
+      <div class="account-grid">
+        <section class="card account-panel">
+          <div class="section-head compact"><p class="eyebrow">Profile</p><h2>Your details</h2></div>
+          <form id="accountProfileForm">
+            <label>Full name<input name="name" autocomplete="name" maxlength="80" required /><p class="field-error" aria-live="polite"></p></label>
+            <label>Email<input name="email" type="email" autocomplete="email" required /><p class="field-error" aria-live="polite"></p></label>
+            <p class="field-helper">Changing email will ask you to verify the new address before using the app again.</p>
+            ${buttonTemplate({ variant: "primary", label: "Save profile", icon: "save", type: "submit" })}
+          </form>
+        </section>
+        <section class="card account-panel">
+          <div class="section-head compact"><p class="eyebrow">Security</p><h2>Change password</h2></div>
+          <form id="accountPasswordForm">
+            <label>Current password<input name="currentPassword" type="password" autocomplete="current-password" required /><p class="field-error" aria-live="polite"></p></label>
+            <label>New password<input name="newPassword" type="password" autocomplete="new-password" minlength="8" required /><p class="field-error" aria-live="polite"></p></label>
+            ${buttonTemplate({ variant: "secondary", label: "Update password", icon: "lock", type: "submit" })}
+          </form>
+        </section>
       </div>
     </section>
   `;
@@ -715,8 +834,61 @@ function billingRouteTemplate() {
 
 function hydrateAppRoute(me = accountState) {
   const route = appRouteName();
+  if (route === "dashboard") loadDashboardHistory(me);
   if (route === "history") loadAppHistory();
   if (route === "billing") loadBilling(me);
+  if (route === "account") hydrateAccountSettings(me);
+}
+
+function hydrateAccountSettings(me = accountState) {
+  const form = $("#accountProfileForm");
+  if (!form || !me.user) return;
+  form.elements.name.value = me.user.name || "";
+  form.elements.email.value = me.user.email || "";
+}
+
+async function loadDashboardHistory(me = accountState) {
+  $$(".js-first-run").forEach((node) => {
+    node.classList.toggle("hidden", Number(me.credits?.used || 0) > 0);
+  });
+  const list = $("#dashboardHistory");
+  if (!list) return;
+  if (!me.user) {
+    list.innerHTML = emptyStateTemplate({
+      icon: "lock",
+      heading: "Sign in to see activity",
+      body: "Your generated listings will appear here after you create an account."
+    });
+    return;
+  }
+  try {
+    const data = await api("/api/history?page=1&pageSize=5");
+    if (!data.history?.length) {
+      list.innerHTML = emptyStateTemplate({
+        icon: "file-text",
+        heading: "No listings yet - generate your first one to see it here",
+        body: "Your saved titles, descriptions and copy buttons will appear in recent activity.",
+        cta: buttonTemplate({ variant: "primary", label: "Generate a listing", icon: "arrow-right", href: "/app/notes" })
+      });
+      return;
+    }
+    list.innerHTML = data.history.slice(0, 5).map((item) => `
+      <article class="history-card compact-history-card">
+        <strong>${escapeHtml(item.title || "Untitled listing")}</strong>
+        <p>${escapeHtml((item.description || "No description saved.").slice(0, 120))}</p>
+        <div class="history-actions">
+          ${copyButton("Copy title", item.title || "")}
+          <a class="btn btn-ghost" href="/app/history">${iconSvg("arrow-right")}<span>View</span></a>
+        </div>
+      </article>
+    `).join("");
+  } catch (error) {
+    list.innerHTML = emptyStateTemplate({
+      icon: "x",
+      heading: "Activity could not load",
+      body: error.message || "Try again shortly."
+    });
+  }
 }
 
 function installPasswordToggles() {
@@ -752,6 +924,25 @@ function clearFieldErrors(form) {
   $$(".field-error", form).forEach((node) => { node.textContent = ""; });
 }
 
+function validateFullName(value) {
+  const raw = String(value || "");
+  const trimmed = raw.trim();
+  if (!trimmed) return "Enter your full name.";
+  if (raw !== trimmed) return "Remove spaces before or after your name.";
+  if (trimmed.replace(/\s+/g, " ").length > 80) return "Name must be 80 characters or fewer.";
+  return "";
+}
+
+function validateEmailField(value) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || "").trim())
+    ? ""
+    : "Enter a valid email address.";
+}
+
+function validatePasswordField(value, label = "Password") {
+  return String(value || "").length >= 8 ? "" : `${label} must be at least 8 characters.`;
+}
+
 function installFaq() {
   $$(".faq button").forEach((button) => {
     button.addEventListener("click", () => {
@@ -771,18 +962,33 @@ function installForms() {
       const mode = authForm.dataset.mode || "login";
       const button = authForm.querySelector("button[type=submit]");
       clearFieldErrors(authForm);
+      const emailError = validateEmailField(authForm.elements.email?.value);
+      const passwordError = validatePasswordField(authForm.elements.password?.value);
+      const nameError = mode === "signup" ? validateFullName(authForm.elements.name?.value) : "";
+      if (nameError || emailError || passwordError) {
+        if (nameError) setFieldError(authForm, "name", nameError);
+        if (emailError) setFieldError(authForm, "email", emailError);
+        if (passwordError) setFieldError(authForm, "password", passwordError);
+        authForm.elements[nameError ? "name" : emailError ? "email" : "password"]?.focus();
+        return;
+      }
       button.disabled = true;
       button.dataset.busy = "true";
       button.textContent = mode === "signup" ? "Creating..." : "Signing in...";
       try {
-        await api(`/api/${mode}`, {
+        const data = await api(`/api/${mode}`, {
           method: "POST",
           body: JSON.stringify(Object.fromEntries(new FormData(authForm)))
         });
+        if (data.verificationRequired && data.user && !data.emailVerified) {
+          location.href = "/verify-email";
+          return;
+        }
         location.href = new URLSearchParams(location.search).get("next") || "/app";
       } catch (error) {
-        const target = /password/i.test(error.message) ? "password" : "email";
+        const target = error.field || (/password/i.test(error.message) ? "password" : /name/i.test(error.message) ? "name" : "email");
         setFieldError(authForm, target, error.message);
+        authForm.elements[target]?.focus();
       } finally {
         button.disabled = false;
         button.dataset.busy = "false";
@@ -793,25 +999,34 @@ function installForms() {
 
   const resend = $("#resendVerification");
   if (resend) {
-    resend.addEventListener("click", async () => {
+    const cooldown = $("#resendCooldown");
+    let cooldownTimer;
+    const startCooldown = (seconds = 60) => {
+      clearInterval(cooldownTimer);
       resend.disabled = true;
-      let remaining = 60;
-      const cooldown = $("#resendCooldown");
-      const tick = setInterval(() => {
+      let remaining = Number(seconds || 60);
+      if (cooldown) cooldown.textContent = `You can resend again in ${remaining}s.`;
+      cooldownTimer = setInterval(() => {
         remaining -= 1;
         if (cooldown) cooldown.textContent = remaining > 0 ? `You can resend again in ${remaining}s.` : "";
         if (remaining <= 0) {
-          clearInterval(tick);
+          clearInterval(cooldownTimer);
           resend.disabled = false;
         }
       }, 1000);
+    };
+    resend.addEventListener("click", async () => {
       try {
-        await api("/api/resend-verification", { method: "POST" });
+        startCooldown(60);
+        const data = await api("/api/resend-verification", { method: "POST" });
+        if (data.alreadyVerified) {
+          location.href = "/app?verified=1";
+          return;
+        }
         toast("Verification link sent. Check your inbox.", "success");
       } catch (error) {
         toast(error.message, "error");
-        clearInterval(tick);
-        resend.disabled = false;
+        startCooldown(error.retryAfterSec || 60);
       }
     });
   }
@@ -821,6 +1036,13 @@ function installForms() {
     forgot.addEventListener("submit", async (event) => {
       event.preventDefault();
       const button = forgot.querySelector("button[type=submit]");
+      clearFieldErrors(forgot);
+      const emailError = validateEmailField(forgot.elements.email?.value);
+      if (emailError) {
+        setFieldError(forgot, "email", emailError);
+        forgot.elements.email?.focus();
+        return;
+      }
       button.disabled = true;
       button.textContent = "Sending...";
       try {
@@ -834,6 +1056,9 @@ function installForms() {
       } catch {
         forgot.classList.add("hidden");
         $("#forgotSuccess")?.classList.remove("hidden");
+      } finally {
+        button.disabled = false;
+        button.textContent = "Send reset email";
       }
     });
   }
@@ -868,9 +1093,15 @@ function installForms() {
     reset.addEventListener("submit", async (event) => {
       event.preventDefault();
       const button = reset.querySelector("button[type=submit]");
+      clearFieldErrors(reset);
+      const passwordError = validatePasswordField(reset.elements.password?.value);
+      if (passwordError) {
+        setFieldError(reset, "password", passwordError);
+        reset.elements.password?.focus();
+        return;
+      }
       button.disabled = true;
       button.textContent = "Updating...";
-      clearFieldErrors(reset);
       try {
         await api("/api/reset-password", {
           method: "POST",
@@ -880,6 +1111,75 @@ function installForms() {
         location.href = "/login";
       } catch (err) {
         setFieldError(reset, /password/i.test(err.message) ? "password" : "token", err.message);
+        button.disabled = false;
+        button.textContent = "Update password";
+      }
+    });
+  }
+
+  const profileForm = $("#accountProfileForm");
+  if (profileForm) {
+    profileForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      clearFieldErrors(profileForm);
+      const nameError = validateFullName(profileForm.elements.name?.value);
+      const emailError = validateEmailField(profileForm.elements.email?.value);
+      if (nameError || emailError) {
+        if (nameError) setFieldError(profileForm, "name", nameError);
+        if (emailError) setFieldError(profileForm, "email", emailError);
+        profileForm.elements[nameError ? "name" : "email"]?.focus();
+        return;
+      }
+      const button = profileForm.querySelector("button[type=submit]");
+      button.disabled = true;
+      button.textContent = "Saving...";
+      try {
+        const data = await api("/api/account/profile", {
+          method: "POST",
+          body: JSON.stringify(Object.fromEntries(new FormData(profileForm)))
+        });
+        updateCreditsFromResponse(data);
+        toast("Profile saved.", "success");
+        if (data.verificationRequired) location.href = "/verify-email";
+      } catch (error) {
+        const target = error.field || (/name/i.test(error.message) ? "name" : "email");
+        setFieldError(profileForm, target, error.message);
+        profileForm.elements[target]?.focus();
+      } finally {
+        button.disabled = false;
+        button.textContent = "Save profile";
+      }
+    });
+  }
+
+  const passwordForm = $("#accountPasswordForm");
+  if (passwordForm) {
+    passwordForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      clearFieldErrors(passwordForm);
+      const currentError = passwordForm.elements.currentPassword?.value ? "" : "Enter your current password.";
+      const newError = validatePasswordField(passwordForm.elements.newPassword?.value, "New password");
+      if (currentError || newError) {
+        if (currentError) setFieldError(passwordForm, "currentPassword", currentError);
+        if (newError) setFieldError(passwordForm, "newPassword", newError);
+        passwordForm.elements[currentError ? "currentPassword" : "newPassword"]?.focus();
+        return;
+      }
+      const button = passwordForm.querySelector("button[type=submit]");
+      button.disabled = true;
+      button.textContent = "Updating...";
+      try {
+        await api("/api/account/password", {
+          method: "POST",
+          body: JSON.stringify(Object.fromEntries(new FormData(passwordForm)))
+        });
+        passwordForm.reset();
+        toast("Password updated.", "success");
+      } catch (error) {
+        const target = error.field || (/current/i.test(error.message) ? "currentPassword" : "newPassword");
+        setFieldError(passwordForm, target, error.message);
+        passwordForm.elements[target]?.focus();
+      } finally {
         button.disabled = false;
         button.textContent = "Update password";
       }
@@ -1222,7 +1522,7 @@ function installAppTools() {
         out.innerHTML = outputTemplate(data, { creditUsed: 1, inputText: formData.get("notes") || "Photo upload", momentumCount });
         toast("Generated from photos. 1 credit used.", "success");
       } catch (error) {
-        out.innerHTML = `<p class="error">${escapeHtml(error.message)}</p>`;
+        out.innerHTML = emptyStateTemplate({ icon: "x", heading: "Photo generation paused", body: error.message });
         handleGenerationError(error);
       }
     });
@@ -1251,7 +1551,7 @@ function installAppTools() {
         out.innerHTML = outputTemplate(data, { creditUsed: 1, inputText: `${formData.get("title") || ""}\n${formData.get("description") || ""}`.trim(), momentumCount });
         toast("Scored listing. 1 credit used.", "success");
       } catch (error) {
-        out.innerHTML = `<p class="error">${escapeHtml(error.message)}</p>`;
+        out.innerHTML = emptyStateTemplate({ icon: "x", heading: "Score paused", body: error.message });
         handleGenerationError(error);
       }
     });
@@ -1278,10 +1578,10 @@ function installAppTools() {
         });
         const reply = data.buyerQuestionReply || (data.buyerReplies || [])[0] || "Reply generated.";
         updateCreditsFromResponse(data);
-        out.innerHTML = `<section class="output-card reply-block"><h3>Suggested reply</h3><p>${escapeHtml(reply)}</p><button type="button" data-copy="${escapeHtml(reply)}">Copy reply</button></section>`;
+        out.innerHTML = `<section class="output-card reply-block"><h3>Suggested reply</h3><p>${escapeHtml(reply)}</p>${copyButton("Copy reply", reply)}</section>`;
         toast("Reply generated. 1 credit used.", "success");
       } catch (error) {
-        out.innerHTML = `<p class="error">${escapeHtml(error.message)}</p>`;
+        out.innerHTML = emptyStateTemplate({ icon: "x", heading: "Reply paused", body: error.message });
         handleGenerationError(error);
       }
     });
@@ -1327,11 +1627,16 @@ async function loadAppHistory(page = 1) {
     return;
   }
   const query = $("#historySearch")?.value || "";
-  list.innerHTML = "<div class='skeleton'>Loading history...</div>";
+  list.innerHTML = loadingTemplate("Loading history...");
   try {
     const data = await api(`/api/history?page=${page}&pageSize=20&q=${encodeURIComponent(query)}`);
     if (!data.history?.length) {
-      list.innerHTML = '<div class="empty-state">Your generated listings will appear here</div>';
+      list.innerHTML = emptyStateTemplate({
+        icon: "file-text",
+        heading: "No listings yet - generate your first one to see it here",
+        body: "Once you create a listing package, you can reopen and copy it from here.",
+        cta: buttonTemplate({ variant: "primary", label: "Generate a listing", icon: "arrow-right", href: "/app/notes" })
+      });
     } else {
       list.innerHTML = data.history.map((item) => `
         <article class="history-card" data-history-id="${escapeHtml(item.id)}">
@@ -1340,8 +1645,8 @@ async function loadAppHistory(page = 1) {
           <p>${escapeHtml((item.description || "No description saved.").slice(0, 180))}</p>
           <div class="history-meta">${escapeHtml(item.source === "photos" ? "from photos" : "from notes")}</div>
           <div class="history-actions">
-            <button type="button" class="history-button" data-copy="${escapeHtml(item.title || "")}">Copy title</button>
-            <button type="button" class="history-button" data-copy="${escapeHtml(item.description || "")}">Copy description</button>
+            ${copyButton("Copy title", item.title || "")}
+            ${copyButton("Copy description", item.description || "")}
           </div>
         </article>
       `).join("");
@@ -1349,16 +1654,16 @@ async function loadAppHistory(page = 1) {
     const pagination = data.pagination || { page: 1, totalPages: 1 };
     if (pager) {
       pager.innerHTML = `
-        <button type="button" ${pagination.page <= 1 ? "disabled" : ""} data-history-page="${pagination.page - 1}">Previous</button>
+        <button class="btn btn-secondary" type="button" ${pagination.page <= 1 ? "disabled" : ""} data-history-page="${pagination.page - 1}">Previous</button>
         <span>Page ${pagination.page} of ${pagination.totalPages}</span>
-        <button type="button" ${pagination.page >= pagination.totalPages ? "disabled" : ""} data-history-page="${pagination.page + 1}">Next</button>
+        <button class="btn btn-secondary" type="button" ${pagination.page >= pagination.totalPages ? "disabled" : ""} data-history-page="${pagination.page + 1}">Next</button>
       `;
       $$("[data-history-page]", pager).forEach((button) => {
         button.addEventListener("click", () => loadAppHistory(Number(button.dataset.historyPage)));
       });
     }
   } catch (error) {
-    list.innerHTML = `<div class="empty-state">${escapeHtml(error.message)}</div>`;
+    list.innerHTML = emptyStateTemplate({ icon: "x", heading: "History could not load", body: error.message });
   }
 }
 
@@ -1376,24 +1681,22 @@ async function loadBilling(me = accountState) {
   try {
     const data = await api("/api/billing");
     updateCreditsFromResponse(data);
-    packs.innerHTML = (data.creditPacks || []).map((pack) => `
-      <div class="billing-pack ${pack.featured ? "is-featured" : ""}">
-        <strong>${escapeHtml(pack.name)}</strong>
-        <span>${Number(pack.credits || 0)} credits - ${escapeHtml(formatPrice(pack.pricePence))}</span>
-        <button type="button" class="pricing-buy" data-checkout-pack="${escapeHtml(pack.id)}">Buy ${escapeHtml(pack.name)}</button>
-      </div>
-    `).join("");
+    packs.innerHTML = (data.creditPacks || []).map((pack) => pricingCardTemplate({
+      variant: "one-time",
+      ...pack,
+      ctaLabel: `Buy ${pack.name}`
+    })).join("");
     const currentPlan = data.subscription?.plan || data.user?.subscriptionPlan || "free";
     const currentStatus = data.subscription?.status || data.user?.subscriptionStatus || "inactive";
     subscriptions.innerHTML = (data.subscriptionPlans || []).map((plan) => {
       const isCurrent = currentPlan === plan.id && ["active", "trialing", "past_due"].includes(String(currentStatus).toLowerCase());
-      return `
-        <div class="billing-pack subscription-pack ${plan.featured ? "is-featured" : ""}">
-          <strong>${escapeHtml(plan.name)} ${plan.featured ? '<span class="mini-badge">Best value</span>' : ""}</strong>
-          <span>${Number(plan.credits || 0)} credits/month - ${escapeHtml(formatMonthlyPrice(plan))}</span>
-          <button type="button" class="pricing-buy" data-subscription-plan="${escapeHtml(plan.id)}" ${isCurrent ? "disabled" : ""}>${isCurrent ? "Current plan" : currentPlan === "free" ? "Subscribe" : "Switch plan"}</button>
-        </div>
-      `;
+      return pricingCardTemplate({
+        variant: "subscription",
+        ...plan,
+        current: isCurrent,
+        label: plan.featured ? "Best value" : plan.label || "Monthly",
+        ctaLabel: isCurrent ? "Current plan" : currentPlan === "free" ? `Subscribe ${plan.name}` : `Switch to ${plan.name}`
+      });
     }).join("");
     const rows = [
       ...(data.payments || []).map((item) => ({ label: `Payment ${item.reference}`, amount: `+${item.credits} credits`, date: item.createdAt })),
@@ -1404,9 +1707,9 @@ async function loadBilling(me = accountState) {
       <div class="transaction-list">
         ${rows.map((row) => `<div><span>${escapeHtml(row.label)}</span><strong>${escapeHtml(row.amount)}</strong><time>${escapeHtml(row.date)}</time></div>`).join("")}
       </div>
-    ` : '<div class="empty-state">No transactions yet. Credit purchases and adjustments appear here.</div>';
+    ` : emptyStateTemplate({ icon: "wallet", heading: "No transactions yet", body: "Credit purchases, monthly refills and adjustments will appear here." });
   } catch (error) {
-    transactions.innerHTML = `<div class="empty-state">${escapeHtml(error.message)}</div>`;
+    transactions.innerHTML = emptyStateTemplate({ icon: "x", heading: "Billing could not load", body: error.message });
   }
 }
 
@@ -1421,6 +1724,28 @@ function installCheckoutButtons() {
       const view = billingView.dataset.billingView;
       $$("[data-billing-view]").forEach((button) => button.classList.toggle("is-active", button === billingView));
       $$("[data-billing-panel]").forEach((panel) => panel.classList.toggle("hidden", panel.dataset.billingPanel !== view));
+      return;
+    }
+    const pricingView = event.target.closest("[data-pricing-view]");
+    if (pricingView) {
+      const view = pricingView.dataset.pricingView;
+      $$("[data-pricing-view]").forEach((button) => button.classList.toggle("is-active", button === pricingView));
+      $$("[data-pricing-panel]").forEach((panel) => panel.classList.toggle("is-muted-panel", panel.dataset.pricingPanel !== view));
+      return;
+    }
+    const manageSubscription = event.target.closest("[data-manage-subscription]");
+    if (manageSubscription) {
+      manageSubscription.disabled = true;
+      const original = manageSubscription.innerHTML;
+      manageSubscription.textContent = "Opening portal...";
+      try {
+        const data = await api("/api/create-billing-portal-session", { method: "POST" });
+        if (data.url) location.href = data.url;
+      } catch (error) {
+        toast(error.message, "error");
+        manageSubscription.disabled = false;
+        manageSubscription.innerHTML = original;
+      }
       return;
     }
     const subscriptionButton = event.target.closest("[data-subscription-plan]");
