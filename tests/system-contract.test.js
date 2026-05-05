@@ -224,13 +224,16 @@ test("public CTAs have valid hrefs and pricing has subscribe buttons", () => {
   }
 });
 
-test("homepage shows seller-example product cards (Zara, Nike, Kids bundle)", () => {
-  assert.match(indexHtml, /class="seller-cards"/);
+test("homepage shows product-gallery example cards (Zara, Nike, Kids bundle)", () => {
+  assert.match(indexHtml, /class="gallery-v3"/);
+  assert.match(indexHtml, /class="gallery-card/);
   assert.match(indexHtml, /Zara Navy Satin Midi Dress/);
   assert.match(indexHtml, /Nike Air Force 1/);
   assert.match(indexHtml, /Kids Winter Bundle/);
-  assert.match(indexHtml, /class="seller-tags"/);
-  assert.match(indexHtml, /class="seller-price"/);
+  assert.match(indexHtml, /class="gallery-card-tags/);
+  // At least 6 gallery cards for the new product-gallery style.
+  const cards = (indexHtml.match(/class="gallery-card"/g) || []).length;
+  assert.equal(cards >= 6, true, `expected 6+ gallery cards, found ${cards}`);
 });
 
 test("app generator empty states scaffold the upcoming output", () => {
@@ -374,9 +377,9 @@ test("pricing surfaces use the single PRICING_CATALOGUE source of truth", () => 
   assert.match(siteJs, /id:\s*"starter"[\s\S]*?monthlyLimit:\s*20[\s\S]*?pricePence:\s*699/);
   assert.match(siteJs, /id:\s*"seller"[\s\S]*?monthlyLimit:\s*75[\s\S]*?pricePence:\s*1499[\s\S]*?featured:\s*true/);
   assert.match(siteJs, /id:\s*"reseller"[\s\S]*?monthlyLimit:\s*250[\s\S]*?pricePence:\s*2999/);
-  // Static HTML opts in to JS hydration via data-pricing-grid.
-  assert.match(indexHtml, /class="pricing-grid"\s+data-pricing-grid="true"/);
-  assert.match(pricingHtml, /class="pricing-grid"\s+data-pricing-grid="true"/);
+  // Static HTML opts in to JS hydration via data-pricing-grid (v3 layout uses class="pricing-v3").
+  assert.match(indexHtml, /class="pricing-v3"\s+data-pricing-grid="true"/);
+  assert.match(pricingHtml, /class="pricing-v3"\s+data-pricing-grid="true"/);
   // Bootstrap calls hydratePricingGrids().
   assert.match(siteJs, /hydratePricingGrids\(\)/);
   // Paywall modal also renders from the catalogue (no bespoke per-plan paywall markup remains).
@@ -430,29 +433,31 @@ test("paywall modal can be dismissed with Escape and renders from the catalogue"
   assert.doesNotMatch(siteJs, /paywall-pack is-featured is-dominant/);
 });
 
-test("homepage hero is Vinted-specific (note → title → tags → fast/fair/max)", () => {
-  assert.match(indexHtml, /hero-vinted/);
-  assert.match(indexHtml, /hero-item-card/);
-  assert.match(indexHtml, /hero-item-note/);
-  assert.match(indexHtml, /Navy Satin Midi Dress/);
-  assert.match(indexHtml, /hero-item-tags/);
-  assert.match(indexHtml, /hero-item-prices/);
-  // Old browser-chrome mock and emoji-style Vinted dressing must not return.
-  assert.doesNotMatch(indexHtml, /hero-mock-chrome/);
-  assert.doesNotMatch(indexHtml, /listboost\.uk &middot; Listing/);
+test("homepage hero is Vinted-specific (workspace mock with note → generated listing)", () => {
+  // V3 hero uses a workspace mockup with a real-looking listing card.
+  assert.match(indexHtml, /class="hero-v3"/);
+  assert.match(indexHtml, /class="workspace-mock"/);
+  assert.match(indexHtml, /class="workspace-note"/);
+  assert.match(indexHtml, /class="workspace-listing"/);
+  assert.match(indexHtml, /Zara Navy Satin Midi Dress/);
+  assert.match(indexHtml, /class="workspace-tags"/);
+  // Marketing-v3 dark page mode must be active on the homepage.
+  assert.match(indexHtml, /<body data-page="marketing-v3"/);
 });
 
-test("homepage trust section uses honest 'real seller problems' framing without fake testimonials", () => {
-  assert.match(indexHtml, /trust-section/);
-  assert.match(indexHtml, /Built around real seller problems/);
-  assert.match(indexHtml, /trust-problem/);
-  assert.match(indexHtml, /trust-stats/);
-  // No fake testimonials: forbid quote-attribution patterns.
+test("homepage trust section gives honest trust signals without fake testimonials", () => {
+  // V3 uses a trust-v3 grid of trust-tile cards (no fabricated quotes).
+  assert.match(indexHtml, /class="trust-v3"/);
+  assert.match(indexHtml, /class="trust-tile"/);
+  assert.match(indexHtml, /No Vinted login/);
+  assert.match(indexHtml, /Secure Stripe checkout/);
+  assert.match(indexHtml, /Email verification required/);
+  // No fake testimonials: forbid quote-attribution patterns and class="testimonial".
   assert.doesNotMatch(indexHtml, /\bsays\b\s+[A-Z][a-z]+,\s*[A-Z]/);
   assert.doesNotMatch(indexHtml, /class="testimonial/);
-  // Three problem cards.
-  const problems = (indexHtml.match(/trust-problem/g) || []).length;
-  assert.equal(problems >= 3, true, `expected 3+ trust-problem cards, found ${problems}`);
+  // Six trust tiles (or more).
+  const tiles = (indexHtml.match(/class="trust-tile"/g) || []).length;
+  assert.equal(tiles >= 6, true, `expected 6+ trust tiles, found ${tiles}`);
 });
 
 test("mobile app nav uses inline SVG icons + visible labels", () => {
@@ -491,11 +496,12 @@ test("homepage pricing teaser matches the new feature lists", () => {
   assert.match(sellerBlock, /75 listings per month/);
   assert.match(sellerBlock, /Photo upload listing generator/);
   assert.match(sellerBlock, /Listing score checker/);
-  assert.match(sellerBlock, /&pound;14\.99\/month/);
+  // V3 layout: <strong>£X.XX</strong><span>per month</span>.
+  assert.match(sellerBlock, /<strong>&pound;14\.99<\/strong>/);
   const eliteBlock = indexHtml.match(/id="subscribe-reseller"[\s\S]*?<\/article>/)[0];
   assert.match(eliteBlock, /<h3>Elite<\/h3>/);
   assert.match(eliteBlock, /250 listings per month/);
-  assert.match(eliteBlock, /&pound;29\.99\/month/);
+  assert.match(eliteBlock, /<strong>&pound;29\.99<\/strong>/);
   assert.match(eliteBlock, /Reusable listing templates \(coming soon\)/);
   assert.doesNotMatch(eliteBlock, /Unlimited/);
 });
@@ -585,14 +591,14 @@ test("pricing page renders Starter / Seller / Elite subscription tiers with laun
   assert.doesNotMatch(pricingHtml, /data-checkout-pack/);
   assert.doesNotMatch(pricingHtml, /one-time/);
   assert.match(pricingHtml, /Best value/);
-  // New launch prices.
-  assert.match(pricingHtml, /&pound;6\.99\/month/);
-  assert.match(pricingHtml, /&pound;14\.99\/month/);
-  assert.match(pricingHtml, /&pound;29\.99\/month/);
+  // New launch prices (v3 layout uses "<strong>£X.XX</strong><span>per month</span>").
+  assert.match(pricingHtml, /<strong>&pound;6\.99<\/strong>/);
+  assert.match(pricingHtml, /<strong>&pound;14\.99<\/strong>/);
+  assert.match(pricingHtml, /<strong>&pound;29\.99<\/strong>/);
   // Old prices and unlimited wording must NOT appear in public HTML.
-  assert.doesNotMatch(pricingHtml, /&pound;5\/month/);
-  assert.doesNotMatch(pricingHtml, /&pound;12\/month/);
-  assert.doesNotMatch(pricingHtml, /&pound;25\/month/);
+  assert.doesNotMatch(pricingHtml, /<strong>&pound;5<\/strong>/);
+  assert.doesNotMatch(pricingHtml, /<strong>&pound;12<\/strong>/);
+  assert.doesNotMatch(pricingHtml, /<strong>&pound;25<\/strong>/);
   assert.doesNotMatch(pricingHtml, /100 listings\/month/);
   assert.doesNotMatch(pricingHtml, /Unlimited listings/);
   assert.doesNotMatch(pricingHtml, /<strong>Unlimited<\/strong>/);
@@ -638,7 +644,7 @@ test("example demo uses anonymous live generation endpoint", () => {
   assert.match(exampleHtml, /No Vinted login/);
   assert.match(exampleHtml, /No card needed/);
   assert.match(exampleHtml, /Copy &amp; paste manually/);
-  assert.match(exampleHtml, /Create free account · 3 free listings/);
+  assert.match(exampleHtml, /Create free account[\s\S]{0,12}3 free listings/);
   assert.match(serverJs, /handleDemoGenerate/);
   assert.match(serverJs, /\/api\/demo-generate/);
   assert.match(siteJs, /\/api\/demo-generate/);

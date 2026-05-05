@@ -14,54 +14,65 @@
     <link rel="icon" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.svg" />
     <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="/styles-v3.css" />
   </head>
-  <body>
+  <body data-page="marketing-v3">
     <a class="skip-link" href="#main">Skip to content</a>
     <div class="toast-region" id="toastRegion" aria-live="polite"></div>
     <header class="lb-header"></header>
     <main class="page-wrap pricing-page" id="main">
-      <section class="page-hero narrow">
-        <span class="badge badge-brand">3 free listings on signup</span>
-        <h1>Simple monthly pricing for UK Vinted sellers</h1>
-        <p>Pick the plan that fits your monthly listing volume. Cancel or switch any time.</p>
+
+      <section class="hero-v3" aria-labelledby="pricing-hero-title" style="grid-template-columns: 1fr; max-width: 880px; margin: 0 auto; text-align: center;">
+        <div class="hero-v3-copy" style="margin: 0 auto; max-width: 720px;">
+          <p class="eyebrow" style="margin: 0 auto;">Monthly subscriptions</p>
+          <h1 class="hero-v3-title" id="pricing-hero-title">Simple monthly pricing for <span class="accent">UK Vinted sellers</span>.</h1>
+          <p class="hero-v3-lede" style="margin: 0 auto;">Pick the plan that fits your monthly listing volume. Cancel or switch any time. Backend plan ids stay stable; the Elite tier is shown publicly as Elite.</p>
+          <ul class="hero-v3-trust" style="justify-content: center;" aria-label="Pricing trust signals">
+            <li>3 free listings on signup</li>
+            <li>Cancel any time</li>
+            <li>Secure Stripe checkout</li>
+          </ul>
+        </div>
       </section>
 
-      <section id="packGrid" aria-label="ListBoost subscription pricing">
-        <div class="pricing-mode-section recommended" data-pricing-panel="subscriptions">
-          <div class="section-head compact"><p class="eyebrow">Subscribe monthly</p><h2>Pick the plan that fits your listing volume</h2></div>
-          <div class="pricing-grid" data-pricing-grid="true">
-            <article class="pricing-card subscription" id="subscribe-starter"><span class="badge">Monthly starter</span><h3>Starter</h3><p class="pricing-price"><strong>20</strong><span>listings/month</span></p><p class="pricing-meta">&pound;6.99/month</p><p class="pricing-fit">Best for casual sellers</p><p class="pricing-copy">For occasional listings when you need the core generator.</p><ul class="pricing-compare"><li>20 listings per month</li><li>Notes-to-listing generator</li><li>Titles, descriptions and keywords</li></ul><button class="btn btn-secondary pricing-buy" type="button" data-subscription-plan="starter">Subscribe Starter</button></article>
-            <article class="pricing-card subscription is-featured featured" id="subscribe-seller"><span class="badge badge-brand">Best value</span><h3>Seller</h3><p class="pricing-price"><strong>75</strong><span>listings/month</span></p><p class="pricing-meta">&pound;14.99/month</p><p class="pricing-fit">Best for regular sellers</p><p class="pricing-copy">The full toolkit regular Vinted sellers need.</p><ul class="pricing-compare"><li>75 listings per month</li><li>Everything in Starter</li><li>Photo upload listing generator</li><li>Price guidance</li><li>Buyer reply generator</li><li>Listing score checker</li></ul><button class="btn btn-primary pricing-buy" type="button" data-subscription-plan="seller">Subscribe Seller</button></article>
-            <article class="pricing-card subscription" id="subscribe-reseller"><span class="badge">Elite tools</span><h3>Elite</h3><p class="pricing-price"><strong>250</strong><span>listings/month</span></p><p class="pricing-meta">&pound;29.99/month</p><p class="pricing-fit">Best for daily sellers</p><p class="pricing-copy">For serious resellers running larger volumes with priority support.</p><ul class="pricing-compare"><li>250 listings per month</li><li>Everything in Seller</li><li>Built for serious resellers</li><li>Advanced photo checklist</li><li>More detailed price guidance</li><li>Listing history</li><li>Reusable listing templates (coming soon)</li><li>Priority support</li><li>Best for daily sellers</li><li>Early access to new selling tools</li></ul><button class="btn btn-secondary pricing-buy" type="button" data-subscription-plan="reseller">Subscribe Elite</button></article>
+      <section id="packGrid" aria-label="ListBoost subscription pricing" style="margin-top: 24px;">
+        <div class="pricing-v3" data-pricing-grid="true">
+          <article class="pricing-card subscription" id="subscribe-starter"><span class="badge">Monthly starter</span><h3>Starter</h3><p class="pricing-price"><strong>&pound;6.99</strong><span>per month</span></p><p class="pricing-meta">20 listings/month</p><p class="pricing-fit">Best for casual sellers</p><p class="pricing-copy">For occasional listings when you need the core generator.</p><ul class="pricing-compare"><li>20 listings per month</li><li>Notes-to-listing generator</li><li>Titles, descriptions and keywords</li></ul><button class="btn btn-secondary pricing-buy" type="button" data-subscription-plan="starter">Subscribe Starter</button></article>
+          <article class="pricing-card subscription is-featured featured" id="subscribe-seller"><span class="badge badge-brand">Best value</span><h3>Seller</h3><p class="pricing-price"><strong>&pound;14.99</strong><span>per month</span></p><p class="pricing-meta">75 listings/month</p><p class="pricing-fit">Best for regular sellers</p><p class="pricing-copy">The full toolkit regular Vinted sellers need.</p><ul class="pricing-compare"><li>75 listings per month</li><li>Everything in Starter</li><li>Photo upload listing generator</li><li>Price guidance</li><li>Buyer reply generator</li><li>Listing score checker</li></ul><button class="btn btn-primary pricing-buy" type="button" data-subscription-plan="seller">Subscribe Seller</button></article>
+          <article class="pricing-card subscription" id="subscribe-reseller"><span class="badge">Elite tools</span><h3>Elite</h3><p class="pricing-price"><strong>&pound;29.99</strong><span>per month</span></p><p class="pricing-meta">250 listings/month</p><p class="pricing-fit">Best for daily sellers</p><p class="pricing-copy">For serious resellers running larger volumes with priority support.</p><ul class="pricing-compare"><li>250 listings per month</li><li>Everything in Seller</li><li>Built for serious resellers</li><li>Advanced photo checklist</li><li>More detailed price guidance</li><li>Listing history</li><li>Reusable listing templates (coming soon)</li><li>Priority support</li><li>Best for daily sellers</li><li>Early access to new selling tools</li></ul><button class="btn btn-secondary pricing-buy" type="button" data-subscription-plan="reseller">Subscribe Elite</button></article>
+        </div>
+      </section>
+
+      <section class="section" id="pricing-faq" aria-labelledby="pricing-faq-title">
+        <header class="section-head">
+          <p class="eyebrow">Pricing FAQ</p>
+          <h2 id="pricing-faq-title">Questions about plans, limits and billing.</h2>
+        </header>
+        <div class="faq-v3">
+          <div class="faq-list">
+            <details><summary>Which plan should I choose?</summary><p>Seller is best value for regular sellers. Starter suits occasional listings, Elite suits sellers who list every day.</p></details>
+            <details><summary>What is one listing?</summary><p>One listing is one full output package: title, description, keywords, fast/fair/max price, photo checklist and buyer reply.</p></details>
+            <details><summary>Can I switch plans?</summary><p>Yes. Upgrade or downgrade from Billing after signing in. Changes apply right away.</p></details>
+            <details><summary>What happens if I hit my monthly limit?</summary><p>You&rsquo;ll be asked to upgrade your plan to keep generating. Your usage resets on the next billing cycle.</p></details>
+            <details><summary>Is ListBoost connected to Vinted?</summary><p>No. ListBoost is independent and manual-copy only.</p></details>
+            <details><summary>Do I need a card to try ListBoost?</summary><p>No. Create a free account and try 3 listings before choosing a monthly plan.</p></details>
           </div>
+          <aside class="faq-v3-aside">
+            <h3>Need help choosing?</h3>
+            <p>If you&rsquo;re unsure, start on Starter. Switching up to Seller takes a couple of clicks from Billing &mdash; no card juggling.</p>
+            <a class="btn btn-primary" href="/signup">Create free account</a>
+          </aside>
         </div>
       </section>
 
-      <section class="trust-strip-section">
-        <ul class="trust-strip" aria-label="ListBoost trust points">
-          <li>No Vinted login needed</li>
-          <li>Copy and paste manually</li>
-          <li>Cancel or switch monthly plans</li>
-        </ul>
-      </section>
-
-      <section class="faq">
-        <h2>Pricing questions</h2>
-        <article class="faq-item"><button type="button" aria-expanded="false">Which plan should I choose?</button><p>Seller is best value for regular sellers. Starter suits occasional listings, and Reseller suits sellers who list every day.</p></article>
-        <article class="faq-item"><button type="button" aria-expanded="false">What is one listing?</button><p>One listing is one full output package: title, description, keywords, price guidance, photo checklist and buyer reply.</p></article>
-        <article class="faq-item"><button type="button" aria-expanded="false">Can I switch plans?</button><p>Yes. Upgrade or downgrade from Billing after signing in. Changes apply right away.</p></article>
-        <article class="faq-item"><button type="button" aria-expanded="false">What happens if I hit my monthly limit?</button><p>You will be asked to upgrade your plan to keep generating. Your usage resets on the next billing cycle.</p></article>
-        <article class="faq-item"><button type="button" aria-expanded="false">Is ListBoost connected to Vinted?</button><p>No. ListBoost is independent and manual-copy only.</p></article>
-        <article class="faq-item"><button type="button" aria-expanded="false">Do I need a card to try ListBoost?</button><p>No. Create a free account and try 3 listings before choosing a monthly plan.</p></article>
-      </section>
-
-      <section class="demo-strip pricing-cta-strip">
-        <div>
-          <span class="badge">Ready to list faster?</span>
-          <h2>Try 3 free listings before you subscribe</h2>
-          <p>Create an account, verify your email and generate your first Vinted listing.</p>
+      <section class="section" aria-labelledby="pricing-cta">
+        <div class="cta-strip">
+          <div>
+            <h2 id="pricing-cta">Try 3 free listings before you subscribe.</h2>
+            <p>Verified email, no card. You&rsquo;ll see the full output before making any decision.</p>
+          </div>
+          <a class="btn btn-primary" href="/signup">Create free account</a>
         </div>
-        <a class="btn btn-primary" href="/signup">Create free account</a>
       </section>
     </main>
     <script type="module" src="/site.js"></script>

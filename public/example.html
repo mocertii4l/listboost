@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Example - ListBoost</title>
+    <title>Live demo - ListBoost</title>
     <meta name="description" content="Try a prefilled ListBoost demo and see a premium Vinted listing output before creating an account." />
     <link rel="canonical" href="https://www.listboost.uk/example" />
     <meta property="og:title" content="ListBoost example" />
@@ -13,77 +13,89 @@
     <meta name="twitter:card" content="summary_large_image" />
     <link rel="icon" href="/favicon.svg" />
     <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="/styles-v3.css" />
   </head>
-  <body>
+  <body data-page="marketing-v3">
     <a class="skip-link" href="#main">Skip to content</a>
     <div class="toast-region" id="toastRegion" aria-live="polite"></div>
     <header class="lb-header"></header>
 
     <main class="page-wrap demo-page" id="main">
-      <section class="demo-hero" aria-labelledby="demo-title">
-        <div class="demo-copy">
+      <section class="hero-v3" aria-labelledby="demo-title">
+        <div class="hero-v3-copy">
           <p class="eyebrow">Live demo</p>
-          <h1 id="demo-title">Watch raw notes become a <span class="accent">sell-ready listing</span>.</h1>
-          <p class="lede">Edit the prefilled notes, hit Generate, and see the same premium output a paying ListBoost user gets.</p>
-          <ul class="trust-row" aria-label="Demo trust signals">
+          <h1 class="hero-v3-title" id="demo-title">Watch a rough note become a <span class="accent">sell-ready listing</span>.</h1>
+          <p class="hero-v3-lede">Edit the prefilled note, hit Generate, and see exactly the same premium output a paying ListBoost user gets. No account needed for the demo.</p>
+          <ul class="hero-v3-trust" aria-label="Demo trust signals">
             <li>No Vinted login</li>
             <li>No card needed</li>
             <li>Copy &amp; paste manually</li>
           </ul>
         </div>
 
-        <div class="demo-flow" aria-label="Demo workflow">
-          <section class="card demo-generator-card demo-step demo-step-input" aria-label="Demo input">
-            <div class="demo-step-head">
-              <span class="demo-step-num">1</span>
-              <div>
-                <span class="demo-step-kicker">Your notes</span>
-                <h2 class="demo-step-title">Paste rough seller notes</h2>
+        <div class="hero-v3-mock" aria-label="Demo workspace">
+          <div class="workspace-mock">
+            <div class="workspace-mock-bar" aria-hidden="true">
+              <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+              <span class="url">listboost.uk &middot; Demo</span>
+            </div>
+            <div class="workspace-mock-body">
+              <div class="workspace-step">
+                <span class="workspace-step-label">Step 1 &middot; Your notes</span>
+                <label for="demoInput" style="display:block;">
+                  <textarea id="demoInput" class="textarea workspace-note" rows="4" style="width:100%; min-height: 96px; resize: vertical;">Zara navy satin midi dress, UK 10, worn twice for weddings, no marks, zip fastening, flattering bias cut, selling because it no longer fits</textarea>
+                </label>
+              </div>
+              <div class="workspace-arrow" aria-hidden="true"></div>
+              <div class="workspace-step">
+                <span class="workspace-step-label">Step 2 &middot; Generate</span>
+                <button class="btn btn-primary generator-cta" id="runDemo" type="button" style="width:100%; padding:14px 18px; border-radius:12px; font-weight:700; font-size:15px;">
+                  <span>Generate sell-ready listing</span>
+                </button>
+                <p class="muted" style="font-size:12px; margin:0; color: var(--text-subtle);">Most demos finish in a few seconds.</p>
               </div>
             </div>
-            <label for="demoInput" class="demo-step-label">
-              <textarea id="demoInput" class="textarea">Zara navy satin midi dress, UK 10, worn twice for weddings, no marks, zip fastening, flattering bias cut, selling because it no longer fits</textarea>
-              <span class="field-helper">Edit if you like. The demo uses a capped preview endpoint.</span>
-            </label>
-            <button class="btn btn-primary generator-cta" id="runDemo" type="button"><span>Generate sell-ready listing</span></button>
-          </section>
-
-          <div class="demo-flow-connector" aria-hidden="true"><span></span></div>
-
-          <section class="demo-step demo-step-output" aria-labelledby="demo-results-title">
-            <div class="demo-step-head">
-              <span class="demo-step-num is-pending">2</span>
-              <div>
-                <span class="demo-step-kicker">Your output</span>
-                <h2 class="demo-step-title" id="demo-results-title">A polished, copyable listing</h2>
-              </div>
-            </div>
-            <div class="output-stack demo-output" id="demoOutput" aria-live="polite">
-              <div class="empty-state demo-empty">
-                <div class="empty-state-icon" data-icon="sparkles" aria-hidden="true"></div>
-                <h3>Output appears here in seconds</h3>
-                <p>Title, description, keywords, price guidance, photo checklist and buyer reply &mdash; ready to copy.</p>
-                <ul class="demo-empty-checklist" aria-label="Sections you'll receive">
-                  <li>Title</li><li>Description</li><li>Keywords</li><li>Price guidance</li><li>Photo checklist</li><li>Buyer reply</li>
-                </ul>
-              </div>
-            </div>
-          </section>
+          </div>
         </div>
       </section>
 
-      <section class="demo-cta-strip" aria-label="Sign up CTA">
-        <div>
-          <span class="badge badge-brand">Like what you see?</span>
-          <h2>Get the same output on your own listings.</h2>
-          <p class="muted">Free account, 3 listings on us, no card needed.</p>
+      <section class="section" id="demo-result" aria-labelledby="demo-result-title">
+        <header class="section-head">
+          <p class="eyebrow">Step 3 &middot; Your output</p>
+          <h2 id="demo-result-title">Title, description, keywords, price, photo checklist, buyer reply.</h2>
+          <p class="section-sub">Each section is editable. Reset to AI version with one click. Copy what you finalise.</p>
+        </header>
+
+        <div class="output-stack demo-output" id="demoOutput" aria-live="polite" style="display:grid; gap: 16px;">
+          <div class="empty-state" style="padding: 40px 24px; border-radius: 18px; border: 1px dashed rgba(45,212,196,0.3); background: var(--surface); color: var(--text-muted); text-align: left; display:grid; gap: 14px;">
+            <span style="display:inline-flex; gap:8px; align-items:center; font-size:11px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color: var(--primary-hover);"><span style="width:6px; height:6px; border-radius:999px; background: var(--primary);"></span>Output appears here</span>
+            <h3 style="margin:0; font-size: 22px; color: var(--text); letter-spacing:-0.01em;">Click Generate to see the full output</h3>
+            <p style="margin:0; color: var(--text-muted); font-size: 14px; line-height:1.6;">You&rsquo;ll get six copy-ready sections &mdash; title, description, keywords, price guidance, photo checklist and a polite buyer reply.</p>
+            <ul style="display:flex; flex-wrap: wrap; gap: 8px; list-style:none; margin:4px 0 0; padding:0;">
+              <li style="padding:4px 10px; border-radius:999px; background: rgba(45,212,196,0.14); color: var(--primary-hover); border:1px solid rgba(45,212,196,0.28); font-size:11px; font-weight:600;">Title</li>
+              <li style="padding:4px 10px; border-radius:999px; background: rgba(45,212,196,0.14); color: var(--primary-hover); border:1px solid rgba(45,212,196,0.28); font-size:11px; font-weight:600;">Description</li>
+              <li style="padding:4px 10px; border-radius:999px; background: rgba(45,212,196,0.14); color: var(--primary-hover); border:1px solid rgba(45,212,196,0.28); font-size:11px; font-weight:600;">Keywords</li>
+              <li style="padding:4px 10px; border-radius:999px; background: rgba(45,212,196,0.14); color: var(--primary-hover); border:1px solid rgba(45,212,196,0.28); font-size:11px; font-weight:600;">Price guidance</li>
+              <li style="padding:4px 10px; border-radius:999px; background: rgba(45,212,196,0.14); color: var(--primary-hover); border:1px solid rgba(45,212,196,0.28); font-size:11px; font-weight:600;">Photo checklist</li>
+              <li style="padding:4px 10px; border-radius:999px; background: rgba(45,212,196,0.14); color: var(--primary-hover); border:1px solid rgba(45,212,196,0.28); font-size:11px; font-weight:600;">Buyer reply</li>
+            </ul>
+          </div>
         </div>
-        <a class="btn btn-primary btn-lg" href="/signup">Create free account</a>
+      </section>
+
+      <section class="section" aria-labelledby="demo-cta">
+        <div class="cta-strip">
+          <div>
+            <h2 id="demo-cta">Like what you see? Get the same output on your own listings.</h2>
+            <p>Free account, 3 listings on us, no card needed.</p>
+          </div>
+          <a class="btn btn-primary" href="/signup">Create free account</a>
+        </div>
       </section>
     </main>
 
     <div class="mobile-sticky-cta">
-      <a class="btn btn-primary btn-block" href="/signup">Create free account · 3 free listings</a>
+      <a class="btn btn-primary btn-block" href="/signup">Create free account &middot; 3 free listings</a>
     </div>
 
     <script type="module" src="/site.js"></script>

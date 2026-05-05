@@ -51,20 +51,21 @@ test("account bootstrap exposes subscription plans and environment metadata", ()
 });
 
 test("homepage renders premium marketing structure", () => {
-  assert.match(indexHtml, /Turn messy item notes into[\s\S]*?sell-ready Vinted listings[\s\S]*?in seconds/);
-  assert.match(indexHtml, /Start with 3 free listings/);
-  assert.match(indexHtml, /Try the demo/);
-  // Hero now renders the Vinted-specific item card; the old generic data-listing-card hero is gone.
-  assert.match(indexHtml, /class="hero-item-card/);
-  assert.match(indexHtml, /id="before-after"/);
-  assert.match(indexHtml, /zara dress size 10 worn twice navy blue/);
-  assert.match(indexHtml, /class="demo-strip"/);
+  // V3 hero copy.
+  assert.match(indexHtml, /Sell-ready[\s\S]*?Vinted listings[\s\S]*?from rough notes/);
+  // Primary CTA copy.
+  assert.match(indexHtml, /Start free &mdash; 3 listings/);
+  assert.match(indexHtml, /Try the live demo/);
+  // V3 hero uses workspace-mock instead of an item-card mockup.
+  assert.match(indexHtml, /class="workspace-mock/);
+  assert.match(indexHtml, /class="hero-v3"/);
+  // Premium dark mode is applied.
+  assert.match(indexHtml, /<body data-page="marketing-v3"/);
+  // Section anchors are still present.
   assert.match(indexHtml, /id="how-it-works"/);
-  assert.match(indexHtml, /A safer way to list faster/);
-  assert.match(indexHtml, /No automation risk/);
   assert.match(indexHtml, /id="features"/);
   assert.match(indexHtml, /id="pricing"/);
-  assert.match(indexHtml, /Questions sellers ask/);
+  assert.match(indexHtml, /id="faq"/);
   assert.match(siteJs, /public-footer/);
 });
 

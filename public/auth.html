@@ -11,24 +11,37 @@
     <meta name="twitter:card" content="summary_large_image" />
     <link rel="icon" href="/favicon.svg" />
     <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="/styles-v3.css" />
   </head>
-  <body>
+  <body data-page="marketing-v3">
     <a class="skip-link" href="#main">Skip to content</a>
     <div class="toast-region" id="toastRegion" aria-live="polite"></div>
-    <main class="auth-shell" id="main">
-      <a class="btn btn-ghost auth-back" href="/">Back to home</a>
-      <a class="lb-brand" href="/"><img src="/logo.svg" alt="" />ListBoost</a>
-      <section class="card auth-card">
-        <span class="badge">Account</span>
-        <h1 id="authHeading">Sign in</h1>
-        <p id="authIntro">Your subscription, history and listings stay with this account.</p>
-        <form id="authForm" data-mode="login">
-          <label class="signup-name-field hidden">Full name<input name="name" type="text" autocomplete="name" maxlength="80" /><p class="field-error" aria-live="polite"></p></label>
-          <label>Email<input name="email" type="email" autocomplete="email" required /><p class="field-error" aria-live="polite"></p></label>
-          <label>Password<input name="password" type="password" autocomplete="current-password" minlength="8" required /><p class="field-error" aria-live="polite"></p></label>
-          <button class="btn btn-primary" type="submit">Sign in</button>
-        </form>
-        <p id="authLinks"><a href="/signup">Create account</a> | <a href="/forgot-password">Forgot password?</a></p>
+    <main class="auth-split" id="main">
+      <aside class="auth-split-aside" aria-hidden="false">
+        <a class="lb-brand" href="/"><img src="/logo.svg" alt="" />ListBoost</a>
+        <h2>Get 3 free listings the moment you create your account.</h2>
+        <p>Title, description, keywords, fast/fair/max price guidance, photo checklist and a polite buyer reply &mdash; six copy-ready sections per listing. Edit anything before pasting to Vinted.</p>
+        <ul aria-label="Trust points">
+          <li>No Vinted login &mdash; you stay in full control</li>
+          <li>Email verification keeps abuse low</li>
+          <li>Stripe Checkout when you upgrade. We never see your card</li>
+          <li>Cancel monthly any time</li>
+        </ul>
+      </aside>
+      <section class="auth-split-form">
+        <article class="card auth-card">
+          <span class="badge">Account</span>
+          <h1 id="authHeading">Sign in</h1>
+          <p id="authIntro" class="muted">Your subscription, history and listings stay with this account.</p>
+          <form id="authForm" data-mode="login">
+            <label class="signup-name-field hidden">Full name<input name="name" type="text" autocomplete="name" maxlength="80" /><p class="field-error" aria-live="polite"></p></label>
+            <label>Email<input name="email" type="email" autocomplete="email" required /><p class="field-error" aria-live="polite"></p></label>
+            <label>Password<input name="password" type="password" autocomplete="current-password" minlength="8" required /><p class="field-error" aria-live="polite"></p></label>
+            <button class="btn btn-primary" type="submit">Sign in</button>
+          </form>
+          <p id="authLinks" class="muted small"><a href="/signup">Create account</a> &middot; <a href="/forgot-password">Forgot password?</a></p>
+        </article>
+        <p class="muted small" style="margin-top:18px; text-align:center;">By continuing you agree to the <a href="/terms" style="color: var(--primary-hover);">Terms</a> and <a href="/privacy" style="color: var(--primary-hover);">Privacy</a>.</p>
       </section>
     </main>
     <script type="module" src="/site.js"></script>
