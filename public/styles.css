@@ -1053,6 +1053,26 @@ select[aria-invalid="true"] {
   letter-spacing: 0.01em;
 }
 
+.pricing-fit {
+  margin: 0;
+  padding: var(--space-1) var(--space-3);
+  width: fit-content;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--primary-soft) 65%, transparent);
+  color: var(--primary-hover);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.pricing-card.is-featured .pricing-fit,
+.pricing-card.featured .pricing-fit {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--primary) 88%, transparent), var(--primary-hover));
+  color: var(--card);
+  box-shadow: 0 6px 14px -6px color-mix(in srgb, var(--primary) 60%, transparent);
+}
+
 .pricing-copy {
   margin: 0;
   color: var(--text-muted);
@@ -1217,7 +1237,139 @@ select[aria-invalid="true"] {
   position: relative;
   isolation: isolate;
   padding: var(--space-6);
-  transform: rotate(-1.5deg);
+  transform: rotate(-1deg);
+}
+
+.hero-mock {
+  position: relative;
+  border-radius: calc(var(--radius-xl) + var(--space-1));
+  background: var(--card);
+  border: 1px solid var(--border);
+  box-shadow:
+    var(--shadow-lg),
+    0 28px 70px -22px color-mix(in srgb, var(--primary) 36%, transparent);
+  overflow: hidden;
+}
+
+.hero-mock-chrome {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--bg-subtle) 90%, var(--card));
+}
+
+.hero-mock-chrome .hero-mock-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--text-subtle) 35%, transparent);
+}
+
+.hero-mock-chrome .hero-mock-dot:nth-child(1) { background: #ff6f61; }
+.hero-mock-chrome .hero-mock-dot:nth-child(2) { background: #f5b800; }
+.hero-mock-chrome .hero-mock-dot:nth-child(3) { background: var(--primary); }
+
+.hero-mock-tab {
+  margin-left: var(--space-3);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-family: ui-monospace, "JetBrains Mono", monospace;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+}
+
+.hero-mock-body {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-5, 20px) var(--space-5, 20px) var(--space-4);
+}
+
+.hero-mock-input {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px dashed color-mix(in srgb, var(--text-subtle) 35%, var(--border));
+  background:
+    repeating-linear-gradient(135deg, transparent 0 12px, color-mix(in srgb, var(--text-subtle) 5%, transparent) 12px 13px),
+    color-mix(in srgb, var(--card) 95%, var(--bg-subtle));
+}
+
+.hero-mock-input p {
+  margin: 0;
+  color: var(--text-muted);
+  font-family: ui-monospace, "JetBrains Mono", monospace;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.hero-mock-input-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-subtle);
+}
+
+.hero-mock-arrow {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  margin: calc(var(--space-1) * -1) auto;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: var(--card);
+  box-shadow: 0 8px 18px -8px color-mix(in srgb, var(--primary) 60%, transparent);
+}
+
+.hero-mock-arrow::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg) translate(-1px, -1px);
+}
+
+.hero-mock-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.hero-mock-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--primary-soft) 80%, transparent);
+  color: var(--primary-hover);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.hero-mock-pill .hero-mock-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--primary);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 18%, transparent);
+}
+
+.hero-mock-pill .hero-mock-dot.is-live {
+  animation: lb-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes lb-pulse {
+  0%, 100% { box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 22%, transparent); }
+  50% { box-shadow: 0 0 0 8px color-mix(in srgb, var(--primary) 8%, transparent); }
 }
 
 .hero-preview::before {
@@ -1500,24 +1652,58 @@ select[aria-invalid="true"] {
 }
 
 .notes-layout {
+  position: relative;
   display: grid;
   grid-template-columns: minmax(320px, 0.78fr) minmax(0, 1.22fr);
   gap: var(--space-8);
   align-items: start;
 }
 
+.notes-layout::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: calc(0.78 / (0.78 + 1.22) * 100%);
+  width: var(--space-8);
+  height: 2px;
+  margin-top: calc(var(--space-1) * -1);
+  margin-left: calc(var(--space-8) / -2);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--primary) 60%, transparent), transparent);
+  pointer-events: none;
+  border-radius: 999px;
+  display: none;
+}
+
 .notes-layout .generator-panel {
   position: sticky;
   top: var(--space-8);
+  border: 1px solid color-mix(in srgb, var(--primary) 18%, var(--border));
   background:
-    radial-gradient(120% 80% at 0% 0%, color-mix(in srgb, var(--primary-soft) 60%, transparent), transparent 55%),
+    radial-gradient(120% 80% at 0% 0%, color-mix(in srgb, var(--primary-soft) 70%, transparent), transparent 55%),
     var(--card);
-  box-shadow: var(--shadow-md);
+  box-shadow:
+    var(--shadow-md),
+    0 24px 60px -28px color-mix(in srgb, var(--primary) 24%, transparent);
+}
+
+.notes-layout .generator-panel::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: calc(var(--space-8) * -1);
+  width: var(--space-8);
+  height: 2px;
+  margin-top: -1px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--primary) 60%, transparent), transparent);
+  pointer-events: none;
+  border-radius: 999px;
 }
 
 .notes-layout .results-panel {
   display: grid;
   gap: var(--space-4);
+  padding: var(--space-2);
+  border-radius: var(--radius-xl);
 }
 
 .notes-layout .empty-state,
@@ -1528,6 +1714,36 @@ select[aria-invalid="true"] {
   background:
     repeating-linear-gradient(90deg, transparent 0 24px, color-mix(in srgb, var(--text-subtle) 5%, transparent) 24px 25px),
     color-mix(in srgb, var(--card) 90%, var(--bg-subtle));
+}
+
+.result-set {
+  position: relative;
+  display: grid;
+  gap: var(--space-3);
+}
+
+.result-set .output-card,
+.result-set .result-card {
+  border-radius: var(--radius-lg);
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.result-set .output-card:hover,
+.result-set .result-card:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.result-summary {
+  background:
+    radial-gradient(120% 80% at 100% 0%, color-mix(in srgb, var(--primary-soft) 80%, transparent), transparent 60%),
+    var(--card);
+  border-color: color-mix(in srgb, var(--primary) 22%, var(--border));
+}
+
+.result-card-head h3 {
+  font-size: 17px;
+  letter-spacing: -0.005em;
 }
 
 .dashboard-grid {
@@ -2100,16 +2316,183 @@ input[readonly] {
 
 .demo-page {
   display: grid;
-  gap: var(--space-16);
+  gap: var(--space-12);
   align-items: stretch;
 }
 
 .demo-hero {
   display: grid;
-  grid-template-columns: minmax(0, 0.9fr) minmax(320px, 0.85fr);
-  gap: var(--space-12);
+  grid-template-columns: minmax(0, 0.78fr) minmax(380px, 1.4fr);
+  gap: var(--space-8) var(--space-12);
+  align-items: start;
+  min-height: auto;
+}
+
+.demo-flow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+  align-items: stretch;
+}
+
+.demo-step {
+  position: relative;
+  padding: var(--space-6);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border);
+  background: var(--card);
+  box-shadow: var(--shadow-md);
+  display: grid;
+  gap: var(--space-4);
+}
+
+.demo-step-input {
+  background:
+    radial-gradient(120% 80% at 0% 0%, color-mix(in srgb, var(--primary-soft) 80%, transparent), transparent 55%),
+    var(--card);
+}
+
+.demo-step-output {
+  background: var(--card);
+}
+
+.demo-step-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--space-3);
   align-items: center;
-  min-height: min(620px, calc(100vh - var(--space-24)));
+}
+
+.demo-step-num {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  color: var(--card);
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  box-shadow: 0 8px 18px -10px color-mix(in srgb, var(--primary) 60%, transparent);
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.demo-step-num.is-pending {
+  color: var(--text-muted);
+  background: color-mix(in srgb, var(--primary-soft) 80%, var(--card));
+  box-shadow: none;
+  border: 1px dashed color-mix(in srgb, var(--primary) 30%, var(--border));
+}
+
+.demo-step-kicker {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-subtle);
+}
+
+.demo-step-title {
+  margin: 0;
+  font-size: 22px;
+  letter-spacing: -0.01em;
+}
+
+.demo-step-label {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.demo-flow-connector {
+  display: grid;
+  place-items: center;
+  height: 28px;
+}
+
+.demo-flow-connector span {
+  width: 2px;
+  height: 100%;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--primary) 60%, transparent), transparent);
+}
+
+.demo-empty {
+  border: 1px dashed color-mix(in srgb, var(--primary) 22%, var(--border-strong));
+  border-radius: var(--radius-lg);
+  padding: var(--space-8) var(--space-6);
+  background:
+    repeating-linear-gradient(90deg, transparent 0 24px, color-mix(in srgb, var(--text-subtle) 5%, transparent) 24px 25px),
+    color-mix(in srgb, var(--card) 90%, var(--bg-subtle));
+  display: grid;
+  gap: var(--space-3);
+  justify-items: start;
+}
+
+.demo-empty .empty-state-icon {
+  color: var(--primary-hover);
+}
+
+.demo-empty-checklist {
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.demo-empty-checklist li {
+  position: relative;
+  padding: var(--space-1) var(--space-3) var(--space-1) calc(var(--space-6) + 2px);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--primary-soft) 70%, transparent);
+  color: var(--primary-hover);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.demo-empty-checklist li::before {
+  content: "";
+  position: absolute;
+  left: var(--space-2);
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--primary);
+  transform: translateY(-50%);
+}
+
+.demo-cta-strip {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-6);
+  align-items: center;
+  padding: var(--space-8) var(--space-12);
+  border-radius: var(--radius-xl);
+  background:
+    radial-gradient(120% 80% at 0% 50%, color-mix(in srgb, var(--primary-soft) 90%, transparent), transparent 60%),
+    radial-gradient(80% 80% at 100% 100%, color-mix(in srgb, var(--accent-soft) 80%, transparent), transparent 60%),
+    var(--card);
+  border: 1px solid color-mix(in srgb, var(--primary) 22%, var(--border));
+  box-shadow:
+    var(--shadow-lg),
+    0 24px 60px -28px color-mix(in srgb, var(--primary) 28%, transparent);
+}
+
+.demo-cta-strip h2 {
+  margin: var(--space-2) 0;
+  font-size: 28px;
+  letter-spacing: -0.01em;
+}
+
+.demo-cta-strip p {
+  margin: 0;
+}
+
+.btn-lg {
+  padding: var(--space-3) var(--space-6);
+  font-size: 16px;
+  font-weight: 700;
 }
 
 .demo-copy,
@@ -2341,6 +2724,24 @@ body.confetti::after {
 
   .notes-layout .generator-panel {
     position: static;
+  }
+
+  .notes-layout .generator-panel::after {
+    display: none;
+  }
+
+  .demo-cta-strip {
+    grid-template-columns: 1fr;
+    padding: var(--space-6);
+    text-align: left;
+  }
+
+  .demo-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .demo-step {
+    padding: var(--space-5, 20px);
   }
 
   .lb-header {

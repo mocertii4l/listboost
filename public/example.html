@@ -23,8 +23,8 @@
       <section class="demo-hero" aria-labelledby="demo-title">
         <div class="demo-copy">
           <p class="eyebrow">Live demo</p>
-          <h1 id="demo-title">See a Vinted listing in seconds.</h1>
-          <p class="lede">Use the prefilled notes, generate a premium output, then decide if ListBoost fits your listing routine.</p>
+          <h1 id="demo-title">Watch raw notes become a <span class="accent">sell-ready listing</span>.</h1>
+          <p class="lede">Edit the prefilled notes, hit Generate, and see the same premium output a paying ListBoost user gets.</p>
           <ul class="trust-row" aria-label="Demo trust signals">
             <li>No Vinted login</li>
             <li>No card needed</li>
@@ -32,28 +32,53 @@
           </ul>
         </div>
 
-        <section class="card demo-generator-card" aria-label="Demo generator">
-          <label for="demoInput">
-            Item details
-            <textarea id="demoInput" class="textarea">Zara navy satin midi dress, UK 10, worn twice for weddings, no marks, zip fastening, flattering bias cut, selling because it no longer fits</textarea>
-            <span class="field-helper">Edit the note if you want. The demo uses a capped preview endpoint.</span>
-          </label>
-          <button class="btn btn-primary generator-cta" id="runDemo" type="button">Generate demo listing</button>
-        </section>
+        <div class="demo-flow" aria-label="Demo workflow">
+          <section class="card demo-generator-card demo-step demo-step-input" aria-label="Demo input">
+            <div class="demo-step-head">
+              <span class="demo-step-num">1</span>
+              <div>
+                <span class="demo-step-kicker">Your notes</span>
+                <h2 class="demo-step-title">Paste rough seller notes</h2>
+              </div>
+            </div>
+            <label for="demoInput" class="demo-step-label">
+              <textarea id="demoInput" class="textarea">Zara navy satin midi dress, UK 10, worn twice for weddings, no marks, zip fastening, flattering bias cut, selling because it no longer fits</textarea>
+              <span class="field-helper">Edit if you like. The demo uses a capped preview endpoint.</span>
+            </label>
+            <button class="btn btn-primary generator-cta" id="runDemo" type="button"><span>Generate sell-ready listing</span></button>
+          </section>
+
+          <div class="demo-flow-connector" aria-hidden="true"><span></span></div>
+
+          <section class="demo-step demo-step-output" aria-labelledby="demo-results-title">
+            <div class="demo-step-head">
+              <span class="demo-step-num is-pending">2</span>
+              <div>
+                <span class="demo-step-kicker">Your output</span>
+                <h2 class="demo-step-title" id="demo-results-title">A polished, copyable listing</h2>
+              </div>
+            </div>
+            <div class="output-stack demo-output" id="demoOutput" aria-live="polite">
+              <div class="empty-state demo-empty">
+                <div class="empty-state-icon" data-icon="sparkles" aria-hidden="true"></div>
+                <h3>Output appears here in seconds</h3>
+                <p>Title, description, keywords, price guidance, photo checklist and buyer reply &mdash; ready to copy.</p>
+                <ul class="demo-empty-checklist" aria-label="Sections you'll receive">
+                  <li>Title</li><li>Description</li><li>Keywords</li><li>Price guidance</li><li>Photo checklist</li><li>Buyer reply</li>
+                </ul>
+              </div>
+            </div>
+          </section>
+        </div>
       </section>
 
-      <section class="demo-results" aria-labelledby="demo-results-title">
-        <div class="section-head">
-          <p class="eyebrow">Premium output</p>
-          <h2 id="demo-results-title">Your generated demo appears here.</h2>
+      <section class="demo-cta-strip" aria-label="Sign up CTA">
+        <div>
+          <span class="badge badge-brand">Like what you see?</span>
+          <h2>Get the same output on your own listings.</h2>
+          <p class="muted">Free account, 3 listings on us, no card needed.</p>
         </div>
-        <div class="output-stack demo-output" id="demoOutput" aria-live="polite">
-          <div class="empty-state">
-            <div class="empty-state-icon" data-icon="sparkles" aria-hidden="true"></div>
-            <h3>Ready when you are</h3>
-            <p>Generate the demo to see title, description, keywords, price guidance, photo checklist and buyer reply.</p>
-          </div>
-        </div>
+        <a class="btn btn-primary btn-lg" href="/signup">Create free account</a>
       </section>
     </main>
 

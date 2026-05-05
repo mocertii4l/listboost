@@ -231,7 +231,7 @@ test("pricing page renders subscription tiers only", () => {
 test("example demo uses anonymous live generation endpoint", () => {
   assert.match(exampleHtml, /id="runDemo"/);
   assert.match(exampleHtml, /Zara navy satin midi dress, UK 10, worn twice/);
-  assert.match(exampleHtml, /Generate demo listing/);
+  assert.match(exampleHtml, /Generate sell-ready listing/);
   assert.match(exampleHtml, /No Vinted login/);
   assert.match(exampleHtml, /No card needed/);
   assert.match(exampleHtml, /Copy &amp; paste manually/);
