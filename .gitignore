@@ -10,3 +10,6 @@ server.err.log
 Thumbs.db
 .vscode/
 .idea/
+
+# Local UI/UX reference pack (kept on disk only, not in version control).
+docs/ui-ux-pro-max/
