@@ -189,6 +189,7 @@ function updateAccountChrome(me = accountState) {
   $$(".js-email").forEach((node) => { node.textContent = accountState.user?.email || "Signed out"; });
   $$(".js-credits").forEach((node) => { node.textContent = `${remaining} credits remaining`; });
   $$(".js-current-plan").forEach((node) => { node.textContent = plan.planName || titleCasePlan(plan.subscriptionPlan || plan.plan || "Free"); });
+  $$(".js-subscription-status").forEach((node) => { node.textContent = titleCasePlan(plan.subscriptionStatus || plan.status || "Inactive"); });
   $$(".js-next-refill").forEach((node) => { node.textContent = plan.nextCreditRefill ? formatDate(plan.nextCreditRefill) : "No refill scheduled"; });
   $$(".low-credit-cta").forEach((node) => {
     const show = Boolean(accountState.user) && remaining < 10;
@@ -500,6 +501,7 @@ function billingRouteTemplate() {
       ${routeHeader("Billing", "Plan and credits", "Manage monthly credits, one-time packs and recent credit activity.")}
       <div class="billing-overview">
         <article class="card balance-card"><span class="badge">Current plan</span><h2 class="js-current-plan">Free</h2><p class="muted">Status and plan changes update after Stripe confirms them.</p></article>
+        <article class="card balance-card"><span class="badge">Subscription status</span><h2 class="js-subscription-status">Inactive</h2><p class="muted">Active monthly plans refill automatically.</p></article>
         <article class="card balance-card"><span class="badge">Credits remaining</span><h2 class="js-credits">Loading credits</h2><p class="muted">One credit creates one listing package or buyer reply.</p></article>
         <article class="card balance-card"><span class="badge">Next refill</span><h2 class="js-next-refill">No refill scheduled</h2><p class="muted">Monthly plans refill on renewal.</p></article>
       </div>

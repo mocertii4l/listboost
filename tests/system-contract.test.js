@@ -177,6 +177,7 @@ test("subscription billing surfaces monthly plans and refill status", () => {
   assert.match(serverJs, /customer\.subscription\.updated/);
   assert.match(serverJs, /customer\.subscription\.deleted/);
   assert.match(siteJs, /Current plan/);
+  assert.match(siteJs, /Subscription status/);
   assert.match(siteJs, /Credits remaining/);
   assert.match(siteJs, /Next refill/);
   assert.match(siteJs, /Subscribe monthly/);
