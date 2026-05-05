@@ -1036,6 +1036,7 @@ async function generateWithOpenAI(input) {
       model: process.env.OPENAI_MODEL || "gpt-4.1-mini",
       input: prompt,
       temperature: isRetry ? 0.2 : 0.4,
+      max_output_tokens: 900,
       text: { format: { type: "json_object" } }
     });
     return parseGeneratedJson(response.output_text);
@@ -1128,6 +1129,7 @@ async function generateFromPhotosWithOpenAI(input, photos) {
       model: process.env.OPENAI_VISION_MODEL || process.env.OPENAI_MODEL || "gpt-4.1-mini",
       input: [{ role: "user", content }],
       temperature: isRetry ? 0.2 : 0.4,
+      max_output_tokens: 1000,
       text: { format: { type: "json_object" } }
     });
     return parseGeneratedJson(response.output_text);
@@ -1283,6 +1285,7 @@ async function handleGenerateFromPhotos(req, res) {
     let result;
     let provider = "demo";
 
+    const startedAt = Date.now();
     if (process.env.OPENAI_API_KEY) {
       result = await generateFromPhotosWithOpenAI(input, photos);
       provider = "openai";
@@ -1299,6 +1302,7 @@ async function handleGenerateFromPhotos(req, res) {
     }
 
     const updatedUser = recordGeneration(user, result, { source: "photos", ...input });
+    console.log(`[generation] completed route=/api/generate-from-photos user=${user.id.slice(0, 8)} durationMs=${Date.now() - startedAt} plan=${user.subscription_plan || "free"} provider=${provider} photos=${photos.length}`);
     json(res, 200, { ...result, provider, source: "photos", usage: getAccountUsage(updatedUser), user: publicUser(updatedUser) }, visitor.headers);
   } catch (error) {
     console.error(error);
@@ -1357,6 +1361,7 @@ async function handleGenerate(req, res) {
     let result;
     let provider = "demo";
 
+    const startedAt = Date.now();
     if (process.env.OPENAI_API_KEY) {
       result = await generateWithOpenAI(input);
       provider = "openai";
@@ -1373,6 +1378,7 @@ async function handleGenerate(req, res) {
     }
 
     const updatedUser = recordGeneration(user, result, { source: "notes", ...input });
+    console.log(`[generation] completed route=/api/generate user=${user.id.slice(0, 8)} durationMs=${Date.now() - startedAt} plan=${user.subscription_plan || "free"} provider=${provider}`);
     json(res, 200, { ...result, provider, usage: getAccountUsage(updatedUser), user: publicUser(updatedUser) }, visitor.headers);
   } catch (error) {
     console.error(error);
@@ -1696,6 +1702,7 @@ async function handleRegenerate(req, res, id) {
 
     let result;
     let provider = "demo";
+    const startedAt = Date.now();
     if (process.env.OPENAI_API_KEY) {
       result = await generateWithOpenAI(input);
       provider = "openai";
@@ -1712,6 +1719,7 @@ async function handleRegenerate(req, res, id) {
     }
 
     const updatedUser = recordGeneration(user, result, { source: "notes", regenerated_from: row.id, ...input });
+    console.log(`[generation] completed route=/api/regenerate user=${user.id.slice(0, 8)} durationMs=${Date.now() - startedAt} plan=${user.subscription_plan || "free"} provider=${provider}`);
     json(res, 200, { ...result, provider, regenerated: true, usage: getAccountUsage(updatedUser), user: publicUser(updatedUser) }, visitor.headers);
   } catch (error) {
     console.error(error);

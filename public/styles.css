@@ -2234,6 +2234,164 @@ input[readonly] {
   }
 }
 
+.generation-progress {
+  position: relative;
+}
+
+.progress-strip {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
+  border: 1px solid color-mix(in srgb, var(--primary) 28%, var(--border));
+  background:
+    radial-gradient(120% 80% at 0% 0%, color-mix(in srgb, var(--primary-soft) 80%, transparent), transparent 70%),
+    var(--card);
+  box-shadow: var(--shadow-sm);
+}
+
+.progress-strip .progress-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--primary);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 18%, transparent);
+  animation: lb-pulse 1.4s ease-in-out infinite;
+  flex: none;
+}
+
+.progress-strip .progress-label {
+  flex: 1 1 auto;
+  color: var(--text);
+  font-weight: 600;
+}
+
+.progress-strip .progress-clock {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.progress-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.progress-steps li {
+  position: relative;
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--card) 92%, var(--bg-subtle));
+  font-size: 12px;
+  line-height: 1.3;
+  color: var(--text-muted);
+  transition: background 200ms ease, border-color 200ms ease, color 200ms ease;
+}
+
+.progress-steps li > span {
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  border: 2px solid color-mix(in srgb, var(--text-subtle) 35%, var(--border));
+  background: var(--card);
+  display: block;
+}
+
+.progress-steps li.is-active {
+  border-color: color-mix(in srgb, var(--primary) 50%, var(--border));
+  background: color-mix(in srgb, var(--primary-soft) 70%, var(--card));
+  color: var(--primary-hover);
+}
+
+.progress-steps li.is-active > span {
+  border-color: var(--primary);
+  background: var(--primary);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 18%, transparent);
+}
+
+.progress-steps li.is-done {
+  border-color: color-mix(in srgb, var(--success) 28%, var(--border));
+  background: color-mix(in srgb, var(--success) 8%, var(--card));
+  color: var(--success);
+}
+
+.progress-steps li.is-done > span {
+  border-color: var(--success);
+  background: var(--success);
+}
+
+.progress-still-going {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--warning) 8%, var(--card));
+  border: 1px solid color-mix(in srgb, var(--warning) 22%, var(--border));
+  color: color-mix(in srgb, var(--warning) 80%, var(--text));
+}
+
+.generator-speed-hint {
+  margin: 0;
+}
+
+@media (max-width: 768px) {
+  .progress-steps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Mobile sweep: make pricing comfortable at 360-390px */
+@media (max-width: 420px) {
+  .pricing-card {
+    padding: var(--space-6) var(--space-4);
+    min-height: auto;
+  }
+  .pricing-card.is-featured,
+  .pricing-card.featured {
+    transform: none;
+  }
+  .pricing-compare li {
+    padding-left: calc(var(--space-5, 20px) + var(--space-1));
+    font-size: 14px;
+  }
+  .pricing-price strong,
+  .price strong {
+    font-size: 36px;
+  }
+  .billing-hero,
+  .seller-cards,
+  .scaffold-grid,
+  .photo-empty {
+    grid-template-columns: 1fr !important;
+  }
+  .nav-actions {
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+  .nav-actions .btn {
+    padding-inline: var(--space-3);
+  }
+  .demo-cta-strip,
+  .billing-support {
+    grid-template-columns: 1fr !important;
+    text-align: left;
+  }
+  .progress-strip {
+    flex-wrap: wrap;
+  }
+  .progress-strip .progress-clock {
+    margin-left: auto;
+  }
+}
+
 .spinner {
   width: var(--space-8);
   height: var(--space-8);

@@ -183,19 +183,26 @@ function demoResultTemplate(data = {}, inputText = "") {
   `;
 }
 
+function publicPlanName(id, fallbackName = "") {
+  // Backend plan id "reseller" is shown publicly as "Elite".
+  if (id === "reseller") return "Elite";
+  return fallbackName || (id ? id.charAt(0).toUpperCase() + id.slice(1) : "");
+}
+
 function pricingCardTemplate({ id = "", name = "", monthlyLimit = null, unlimited = false, pricePence = 0, label = "", featured = false, description = "", ctaLabel = "", current = false } = {}) {
   const cardId = `subscribe-${id}`;
+  const displayName = publicPlanName(id, name);
   const price = formatMonthlyPrice({ pricePence });
   const isUnlimited = unlimited || monthlyLimit == null;
   const limitDisplay = isUnlimited ? "Unlimited" : String(Number(monthlyLimit || 0));
-  const limitSub = isUnlimited ? "listings/month" : "listings/month";
+  const limitSub = "listings/month";
   const compare = pricingFeaturesFor(id);
   const buttonAttrs = { "data-subscription-plan": id };
-  const buttonLabel = ctaLabel || (current ? "Current plan" : `Subscribe ${name}`);
+  const buttonLabel = ctaLabel || (current ? "Current plan" : `Subscribe ${displayName}`);
   return `
     <article class="pricing-card subscription ${featured ? "is-featured featured" : ""}" id="${escapeHtml(cardId)}">
       <span class="badge ${featured ? "badge-brand" : ""}">${escapeHtml(featured ? "Best value" : label || "Monthly")}</span>
-      <h3>${escapeHtml(name)}</h3>
+      <h3>${escapeHtml(displayName)}</h3>
       <p class="pricing-price"><strong>${escapeHtml(limitDisplay)}</strong><span>${escapeHtml(limitSub)}</span></p>
       <p class="pricing-meta">${escapeHtml(price)}</p>
       <p class="pricing-copy">${escapeHtml(description || "Monthly subscription with included Vinted listing tools.")}</p>
@@ -210,17 +217,27 @@ function pricingFeaturesFor(id = "") {
     starter: [
       "Notes-to-listing generator",
       "Titles, descriptions and keywords",
-      "Up to 20 listings per month"
+      "20 listings per month"
     ],
     seller: [
       "Everything in Starter",
-      "Photo upload and buyer replies",
-      "Price guidance, listing score, up to 100/month"
+      "100 listings per month",
+      "Photo upload listing generator",
+      "Price guidance",
+      "Buyer reply generator",
+      "Listing score checker"
     ],
     reseller: [
       "Everything in Seller",
-      "Unlimited monthly listings",
-      "Bulk workflow, reusable templates, priority support"
+      "Unlimited listings",
+      "Built for high-volume sellers",
+      "Reusable listing templates (coming soon)",
+      "Advanced photo checklist",
+      "More detailed price guidance",
+      "Listing history",
+      "Faster support",
+      "Best for daily sellers",
+      "Early access to new selling tools"
     ]
   };
   return features[id] || ["Monthly subscription", "Switch plans from billing", "Cancel any time"];
@@ -487,7 +504,8 @@ function updateAccountChrome(me = accountState) {
   const plan = accountState.subscription || accountState.user || {};
   const displayName = accountState.user?.name || accountState.user?.email || "Account";
   const initials = displayName.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase() || "LB";
-  const planLabel = usage.planName || plan.planName || titleCasePlan(usage.plan || plan.subscriptionPlan || plan.plan || "Free");
+  const rawPlanId = usage.plan || plan.subscriptionPlan || plan.plan || "free";
+  const planLabel = publicPlanName(rawPlanId, usage.planName || plan.planName || titleCasePlan(rawPlanId || "Free"));
   const statusLabel = titleCasePlan(usage.subscriptionStatus || plan.subscriptionStatus || plan.status || "Inactive");
   const cycleEnd = usage.billingPeriodEnd || plan.billingPeriodEnd || null;
   $$(".js-name").forEach((node) => { node.textContent = displayName; });
@@ -793,8 +811,9 @@ function notesRouteTemplate() {
             <span class="usage-cost">${iconSvg("file-text")} <span class="js-usage">Loading usage</span></span>
           </div>
           <div class="generator-actions">
-            <button class="btn btn-primary generator-cta" type="submit">Generate sell-ready listing</button>
+            <button class="btn btn-primary generator-cta" type="submit"><span class="generator-cta-label">Generate sell-ready listing</span></button>
           </div>
+          <p class="generator-speed-hint muted small">Most listings finish in a few seconds. Photo listings can take a little longer.</p>
           ${appTrustStrip()}
         </form>
         <section class="results-panel output-stack results-stack" id="output" aria-live="polite">
@@ -1510,6 +1529,107 @@ function loadingTemplate(message) {
   `;
 }
 
+const generationProgressSteps = [
+  { at: 0, label: "Reading your item details" },
+  { at: 1500, label: "Writing your listing" },
+  { at: 4500, label: "Suggesting price and tags" },
+  { at: 7500, label: "Preparing copy buttons" }
+];
+
+const generationProgressStepsPhotos = [
+  { at: 0, label: "Reading photos" },
+  { at: 1800, label: "Identifying brand, size and condition" },
+  { at: 5000, label: "Writing your listing" },
+  { at: 8500, label: "Preparing copy buttons" }
+];
+
+function progressLoadingTemplate(initialLabel = "Reading your item details") {
+  return `
+    <div class="results-skeleton generation-progress" aria-busy="true" aria-live="polite" data-progress>
+      <div class="progress-strip">
+        <span class="progress-dot" aria-hidden="true"></span>
+        <span class="progress-label" data-progress-label>${escapeHtml(initialLabel)}&hellip;</span>
+        <span class="progress-clock" data-progress-clock>0s</span>
+      </div>
+      <ol class="progress-steps" data-progress-steps>
+        <li class="is-active"><span></span><strong>Reading details</strong></li>
+        <li><span></span><strong>Writing listing</strong></li>
+        <li><span></span><strong>Pricing &amp; tags</strong></li>
+        <li><span></span><strong>Ready to copy</strong></li>
+      </ol>
+      <div class="skeleton-toolbar">
+        <span></span>
+        <span></span>
+      </div>
+      <div class="skeleton-listing"></div>
+      <div class="skeleton-grid">
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+      <p class="progress-still-going muted small hidden" data-progress-still>Still working &mdash; photo and detailed listings can take a little longer.</p>
+    </div>
+  `;
+}
+
+function startGenerationProgress(container, options = {}) {
+  const steps = options.kind === "photos" ? generationProgressStepsPhotos : generationProgressSteps;
+  container.innerHTML = progressLoadingTemplate(steps[0].label);
+  const labelNode = container.querySelector("[data-progress-label]");
+  const clockNode = container.querySelector("[data-progress-clock]");
+  const stillNode = container.querySelector("[data-progress-still]");
+  const stepNodes = Array.from(container.querySelectorAll("[data-progress-steps] li"));
+  const startedAt = Date.now();
+  let activeIndex = 0;
+
+  const updateActive = () => {
+    const elapsed = Date.now() - startedAt;
+    let next = 0;
+    for (let i = 0; i < steps.length; i += 1) {
+      if (elapsed >= steps[i].at) next = i;
+    }
+    if (next !== activeIndex) {
+      activeIndex = next;
+      if (labelNode) labelNode.innerHTML = `${escapeHtml(steps[next].label)}&hellip;`;
+      stepNodes.forEach((node, idx) => {
+        node.classList.toggle("is-active", idx === Math.min(next, stepNodes.length - 1));
+        node.classList.toggle("is-done", idx < next);
+      });
+    }
+    if (clockNode) clockNode.textContent = `${Math.max(1, Math.round(elapsed / 1000))}s`;
+    if (stillNode && elapsed > 8000) stillNode.classList.remove("hidden");
+  };
+
+  const timer = setInterval(updateActive, 350);
+  updateActive();
+
+  return {
+    finish() {
+      clearInterval(timer);
+      stepNodes.forEach((node) => { node.classList.remove("is-active"); node.classList.add("is-done"); });
+    },
+    cancel() {
+      clearInterval(timer);
+    }
+  };
+}
+
+function setGeneratorBusy(form, busy, label) {
+  if (!form) return;
+  const button = form.querySelector("button[type=submit]");
+  if (!button) return;
+  button.disabled = busy;
+  button.dataset.busy = busy ? "true" : "false";
+  if (busy) {
+    if (!button.dataset.idleLabel) button.dataset.idleLabel = button.textContent;
+    if (label) button.querySelector(".generator-cta-label, span")?.replaceChildren(document.createTextNode(label));
+  } else {
+    const idle = button.dataset.idleLabel;
+    if (idle) button.querySelector(".generator-cta-label, span")?.replaceChildren(document.createTextNode(idle));
+  }
+}
+
 function fileToDataUrl(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -1559,7 +1679,7 @@ function showPaywallModal() {
         ${featuredPlan ? `
           <article class="paywall-pack is-featured is-dominant subscription-paywall">
             <span>Recommended monthly</span>
-            <strong>${escapeHtml(featuredPlan.name)} - ${featuredPlan.unlimited || featuredPlan.monthlyLimit == null ? "Unlimited" : Number(featuredPlan.monthlyLimit || 0)} listings/month</strong>
+            <strong>${escapeHtml(publicPlanName(featuredPlan.id, featuredPlan.name))} - ${featuredPlan.unlimited || featuredPlan.monthlyLimit == null ? "Unlimited" : Number(featuredPlan.monthlyLimit || 0)} listings/month</strong>
             <p>${escapeHtml(formatMonthlyPrice(featuredPlan))}</p>
             <button type="button" class="pricing-buy" data-subscription-plan="${escapeHtml(featuredPlan.id)}">Subscribe monthly</button>
           </article>
@@ -1570,7 +1690,7 @@ function showPaywallModal() {
               <span>${escapeHtml(plan.label || "Monthly")}</span>
               <strong>${plan.unlimited || plan.monthlyLimit == null ? "Unlimited" : Number(plan.monthlyLimit || 0)} listings/month</strong>
               <p>${escapeHtml(formatMonthlyPrice(plan))}</p>
-              <button type="button" class="pricing-buy" data-subscription-plan="${escapeHtml(plan.id)}">Subscribe ${escapeHtml(plan.name)}</button>
+              <button type="button" class="pricing-buy" data-subscription-plan="${escapeHtml(plan.id)}">Subscribe ${escapeHtml(publicPlanName(plan.id, plan.name))}</button>
             </article>
           `).join("")}
         </div>
@@ -1618,21 +1738,26 @@ function installAppTools() {
       event.preventDefault();
       const out = $("#output");
       out.hidden = false;
-      out.innerHTML = loadingTemplate("Generating your listing...");
+      const progress = startGenerationProgress(out);
+      setGeneratorBusy(notesForm, true, "Generating");
       try {
         const formPayload = Object.fromEntries(new FormData(notesForm));
         const data = await api("/api/generate", { method: "POST", body: JSON.stringify(formPayload) });
         updateUsageFromResponse(data);
         const momentumCount = recordGenerationMomentum();
+        progress.finish();
         out.innerHTML = outputTemplate(data, { usageNote: formatUsageText(data.usage), inputText: formPayload.itemDetails, momentumCount });
         toast("Listing generated.", "success");
       } catch (error) {
+        progress.cancel();
         out.innerHTML = emptyStateTemplate({
           icon: "x",
           heading: "Generation paused",
           body: error.message || "Something went wrong. Try again in a moment."
         });
         handleGenerationError(error);
+      } finally {
+        setGeneratorBusy(notesForm, false);
       }
     });
   }
@@ -1642,7 +1767,8 @@ function installAppTools() {
     photoRouteForm.addEventListener("submit", async (event) => {
       event.preventDefault();
       const out = $("#photoRouteOutput");
-      out.innerHTML = loadingTemplate("Reading photos...");
+      const progress = startGenerationProgress(out, { kind: "photos" });
+      setGeneratorBusy(photoRouteForm, true, "Generating");
       try {
         const formData = new FormData(photoRouteForm);
         const files = Array.from(photoRouteForm.elements.photos.files || []).slice(0, 4);
@@ -1663,11 +1789,15 @@ function installAppTools() {
         });
         updateUsageFromResponse(data);
         const momentumCount = recordGenerationMomentum();
+        progress.finish();
         out.innerHTML = outputTemplate(data, { usageNote: formatUsageText(data.usage), inputText: formData.get("notes") || "Photo upload", momentumCount });
         toast("Generated from photos.", "success");
       } catch (error) {
+        progress.cancel();
         out.innerHTML = emptyStateTemplate({ icon: "x", heading: "Photo generation paused", body: error.message });
         handleGenerationError(error);
+      } finally {
+        setGeneratorBusy(photoRouteForm, false);
       }
     });
   }
@@ -1820,22 +1950,29 @@ function planBenefitsFor(planId) {
       "Subscribe to keep going past the free trial"
     ],
     starter: [
-      "Up to 20 listings per month",
       "Notes-to-listing generator",
       "Titles, descriptions and keywords",
-      "Saved history"
+      "20 listings per month"
     ],
     seller: [
-      "Up to 100 listings per month",
       "Everything in Starter",
-      "Photo upload and buyer replies",
-      "Price guidance and listing score"
+      "100 listings per month",
+      "Photo upload listing generator",
+      "Price guidance",
+      "Buyer reply generator",
+      "Listing score checker"
     ],
     reseller: [
-      "Unlimited monthly listings",
       "Everything in Seller",
-      "Bulk-friendly workflow and reusable templates",
-      "Priority support"
+      "Unlimited listings",
+      "Built for high-volume sellers",
+      "Reusable listing templates (coming soon)",
+      "Advanced photo checklist",
+      "More detailed price guidance",
+      "Listing history",
+      "Faster support",
+      "Best for daily sellers",
+      "Early access to new selling tools"
     ]
   };
   return benefits[planId] || benefits.free;
@@ -1880,7 +2017,8 @@ async function loadBilling(me = accountState) {
       node.dataset.status = currentStatus;
     });
     $$(".js-billing-plan-strapline").forEach((node) => { node.textContent = planStrapline(currentPlan); });
-    $$(".js-billing-plan-title").forEach((node) => { node.textContent = `${data.subscription?.planName || titleCasePlan(currentPlan)} plan benefits`; });
+    $$(".js-billing-plan-title").forEach((node) => { node.textContent = `${publicPlanName(currentPlan, data.subscription?.planName || titleCasePlan(currentPlan))} plan benefits`; });
+    $$(".js-current-plan").forEach((node) => { node.textContent = publicPlanName(currentPlan, data.subscription?.planName || titleCasePlan(currentPlan)); });
     $$(".js-billing-cycle-note").forEach((node) => {
       if (isPaying) {
         node.textContent = "Auto-renews and resets your usage at the cycle end.";
@@ -1914,7 +2052,7 @@ async function loadBilling(me = accountState) {
     }).join("");
 
     const rows = [
-      ...(data.cycles || []).map((item) => ({ label: `${titleCasePlan(item.plan)} billing cycle`, amount: "Reset", date: item.createdAt })),
+      ...(data.cycles || []).map((item) => ({ label: `${publicPlanName(item.plan, titleCasePlan(item.plan))} billing cycle`, amount: "Reset", date: item.createdAt })),
       ...(data.audit || []).map((item) => ({ label: item.reason, amount: item.actor, date: item.createdAt }))
     ].slice(0, 20);
     transactions.innerHTML = rows.length ? `

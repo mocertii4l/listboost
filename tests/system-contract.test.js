@@ -66,7 +66,7 @@ test("app generator flow is guided, copyable and usage aware", () => {
   assert.match(siteJs, /notesCharCount/);
   assert.match(siteJs, /class="js-usage"/);
   assert.match(siteJs, /Generate sell-ready listing/);
-  assert.match(siteJs, /Generating your listing/);
+  assert.match(siteJs, /Reading your item details|Writing your listing/);
   assert.match(siteJs, /results-skeleton/);
   assert.match(siteJs, /Copy all/);
   assert.match(siteJs, /Save to history/);
@@ -345,6 +345,78 @@ test("billing route shows plan, status, usage bar, benefits and truthful manage 
   assert.match(siteJs, /data-manage-subscription/);
 });
 
+test("Seller card remains the featured / best-value plan", () => {
+  for (const html of [pricingHtml, indexHtml]) {
+    // Article wrapper for Seller has the featured class plus the brand-badged "Best value" pill.
+    assert.match(html, /<article class="pricing-card subscription is-featured featured" id="subscribe-seller"/);
+    const sellerBlock = html.match(/id="subscribe-seller"[\s\S]*?<\/article>/)[0];
+    assert.match(sellerBlock, /badge badge-brand">Best value/);
+  }
+});
+
+test("homepage pricing teaser matches the new feature lists", () => {
+  const sellerBlock = indexHtml.match(/id="subscribe-seller"[\s\S]*?<\/article>/)[0];
+  assert.match(sellerBlock, /100 listings per month/);
+  assert.match(sellerBlock, /Photo upload listing generator/);
+  assert.match(sellerBlock, /Listing score checker/);
+  const eliteBlock = indexHtml.match(/id="subscribe-reseller"[\s\S]*?<\/article>/)[0];
+  assert.match(eliteBlock, /<h3>Elite<\/h3>/);
+  assert.match(eliteBlock, /Reusable listing templates \(coming soon\)/);
+});
+
+test("plan id 'reseller' stays stable internally even though display says Elite", () => {
+  // The button still posts the backend id `reseller`.
+  for (const html of [pricingHtml, indexHtml]) {
+    assert.match(html, /data-subscription-plan="reseller"/);
+  }
+  // site.js maps "reseller" to "Elite" via publicPlanName.
+  assert.match(siteJs, /function publicPlanName/);
+  assert.match(siteJs, /if \(id === "reseller"\) return "Elite"/);
+});
+
+test("billing route benefits list matches the per-plan public spec", () => {
+  // Starter
+  assert.match(siteJs, /starter:\s*\[\s*"Notes-to-listing generator"[\s\S]*?"Titles, descriptions and keywords"[\s\S]*?"20 listings per month"/);
+  // Seller (the 6 features)
+  assert.match(siteJs, /seller:\s*\[\s*"Everything in Starter"[\s\S]*?"100 listings per month"[\s\S]*?"Photo upload listing generator"[\s\S]*?"Price guidance"[\s\S]*?"Buyer reply generator"[\s\S]*?"Listing score checker"/);
+  // Elite (>=10 with honest templates copy)
+  assert.match(siteJs, /reseller:\s*\[[\s\S]*?"Unlimited listings"[\s\S]*?"Reusable listing templates \(coming soon\)"[\s\S]*?"Early access to new selling tools"/);
+});
+
+test("generation UI shows progress messages, speed copy and a busy button", () => {
+  assert.match(siteJs, /Most listings finish in a few seconds/);
+  assert.match(siteJs, /generationProgressSteps/);
+  assert.match(siteJs, /Reading your item details/);
+  assert.match(siteJs, /Writing your listing/);
+  assert.match(siteJs, /Preparing copy buttons/);
+  assert.match(siteJs, /progress-still-going|Still working/);
+  assert.match(siteJs, /function startGenerationProgress/);
+  assert.match(siteJs, /function setGeneratorBusy/);
+  assert.match(stylesCss, /\.progress-strip/);
+  assert.match(stylesCss, /\.progress-steps/);
+  assert.match(stylesCss, /\.progress-still-going/);
+});
+
+test("server logs generation duration without leaking user input", () => {
+  // Capture each `[generation] completed ...` template literal, including its interpolations.
+  const logLines = serverJs.match(/console\.log\(`\[generation\] completed[\s\S]*?\)\;/g) || [];
+  assert.equal(logLines.length >= 3, true, `expected >=3 [generation] log sites, found ${logLines.length}`);
+  for (const line of logLines) {
+    assert.match(line, /route=/);
+    assert.match(line, /durationMs=/);
+    assert.match(line, /plan=/);
+    // Must NOT log raw user content / model output.
+    assert.doesNotMatch(line, /itemDetails/);
+    assert.doesNotMatch(line, /buyerQuestion/);
+    assert.doesNotMatch(line, /input\.notes/);
+    assert.doesNotMatch(line, /result\.title/);
+    assert.doesNotMatch(line, /result\.description/);
+  }
+  // The OpenAI calls cap output tokens to keep latency bounded.
+  assert.match(serverJs, /max_output_tokens:\s*900/);
+  assert.match(serverJs, /max_output_tokens:\s*1000/);
+});
+
 test("legacy credit wording is no longer surfaced to users", () => {
   for (const html of [indexHtml, pricingHtml, exampleHtml, supportHtml]) {
     assert.doesNotMatch(html, /credits\/month/);
@@ -368,23 +440,47 @@ test("dark mode contrast keeps app usage readable", () => {
   assert.match(stylesCss, /color: var\(--text\)/);
 });
 
-test("pricing page renders subscription tiers only", () => {
+test("pricing page renders Starter / Seller / Elite subscription tiers", () => {
   for (const plan of ["starter", "seller", "reseller"]) {
     assert.match(pricingHtml, new RegExp(`id="subscribe-${plan}"`));
     assert.match(pricingHtml, new RegExp(`data-subscription-plan="${plan}"`));
   }
   assert.doesNotMatch(pricingHtml, /data-checkout-pack/);
   assert.doesNotMatch(pricingHtml, /one-time/);
-  assert.match(pricingHtml, /20/);
-  assert.match(pricingHtml, /100/);
-  assert.match(pricingHtml, /Unlimited/);
   assert.match(pricingHtml, /Best value/);
-  assert.match(pricingHtml, /Subscribe monthly/);
-  assert.match(pricingHtml, /Photo upload and buyer replies/);
-  assert.match(pricingHtml, /priority support/i);
   assert.match(pricingHtml, /&pound;5\/month/);
   assert.match(pricingHtml, /&pound;12\/month/);
   assert.match(pricingHtml, /&pound;25\/month/);
+  // Plan labels
+  assert.match(pricingHtml, /<h3>Starter<\/h3>/);
+  assert.match(pricingHtml, /<h3>Seller<\/h3>/);
+  assert.match(pricingHtml, /<h3>Elite<\/h3>/);
+  assert.match(pricingHtml, /Subscribe Elite/);
+  assert.doesNotMatch(pricingHtml, /Subscribe Reseller/);
+
+  // Starter must show exactly the 3 features from spec.
+  const starterBlock = pricingHtml.match(/id="subscribe-starter"[\s\S]*?<\/article>/)[0];
+  assert.match(starterBlock, /Notes-to-listing generator/);
+  assert.match(starterBlock, /Titles, descriptions and keywords/);
+  assert.match(starterBlock, /20 listings per month/);
+
+  // Seller must show all 6 spec features.
+  const sellerBlock = pricingHtml.match(/id="subscribe-seller"[\s\S]*?<\/article>/)[0];
+  assert.match(sellerBlock, /Everything in Starter/);
+  assert.match(sellerBlock, /100 listings per month/);
+  assert.match(sellerBlock, /Photo upload listing generator/);
+  assert.match(sellerBlock, /Price guidance/);
+  assert.match(sellerBlock, /Buyer reply generator/);
+  assert.match(sellerBlock, /Listing score checker/);
+
+  // Elite must list ten or more bullets.
+  const eliteBlock = pricingHtml.match(/id="subscribe-reseller"[\s\S]*?<\/article>/)[0];
+  const eliteBullets = (eliteBlock.match(/<li>/g) || []).length;
+  assert.equal(eliteBullets >= 10, true, `Elite should list 10+ bullets, found ${eliteBullets}`);
+  // Elite features must be honestly phrased (templates are coming-soon).
+  assert.match(eliteBlock, /Reusable listing templates \(coming soon\)/);
+  assert.match(eliteBlock, /Unlimited listings/);
+  assert.match(eliteBlock, /Best for daily sellers/);
 });
 
 test("example demo uses anonymous live generation endpoint", () => {
