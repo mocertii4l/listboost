@@ -832,6 +832,9 @@ function getLaunchChecks() {
     stripeWebhookConfigured: Boolean(stripeWebhookSecret),
     emailVerificationRequired: requireEmailVerification,
     emailSenderConfigured: Boolean(resendApiKey),
+    emailMockMode: process.env.RESEND_MOCK_EMAIL === "true",
+    emailFromConfigured: Boolean(emailFrom),
+    emailFromDomain: emailDomainOf(emailFrom) || null,
     adminConfigured: Boolean(adminEmail && adminPassword),
     database: "sqlite",
     missing,
@@ -1974,6 +1977,7 @@ function startBillingCycleOnce({ grantId, userId, subscriptionId, plan, billingP
     WHERE id = ?
   `).run(plan.id, limit, periodEnd, periodEnd, subscriptionId || null, now, userId);
   recordAudit(userId, source || "stripe:subscription", 0, `Billing cycle started on ${plan.name}`);
+  console.log(`[billing-cycle] started user=${userId.slice(0, 8)} plan=${plan.id} limit=${limit == null ? "unlimited" : limit} periodEnd=${periodEnd} source=${source || "stripe:subscription"}`);
 
   // Fire-and-forget: send a subscription confirmation email if this looks like a fresh activation.
   // Renewals are silent (they would just re-confirm the existing plan).
@@ -1981,16 +1985,30 @@ function startBillingCycleOnce({ grantId, userId, subscriptionId, plan, billingP
   if (isFreshActivation) {
     const user = db.prepare("SELECT * FROM users WHERE id = ?").get(userId);
     if (user) {
-      sendSubscriptionConfirmationEmail(user, plan, periodEnd).catch((error) => {
-        console.error("[email] subscription confirmation failed:", error);
+      // sendSubscriptionConfirmationEmail catches all errors internally and never throws.
+      sendSubscriptionConfirmationEmail(user, plan, periodEnd).then((result) => {
+        if (!result.delivered) {
+          console.warn(`[billing-cycle] confirmation email NOT delivered user=${userId.slice(0, 8)} reason=${result.reason || "unknown"}${result.status ? ` status=${result.status}` : ""}`);
+        }
       });
     }
+  } else {
+    console.log(`[billing-cycle] skipping confirmation email user=${userId.slice(0, 8)} source=${source || "stripe:subscription"} (not a fresh activation)`);
   }
   return true;
 }
 
+function emailDomainOf(address) {
+  const match = String(address || "").trim().match(/@([^>\s]+?)>?$/);
+  return match ? match[1].toLowerCase() : "";
+}
+
 async function sendSubscriptionConfirmationEmail(user, plan, periodEnd) {
-  if (!user?.email) return { delivered: false };
+  const safeUser = user?.id ? `${user.id.slice(0, 8)}@${emailDomainOf(user.email) || "unknown"}` : "unknown";
+  if (!user?.email) {
+    console.warn(`[subscription-email] skipped: missing email for user ${safeUser}`);
+    return { delivered: false, reason: "missing-email" };
+  }
   const limitLine = plan.monthlyLimit == null ? "Unlimited listings per month" : `${plan.monthlyLimit} listings per month`;
   const cycleLine = periodEnd ? `Your first cycle ends ${new Date(periodEnd).toUTCString()}.` : "";
   const link = `${appUrl}/app/notes`;
@@ -2021,33 +2039,44 @@ async function sendSubscriptionConfirmationEmail(user, plan, periodEnd) {
   `;
 
   if (process.env.RESEND_MOCK_EMAIL === "true") {
-    return { delivered: false };
+    console.log(`[subscription-email] mock mode (RESEND_MOCK_EMAIL=true) for ${safeUser} on plan=${plan.id} - skipped real send`);
+    return { delivered: false, reason: "mock-mode" };
   }
   if (!resendApiKey) {
-    console.log("=================================================================");
-    console.log(`[subscription-email] DEV preview for ${user.email} (${plan.id}): ${link}`);
-    console.log("=================================================================");
-    return { delivered: false };
+    console.warn(`[subscription-email] RESEND_API_KEY missing - cannot deliver to ${safeUser} on plan=${plan.id}; preview link: ${link}`);
+    return { delivered: false, reason: "missing-api-key" };
   }
-  const response = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      authorization: `Bearer ${resendApiKey}`,
-      "content-type": "application/json"
-    },
-    body: JSON.stringify({
-      from: emailFrom,
-      to: [user.email],
-      subject,
-      html,
-      text
-    })
-  });
-  if (!response.ok) {
-    const body = await response.text().catch(() => "");
-    throw new Error(`Resend subscription email failed: ${response.status} ${body.slice(0, 200)}`);
+
+  try {
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        authorization: `Bearer ${resendApiKey}`,
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({
+        from: emailFrom,
+        to: [user.email],
+        subject,
+        html,
+        text
+      })
+    });
+    const rawBody = await response.text().catch(() => "");
+    let parsed = null;
+    try { parsed = rawBody ? JSON.parse(rawBody) : null; } catch { parsed = null; }
+    if (!response.ok) {
+      const safeMessage = String(parsed?.message || parsed?.error || rawBody || "").slice(0, 200);
+      console.error(`[subscription-email] Subscription confirmation email failed status=${response.status} user=${safeUser} plan=${plan.id} from=${emailDomainOf(emailFrom)} to=${emailDomainOf(user.email)} message="${safeMessage}"`);
+      return { delivered: false, reason: "http-error", status: response.status, message: safeMessage };
+    }
+    const messageId = parsed?.id || parsed?.message_id || null;
+    console.log(`[subscription-email] Subscription confirmation email queued for ${safeUser} plan=${plan.id} from=${emailDomainOf(emailFrom)} to=${emailDomainOf(user.email)} messageId=${messageId || "n/a"}`);
+    return { delivered: true, messageId };
+  } catch (error) {
+    console.error(`[subscription-email] Subscription confirmation email failed network user=${safeUser} plan=${plan.id} message="${String(error?.message || error).slice(0, 200)}"`);
+    return { delivered: false, reason: "network", message: String(error?.message || error).slice(0, 200) };
   }
-  return { delivered: true };
 }
 
 function escapeHtmlSafe(value) {

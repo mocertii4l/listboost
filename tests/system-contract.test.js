@@ -282,6 +282,57 @@ test("subscription confirmation email is wired to billing-cycle start", () => {
   assert.match(serverJs, /isFreshActivation/);
 });
 
+test("subscription confirmation email logs success and failure safely without secrets", () => {
+  // Resend HTTP error path logs status + safe message but never the bearer token.
+  assert.match(serverJs, /Subscription confirmation email failed status=/);
+  assert.match(serverJs, /Subscription confirmation email queued/);
+  // Mock mode and missing-key paths log distinct, machine-greppable reasons.
+  assert.match(serverJs, /\[subscription-email\] mock mode \(RESEND_MOCK_EMAIL=true\)/);
+  assert.match(serverJs, /RESEND_API_KEY missing/);
+  // Failures must return a structured result, never throw to the webhook.
+  assert.match(serverJs, /return \{ delivered: false, reason: "http-error"/);
+  assert.match(serverJs, /return \{ delivered: false, reason: "network"/);
+  assert.match(serverJs, /return \{ delivered: true, messageId/);
+  // The bearer token must only appear inside the Authorization header construction, never in logs.
+  const logLines = serverJs.match(/console\.(log|warn|error)\([^)]*\)/g) || [];
+  for (const line of logLines) {
+    assert.doesNotMatch(line, /resendApiKey/, `log line must not reference resendApiKey: ${line}`);
+    assert.doesNotMatch(line, /Bearer\s+\$\{/, `log line must not interpolate Bearer token: ${line}`);
+  }
+});
+
+test("billing-cycle start emits a structured log line", () => {
+  assert.match(serverJs, /\[billing-cycle\] started user=/);
+  assert.match(serverJs, /\[billing-cycle\] skipping confirmation email/);
+});
+
+test("/health surfaces email mock mode and from-domain (no secrets)", () => {
+  assert.match(serverJs, /emailMockMode:/);
+  assert.match(serverJs, /emailFromConfigured:/);
+  assert.match(serverJs, /emailFromDomain:/);
+  assert.doesNotMatch(serverJs, /resendApiKey:\s*resendApiKey/);
+});
+
+test("checkout success copy does not promise guaranteed email delivery", () => {
+  const successHtml = readFileSync(new URL("../public/checkout-success.html", import.meta.url), "utf8");
+  // The earlier guaranteed-delivery copy must not appear.
+  assert.doesNotMatch(successHtml, /We sent a confirmation/);
+  assert.doesNotMatch(successHtml, /receipt will arrive/i);
+  // Must say the subscription is active and offer a way forward without claiming delivery.
+  assert.match(successHtml, /Your subscription is active/);
+  assert.match(successHtml, /If email confirmations are enabled/);
+  assert.match(successHtml, /href="mailto:support@listboost\.uk"/);
+});
+
+test("confirmation email only fires on subscription-start, not on renewals", () => {
+  // The fresh-activation gate must depend on the source string containing 'subscription-start'.
+  assert.match(serverJs, /isFreshActivation = String\(source \|\| ""\)\.includes\("subscription-start"\)/);
+  // The renewal handler in grantRenewalCreditsFromInvoice uses the 'stripe:invoice.paid' source which does NOT match.
+  assert.match(serverJs, /source: "stripe:invoice\.paid"/);
+  // The fresh activation in activateSubscriptionFromCheckout uses 'stripe:subscription-start'.
+  assert.match(serverJs, /source: "stripe:subscription-start"/);
+});
+
 test("billing route shows plan, status, usage bar, benefits and truthful manage button", () => {
   assert.match(siteJs, /function billingRouteTemplate/);
   assert.match(siteJs, /js-current-plan/);
