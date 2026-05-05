@@ -7,6 +7,7 @@ const toastRegion = $("#toastRegion");
 let accountState = { user: null, credits: null };
 let globalCopyHandlerInstalled = false;
 let appNavigationInstalled = false;
+let themeToggleInstalled = false;
 let copySuccessCount = 0;
 
 function toast(message, type = "info") {
@@ -46,11 +47,12 @@ function applyTheme(theme) {
 
 function installTheme() {
   applyTheme();
-  $$(".theme-toggle").forEach((button) => {
-    button.addEventListener("click", () => {
-      const current = document.documentElement.dataset.theme;
-      applyTheme(current === "dark" ? "light" : "dark");
-    });
+  if (themeToggleInstalled) return;
+  themeToggleInstalled = true;
+  document.addEventListener("click", (event) => {
+    if (!event.target.closest(".theme-toggle")) return;
+    const current = document.documentElement.dataset.theme;
+    applyTheme(current === "dark" ? "light" : "dark");
   });
 }
 
@@ -137,6 +139,27 @@ function listingCardTemplate({ title = "Vinted-ready listing title", price = "£
       </div>
       ${options.actions ? `<div class="listing-card-actions">${options.actions}</div>` : ""}
     </article>
+  `;
+}
+
+function listingCardDataFromOutput(data = {}) {
+  const keywords = uniqueItems([...(data.tags || []), ...(data.searchTerms || [])]).slice(0, 3);
+  const price = data.priceOptions?.fairPrice || data.priceOptions?.fastSale || data.priceOptions?.maxPrice || "Price guide";
+  const description = linesFromText(data.description || "").join(" ").slice(0, 180) || "A clear, buyer-friendly description will appear here.";
+  return {
+    title: data.title || "Vinted-ready listing title",
+    price,
+    keywords: keywords.length ? keywords : ["vinted", "preloved", "wardrobe"],
+    description
+  };
+}
+
+function demoResultTemplate(data = {}, inputText = "") {
+  return `
+    <section class="demo-result-set">
+      ${listingCardTemplate(listingCardDataFromOutput(data), { elevated: true })}
+      ${outputTemplate(data, { demo: true, inputText })}
+    </section>
   `;
 }
 
@@ -565,28 +588,44 @@ function dashboardRouteTemplate() {
 
 function notesRouteTemplate() {
   return `
-    <section class="generator-route" data-route="notes">
-      <form class="card generator-card" id="notesForm">
-        <div class="generator-step">
-          <span class="badge">Step 1</span>
-          <h1>Paste your item details</h1>
-          <p class="muted">Add the rough facts you already have. ListBoost turns them into a polished Vinted listing.</p>
-        </div>
-        <input type="hidden" name="category" value="Clothing" />
-        <input type="hidden" name="tone" value="clean" />
-        <input type="hidden" name="sellerMode" value="clearout" />
-        <input type="hidden" name="negotiationGoal" value="friendly" />
-        <label class="generator-input-label">
-          Paste your item details
-          <textarea name="itemDetails" required placeholder="Black Zara dress, size 10, worn twice, good condition"></textarea>
-        </label>
-        <div class="generator-actions">
-          <span class="badge">Step 2</span>
-          <button class="button primary generator-cta" type="submit">Generate listing</button>
-        </div>
-        ${appTrustStrip()}
-      </form>
-      <section class="output-stack results-stack" id="output" aria-live="polite" hidden></section>
+    <section class="notes-route" data-route="notes">
+      <div class="notes-layout">
+        <form class="card generator-panel sticky-form" id="notesForm">
+          <div class="generator-step">
+            <span class="badge badge-brand">${iconSvg("sparkles")} Generator</span>
+            <h1>Generate sell-ready listing</h1>
+            <p class="muted">Paste messy item notes. ListBoost turns them into a structured Vinted listing you can copy section by section.</p>
+          </div>
+          <input type="hidden" name="category" value="Clothing" />
+          <input type="hidden" name="tone" value="clean" />
+          <input type="hidden" name="sellerMode" value="clearout" />
+          <input type="hidden" name="negotiationGoal" value="friendly" />
+          <label class="generator-input-label" for="notesInput">
+            Item notes
+            <textarea id="notesInput" name="itemDetails" required placeholder="Example: Zara navy satin midi dress, UK 10, worn twice, no marks, zip fastening, flattering bias cut"></textarea>
+          </label>
+          <div class="example-chips" aria-label="Example item notes">
+            <button class="btn btn-secondary example-chip" type="button" data-example-text="Zara navy satin midi dress, UK 10, worn twice, no marks, zip fastening, flattering bias cut">Zara dress</button>
+            <button class="btn btn-secondary example-chip" type="button" data-example-text="Nike Air Force 1 trainers, UK 5, white leather, light creasing, cleaned soles, still lots of wear left">Nike trainers</button>
+            <button class="btn btn-secondary example-chip" type="button" data-example-text="Kids winter bundle, age 4-5, H&M jumpers and leggings, good used condition, a couple of tiny marks shown in photos">Kids bundle</button>
+          </div>
+          <div class="generator-meta">
+            <span id="notesCharCount">0 characters</span>
+            <span class="credit-cost">${iconSvg("credit-card")} This uses 1 credit</span>
+          </div>
+          <div class="generator-actions">
+            <button class="btn btn-primary generator-cta" type="submit">Generate sell-ready listing</button>
+          </div>
+          ${appTrustStrip()}
+        </form>
+        <section class="results-panel output-stack results-stack" id="output" aria-live="polite">
+          ${emptyStateTemplate({
+            icon: "file-text",
+            heading: "Your listing output will appear here",
+            body: "Generate once, then copy the title, description, keywords, price guidance, photo checklist and buyer reply."
+          })}
+        </section>
+      </div>
     </section>
   `;
 }
@@ -917,16 +956,25 @@ function listingCopyText(data = {}) {
 }
 
 function copyButton(label, text) {
-  return `<button type="button" class="copy-button" data-copy="${escapeHtml(text || "")}">${label}</button>`;
+  return buttonTemplate({
+    variant: "secondary",
+    label,
+    icon: "copy",
+    className: "copy-button",
+    attributes: { "data-copy": text || "" }
+  });
 }
 
-function outputSection(title, html, copyText, copyLabel, valueLabel = "") {
+function outputSection(title, html, copyText, copyLabel, valueLabel = "", icon = "file-text") {
   return `
     <section class="output-card result-card">
       <div class="result-card-head">
-        <div>
-          <h3>${title}</h3>
-          ${valueLabel ? `<p class="value-label">${escapeHtml(valueLabel)}</p>` : ""}
+        <div class="result-card-title">
+          <div class="feature-icon">${iconSvg(icon)}</div>
+          <div>
+            <h3>${title}</h3>
+            ${valueLabel ? `<span class="badge">${escapeHtml(valueLabel)}</span>` : ""}
+          </div>
         </div>
         ${copyButton(copyLabel, copyText)}
       </div>
@@ -963,28 +1011,30 @@ function outputTemplate(data = {}, options = {}) {
   const reply = buyerReplyText(data);
   const allCopy = listingCopyText({ ...data, photoChecklist: photoItems });
   const creditNote = options.creditUsed ? `<p class="credit-feedback">${options.creditUsed} credit used</p>` : "";
-  const demoCta = options.demo ? '<a class="button primary result-cta" href="/signup">Create free account and get 5 free credits</a>' : "";
+  const demoCta = options.demo ? '<a class="btn btn-primary result-cta" href="/signup">Create free account and get 5 free credits</a>' : "";
   const inputText = options.inputText || data.input?.itemDetails || "";
   const momentumNote = options.momentumCount ? `<p class="momentum-feedback">${escapeHtml(momentumMessage(options.momentumCount))}</p>` : "";
 
   return `
     <section class="result-set">
-      <div class="card result-summary">
+      <div class="card result-toolbar result-summary">
         <div>
-          <span class="badge">Step 3</span>
+          <span class="badge badge-brand">${iconSvg("check-circle")} Ready</span>
           <h2>Your listing is ready</h2>
           ${creditNote}
           ${momentumNote}
         </div>
         <div class="result-summary-actions">
           ${copyButton("Copy all", allCopy)}
+          <button class="btn btn-secondary" type="button" data-toast-message="Saved to history">${iconSvg("save")}<span>Save to history</span></button>
           ${demoCta}
         </div>
       </div>
+      ${listingCardTemplate(listingCardDataFromOutput(data), { elevated: true, className: "result-listing-preview" })}
       ${transformationTemplate(inputText, data)}
-      ${outputSection("Title", `<p class="result-title">${escapeHtml(data.title || "Vinted-ready listing title")}</p>`, data.title || "", "Copy title", "Optimised for Vinted search")}
-      ${outputSection("Description", descriptionHtml(data.description), data.description || "", "Copy description", "High-conversion description")}
-      ${outputSection("Keywords", `<p>${escapeHtml(keywords || "vinted, preloved, wardrobe clearout")}</p>`, keywords, "Copy keywords", "Search terms ready")}
+      ${outputSection("Title", `<p class="result-title">${escapeHtml(data.title || "Vinted-ready listing title")}</p>`, data.title || "", "Copy title", "Optimised for Vinted search", "file-text")}
+      ${outputSection("Description", descriptionHtml(data.description), data.description || "", "Copy description", "High-conversion description", "list-check")}
+      ${outputSection("Keywords", `<p>${escapeHtml(keywords || "vinted, preloved, wardrobe clearout")}</p>`, keywords, "Copy keywords", "Search terms ready", "tag")}
       ${outputSection("Price guidance", `
         <div class="mini-cards">
           <span><strong>Fast</strong>${escapeHtml(price.fastSale || "-")}</span>
@@ -992,18 +1042,27 @@ function outputTemplate(data = {}, options = {}) {
           <span><strong>Max</strong>${escapeHtml(price.maxPrice || "-")}</span>
         </div>
         <p>${escapeHtml(data.priceGuidance || "Check similar sold Vinted items before posting.")}</p>
-      `, priceText, "Copy price", "Suggested competitive pricing")}
-      ${outputSection("Photo checklist", listHtml(photoItems), photoItems.join("\n"), "Copy checklist", "Listing-photo checklist")}
-      ${outputSection("Buyer reply", `<p>${escapeHtml(reply)}</p>`, reply, "Copy reply", "Natural seller reply")}
+      `, priceText, "Copy price", "Suggested competitive pricing", "badge-pound")}
+      ${outputSection("Photo checklist", listHtml(photoItems), photoItems.join("\n"), "Copy checklist", "Listing-photo checklist", "image")}
+      ${outputSection("Suggested buyer reply", `<p>${escapeHtml(reply)}</p>`, reply, "Copy reply", "Natural seller reply", "message-circle")}
     </section>
   `;
 }
 
 function loadingTemplate(message) {
   return `
-    <div class="loading-card">
-      <div class="spinner" aria-hidden="true"></div>
-      <strong>${escapeHtml(message)}</strong>
+    <div class="results-skeleton" aria-busy="true" aria-label="${escapeHtml(message)}">
+      <div class="skeleton-toolbar">
+        <span></span>
+        <span></span>
+      </div>
+      <div class="skeleton-listing"></div>
+      <div class="skeleton-grid">
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
     </div>
   `;
 }
@@ -1021,6 +1080,11 @@ function installCopyFeedback() {
   if (globalCopyHandlerInstalled) return;
   globalCopyHandlerInstalled = true;
   document.addEventListener("click", async (event) => {
+    const toastButton = event.target.closest("[data-toast-message]");
+    if (toastButton) {
+      toast(toastButton.dataset.toastMessage || "Done", "success");
+      return;
+    }
     const copy = event.target.closest("[data-copy]");
     if (!copy) return;
     await navigator.clipboard.writeText(copy.dataset.copy || "");
@@ -1028,7 +1092,7 @@ function installCopyFeedback() {
     copy.textContent = "Copied!";
     copy.setAttribute("aria-live", "polite");
     copySuccessCount += 1;
-    toast(copySuccessCount >= 3 ? "You're ready to list this item" : "Copied — paste this into Vinted", "success");
+    toast(copySuccessCount >= 3 ? "You're ready to list this item" : "Copied to clipboard", "success");
     setTimeout(() => {
       copy.textContent = original;
       copy.removeAttribute("aria-live");
@@ -1082,9 +1146,30 @@ function handleGenerationError(error) {
   toast(error.message, "error");
 }
 
+function installNotesInteractions(notesForm) {
+  const textarea = notesForm?.elements?.itemDetails;
+  const counter = $("#notesCharCount");
+  if (!textarea) return;
+  const updateTextarea = () => {
+    if (counter) counter.textContent = `${textarea.value.length} characters`;
+    textarea.style.height = "auto";
+    textarea.style.height = `${textarea.scrollHeight}px`;
+  };
+  textarea.addEventListener("input", updateTextarea);
+  $$(".example-chip", notesForm).forEach((button) => {
+    button.addEventListener("click", () => {
+      textarea.value = button.dataset.exampleText || "";
+      updateTextarea();
+      textarea.focus();
+    });
+  });
+  updateTextarea();
+}
+
 function installAppTools() {
   const notesForm = $("#notesForm");
   if (notesForm) {
+    installNotesInteractions(notesForm);
     notesForm.addEventListener("submit", async (event) => {
       event.preventDefault();
       const out = $("#output");
@@ -1098,7 +1183,11 @@ function installAppTools() {
         out.innerHTML = outputTemplate(data, { creditUsed: 1, inputText: formPayload.itemDetails, momentumCount });
         toast("Generated. 1 credit used.", "success");
       } catch (error) {
-        out.hidden = true;
+        out.innerHTML = emptyStateTemplate({
+          icon: "x",
+          heading: "Generation paused",
+          body: error.message || "Something went wrong. Try again in a moment."
+        });
         handleGenerationError(error);
       }
     });
@@ -1211,14 +1300,14 @@ function installAppTools() {
   if (demo) {
     demo.addEventListener("click", async () => {
       const out = $("#demoOutput");
-      const input = $("#demoInput")?.value || "Black Zara dress size 10 worn twice good condition";
+      const input = $("#demoInput")?.value || "Zara navy satin midi dress, UK 10, worn twice";
       out.innerHTML = loadingTemplate("Generating your demo listing...");
       try {
         const data = await api("/api/demo-generate", {
           method: "POST",
           body: JSON.stringify({ itemDetails: input })
         });
-        out.innerHTML = outputTemplate(data, { demo: true, inputText: input });
+        out.innerHTML = demoResultTemplate(data, input);
       } catch (error) {
         out.innerHTML = `<p class="error">${escapeHtml(error.message)}</p>`;
       }

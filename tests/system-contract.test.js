@@ -28,7 +28,7 @@ test("new app surfaces include required modules", () => {
   }
   assert.match(appHtml, /id="appRoute"/);
   assert.match(siteJs, /function notesRouteTemplate/);
-  assert.match(siteJs, /Paste your item details/);
+  assert.match(siteJs, /Generate sell-ready listing/);
   assert.match(siteJs, /function repliesRouteTemplate/);
   assert.match(siteJs, /Buyer reply tools/);
   assert.match(siteJs, /function billingRouteTemplate/);
@@ -52,11 +52,18 @@ test("app route templates isolate feature content and expose active nav", () => 
 });
 
 test("app generator flow is guided, copyable and credit aware", () => {
-  assert.match(siteJs, /class="generator-route"/);
-  assert.match(siteJs, /Black Zara dress, size 10, worn twice, good condition/);
-  assert.match(siteJs, /hidden><\/section>|hidden/);
+  assert.match(siteJs, /class="notes-route"/);
+  assert.match(siteJs, /class="notes-layout"/);
+  assert.match(siteJs, /id="notesInput"/);
+  assert.match(siteJs, /Example: Zara navy satin midi dress/);
+  assert.match(siteJs, /example-chip/);
+  assert.match(siteJs, /notesCharCount/);
+  assert.match(siteJs, /This uses 1 credit/);
+  assert.match(siteJs, /Generate sell-ready listing/);
   assert.match(siteJs, /Generating your listing/);
+  assert.match(siteJs, /results-skeleton/);
   assert.match(siteJs, /Copy all/);
+  assert.match(siteJs, /Save to history/);
   assert.match(siteJs, /credit used/);
   assert.match(siteJs, /You're out of credits/);
   assert.match(siteJs, /showPaywallModal/);
@@ -75,13 +82,15 @@ test("generated output shows value signals and before-after transformation", () 
   assert.match(siteJs, /Optimised for Vinted search/);
   assert.match(siteJs, /High-conversion description/);
   assert.match(siteJs, /Suggested competitive pricing/);
+  assert.match(siteJs, /Suggested buyer reply/);
+  assert.match(siteJs, /result-listing-preview/);
   assert.match(stylesCss, /\.before-after-grid/);
   assert.match(stylesCss, /\.value-label/);
 });
 
 test("copy feedback nudges users toward listing", () => {
   assert.match(siteJs, /copySuccessCount/);
-  assert.match(siteJs, /Copied — paste this into Vinted/);
+  assert.match(siteJs, /Copied to clipboard/);
   assert.match(siteJs, /You're ready to list this item/);
 });
 
@@ -156,8 +165,12 @@ test("pricing page renders three buyable packs", () => {
 
 test("example demo uses anonymous live generation endpoint", () => {
   assert.match(exampleHtml, /id="runDemo"/);
-  assert.match(exampleHtml, /Black Zara dress size 10 worn twice good condition/);
+  assert.match(exampleHtml, /Zara navy satin midi dress, UK 10, worn twice/);
   assert.match(exampleHtml, /Generate demo listing/);
+  assert.match(exampleHtml, /No Vinted login/);
+  assert.match(exampleHtml, /No card needed/);
+  assert.match(exampleHtml, /Copy &amp; paste manually/);
+  assert.match(exampleHtml, /Create free account · 5 free credits/);
   assert.match(serverJs, /handleDemoGenerate/);
   assert.match(serverJs, /\/api\/demo-generate/);
   assert.match(siteJs, /\/api\/demo-generate/);

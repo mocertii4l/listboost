@@ -4,10 +4,10 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Example - ListBoost</title>
-    <meta name="description" content="See a live ListBoost Vinted listing example." />
+    <meta name="description" content="Try a prefilled ListBoost demo and see a premium Vinted listing output before creating an account." />
     <link rel="canonical" href="https://www.listboost.uk/example" />
     <meta property="og:title" content="ListBoost example" />
-    <meta property="og:description" content="Run a capped live ListBoost demo from a canned Vinted seller input before signing up." />
+    <meta property="og:description" content="Generate a capped ListBoost demo from realistic Vinted seller notes before signing up." />
     <meta property="og:image" content="https://www.listboost.uk/og-image.svg" />
     <meta property="og:url" content="https://www.listboost.uk/example" />
     <meta name="twitter:card" content="summary_large_image" />
@@ -15,22 +15,52 @@
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
+    <a class="skip-link" href="#main">Skip to content</a>
     <div class="toast-region" id="toastRegion" aria-live="polite"></div>
     <header class="lb-header"></header>
-    <main class="page-wrap two-col demo-page" id="main">
-      <section class="card demo-generator-card">
-        <span class="badge">Live demo</span>
-        <h1>Try the Vinted listing generator.</h1>
-        <p>Use the prefilled note or edit it, then generate a full premium listing package before signing up.</p>
-        <label>
-          Item details
-          <textarea id="demoInput">Black Zara dress size 10 worn twice good condition</textarea>
-        </label>
-        <button class="button primary generator-cta" id="runDemo" type="button">Generate demo listing</button>
-        <a class="button secondary" href="/signup">Create free account and get 5 free credits</a>
+
+    <main class="page-wrap demo-page" id="main">
+      <section class="demo-hero" aria-labelledby="demo-title">
+        <div class="demo-copy">
+          <p class="eyebrow">Live demo</p>
+          <h1 id="demo-title">See a Vinted listing in seconds.</h1>
+          <p class="lede">Use the prefilled notes, generate a premium output, then decide if ListBoost fits your listing routine.</p>
+          <ul class="trust-row" aria-label="Demo trust signals">
+            <li>No Vinted login</li>
+            <li>No card needed</li>
+            <li>Copy &amp; paste manually</li>
+          </ul>
+        </div>
+
+        <section class="card demo-generator-card" aria-label="Demo generator">
+          <label for="demoInput">
+            Item details
+            <textarea id="demoInput" class="textarea">Zara navy satin midi dress, UK 10, worn twice for weddings, no marks, zip fastening, flattering bias cut, selling because it no longer fits</textarea>
+            <span class="field-helper">Edit the note if you want. The demo uses a capped preview endpoint.</span>
+          </label>
+          <button class="btn btn-primary generator-cta" id="runDemo" type="button">Generate demo listing</button>
+        </section>
       </section>
-      <section class="card output-stack demo-output" id="demoOutput"><div class="empty-state">Your generated demo listing will appear here.</div></section>
+
+      <section class="demo-results" aria-labelledby="demo-results-title">
+        <div class="section-head">
+          <p class="eyebrow">Premium output</p>
+          <h2 id="demo-results-title">Your generated demo appears here.</h2>
+        </div>
+        <div class="output-stack demo-output" id="demoOutput" aria-live="polite">
+          <div class="empty-state">
+            <div class="empty-state-icon" data-icon="sparkles" aria-hidden="true"></div>
+            <h3>Ready when you are</h3>
+            <p>Generate the demo to see title, description, keywords, price guidance, photo checklist and buyer reply.</p>
+          </div>
+        </div>
+      </section>
     </main>
+
+    <div class="mobile-sticky-cta">
+      <a class="btn btn-primary btn-block" href="/signup">Create free account · 5 free credits</a>
+    </div>
+
     <script type="module" src="/site.js"></script>
   </body>
 </html>
