@@ -349,6 +349,8 @@ function hydrateIconPlaceholders(root = document) {
 
 function publicHeaderTemplate() {
   // Public marketing stays anonymous in layout, but the actions reflect session state.
+  // Signed in: a single primary "Open app" + a quiet "Sign out".
+  // Signed out: "Log in" + primary "Start free".
   return `
     <a class="lb-brand" href="/"><img src="/logo.svg" alt="" />ListBoost</a>
     <button class="nav-toggle btn btn-ghost btn-icon" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="publicNav">${iconSvg("menu")}</button>
@@ -360,7 +362,7 @@ function publicHeaderTemplate() {
     <div class="nav-actions">
       <a class="btn btn-ghost nav-login js-public-login" href="/login">Log in</a>
       <a class="btn btn-primary nav-start js-public-start" href="/signup" aria-label="Start free with 3 listings">Start free - 3 listings</a>
-      <a class="btn btn-secondary js-public-app hidden" href="/app">${iconSvg("user")}<span>Open app</span></a>
+      <a class="btn btn-primary js-public-app hidden" href="/app">${iconSvg("user")}<span>Open app</span></a>
       <button class="btn btn-ghost js-public-logout hidden" type="button" data-logout>${iconSvg("log-out")}<span>Sign out</span></button>
     </div>
   `;
@@ -625,6 +627,10 @@ function navigateApp(path, push = true) {
   $("#main")?.scrollIntoView({ block: "start" });
 }
 
+function isInsideApp() {
+  return location.pathname.startsWith("/app") && Boolean(document.getElementById("appRoute"));
+}
+
 function installAppNavigation() {
   if (appNavigationInstalled) return;
   appNavigationInstalled = true;
@@ -633,10 +639,17 @@ function installAppNavigation() {
     if (!link || event.defaultPrevented || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     const url = new URL(link.href, location.origin);
     if (url.origin !== location.origin || !url.pathname.startsWith("/app")) return;
+    // Only intercept for client-side route swap when we're already inside the app shell.
+    // Otherwise let the browser navigate normally (full page load) so links from /, /pricing,
+    // /checkout/success, /verify-email actually work.
+    if (!isInsideApp()) return;
     event.preventDefault();
     navigateApp(`${url.pathname}${url.search}${url.hash}`);
   });
-  window.addEventListener("popstate", () => navigateApp(`${location.pathname}${location.search}${location.hash}`, false));
+  window.addEventListener("popstate", () => {
+    if (!isInsideApp()) return;
+    navigateApp(`${location.pathname}${location.search}${location.hash}`, false);
+  });
 }
 
 function escapeHtml(value) {
@@ -868,22 +881,53 @@ function historyRouteTemplate() {
 function billingRouteTemplate() {
   return `
     <section class="billing-route" data-route="billing">
-      ${routeHeader("Billing", "Plan and usage", "Manage your monthly subscription and see this cycle's listing usage.")}
-      <div class="billing-overview">
+      ${routeHeader("Billing", "Plan and usage", "Your monthly plan, how much of your listing allowance you've used, and what renews next.")}
+      <div class="billing-hero">
         <article class="card card-elevated billing-summary-card">
-          <span class="badge badge-brand">${iconSvg("repeat")} Current plan</span>
-          <h2 class="js-current-plan">Free</h2>
-          <p class="muted">Subscription status: <span class="js-subscription-status">Inactive</span></p>
-          <button class="btn btn-secondary" type="button" data-manage-subscription>${iconSvg("user-cog")}<span>Manage subscription</span></button>
+          <div class="billing-summary-head">
+            <span class="badge badge-brand">${iconSvg("repeat")} Current plan</span>
+            <span class="status-pill js-billing-status-pill">Inactive</span>
+          </div>
+          <h2 class="js-current-plan billing-plan-name">Free</h2>
+          <p class="muted js-billing-plan-strapline">Try 3 listings on us, then choose a monthly plan.</p>
+          <div class="billing-plan-actions" id="billingPlanActions"></div>
         </article>
-        <article class="card balance-card"><span class="badge">${iconSvg("wallet")} Listings used this month</span><h2 class="js-usage">Loading usage</h2><p class="muted">Usage resets at the start of every billing cycle.</p></article>
-        <article class="card balance-card"><span class="badge">${iconSvg("calendar")} Cycle ends</span><h2 class="js-next-refill">No active subscription</h2><p class="muted">Subscribe monthly to keep generating listings.</p></article>
+        <article class="card billing-usage-card">
+          <span class="badge">${iconSvg("wallet")} Listings used this cycle</span>
+          <div class="billing-usage-readout">
+            <strong class="js-usage">Loading usage</strong>
+          </div>
+          <div class="billing-usage-bar" aria-hidden="true">
+            <span class="js-usage-bar"></span>
+          </div>
+          <p class="muted small">Usage resets at the start of each billing cycle.</p>
+        </article>
+        <article class="card billing-cycle-card">
+          <span class="badge">${iconSvg("calendar")} Cycle ends</span>
+          <h3 class="js-next-refill">No active subscription</h3>
+          <p class="muted small js-billing-cycle-note">Subscribe monthly to keep generating listings.</p>
+        </article>
       </div>
+
+      <section class="card billing-benefits">
+        <div class="section-head compact"><p class="eyebrow">What's included</p><h2 class="js-billing-plan-title">Your plan benefits</h2></div>
+        <ul class="billing-benefits-list" id="billingBenefits">${loadingTemplate("Loading plan benefits...")}</ul>
+      </section>
+
       <section class="billing-panel" data-billing-panel="subscriptions">
-        <div class="section-head compact"><p class="eyebrow">Recommended</p><h2>Monthly plans</h2></div>
+        <div class="section-head compact"><p class="eyebrow">Change your plan</p><h2 id="billingChangePlan">Switch up or down anytime</h2></div>
         <div class="pricing-grid" id="billingSubscriptions">${loadingTemplate("Loading monthly plans...")}</div>
       </section>
-      <section class="card billing-activity"><h3>Recent billing activity</h3><div id="billingTransactions">${loadingTemplate("Loading transactions...")}</div></section>
+
+      <section class="card billing-activity"><div class="section-head compact"><p class="eyebrow">Activity</p><h3>Recent billing activity</h3></div><div id="billingTransactions">${loadingTemplate("Loading transactions...")}</div></section>
+
+      <section class="card billing-support">
+        <div>
+          <strong>Need help with your subscription?</strong>
+          <p class="muted small">Email us with the address on your account and we'll sort it.</p>
+        </div>
+        <a class="btn btn-secondary" href="mailto:support@listboost.uk?subject=ListBoost%20billing%20support">${iconSvg("mail")}<span>Email support</span></a>
+      </section>
     </section>
   `;
 }
@@ -1767,22 +1811,100 @@ async function loadAppHistory(page = 1) {
   }
 }
 
+function planBenefitsFor(planId) {
+  const benefits = {
+    free: [
+      "3 listings to try ListBoost",
+      "Notes-to-listing generator",
+      "Title, description, keywords, price guidance, photo checklist, buyer reply",
+      "Subscribe to keep going past the free trial"
+    ],
+    starter: [
+      "Up to 20 listings per month",
+      "Notes-to-listing generator",
+      "Titles, descriptions and keywords",
+      "Saved history"
+    ],
+    seller: [
+      "Up to 100 listings per month",
+      "Everything in Starter",
+      "Photo upload and buyer replies",
+      "Price guidance and listing score"
+    ],
+    reseller: [
+      "Unlimited monthly listings",
+      "Everything in Seller",
+      "Bulk-friendly workflow and reusable templates",
+      "Priority support"
+    ]
+  };
+  return benefits[planId] || benefits.free;
+}
+
+function planStrapline(planId) {
+  return ({
+    free: "Try 3 listings on us, then choose a monthly plan.",
+    starter: "Light, monthly plan for casual sellers.",
+    seller: "The full toolkit weekly Vinted sellers need.",
+    reseller: "Unlimited usage and priority support for daily sellers."
+  })[planId] || "";
+}
+
 async function loadBilling(me = accountState) {
   const subscriptions = $("#billingSubscriptions");
   const transactions = $("#billingTransactions");
+  const benefits = $("#billingBenefits");
+  const planActions = $("#billingPlanActions");
   if (!subscriptions || !transactions) return;
   if (!me.user) {
     subscriptions.innerHTML = '<div class="empty-state">Sign in to subscribe monthly.</div>';
     transactions.innerHTML = '<div class="empty-state">Billing activity appears after your first subscription.</div>';
+    if (benefits) benefits.innerHTML = "";
     return;
   }
   try {
     const data = await api("/api/billing");
     updateUsageFromResponse(data);
     const currentPlan = data.subscription?.plan || data.user?.plan || "free";
-    const currentStatus = data.subscription?.status || data.user?.subscriptionStatus || "inactive";
+    const currentStatus = String(data.subscription?.status || data.user?.subscriptionStatus || "inactive").toLowerCase();
+    const isPaying = ["active", "trialing", "past_due"].includes(currentStatus);
+    const usage = data.usage || me.usage || {};
+    const usagePct = usage.unlimited ? 100 : Math.min(100, Math.round((Number(usage.usageThisMonth || 0) / Math.max(Number(usage.usageLimit || 1), 1)) * 100));
+    const bar = $(".js-usage-bar");
+    if (bar) {
+      bar.style.width = `${usagePct}%`;
+      bar.dataset.full = usage.unlimited ? "true" : (usagePct >= 90 ? "true" : "false");
+    }
+    $$(".js-billing-status-pill").forEach((node) => {
+      node.textContent = titleCasePlan(currentStatus || "Inactive");
+      node.dataset.status = currentStatus;
+    });
+    $$(".js-billing-plan-strapline").forEach((node) => { node.textContent = planStrapline(currentPlan); });
+    $$(".js-billing-plan-title").forEach((node) => { node.textContent = `${data.subscription?.planName || titleCasePlan(currentPlan)} plan benefits`; });
+    $$(".js-billing-cycle-note").forEach((node) => {
+      if (isPaying) {
+        node.textContent = "Auto-renews and resets your usage at the cycle end.";
+      } else {
+        node.textContent = "Subscribe monthly to keep generating listings.";
+      }
+    });
+
+    if (planActions) {
+      const canPortal = isPaying;
+      planActions.innerHTML = canPortal
+        ? `<button class="btn btn-secondary" type="button" data-manage-subscription>${iconSvg("user-cog")}<span>Manage subscription</span></button>
+           <a class="btn btn-ghost" href="#billingChangePlan">${iconSvg("repeat")}<span>Change plan</span></a>`
+        : `<a class="btn btn-primary" href="#billingChangePlan">${iconSvg("arrow-right")}<span>Choose a plan</span></a>`;
+    }
+
+    if (benefits) {
+      benefits.innerHTML = planBenefitsFor(currentPlan).map((item) => `
+        <li>${iconSvg("check-circle")}<span>${escapeHtml(item)}</span></li>
+      `).join("");
+    }
+
     subscriptions.innerHTML = (data.subscriptionPlans || []).map((plan) => {
-      const isCurrent = currentPlan === plan.id && ["active", "trialing", "past_due"].includes(String(currentStatus).toLowerCase());
+      const isCurrent = currentPlan === plan.id && isPaying;
       return pricingCardTemplate({
         ...plan,
         current: isCurrent,
@@ -1790,13 +1912,14 @@ async function loadBilling(me = accountState) {
         ctaLabel: isCurrent ? "Current plan" : currentPlan === "free" ? `Subscribe ${plan.name}` : `Switch to ${plan.name}`
       });
     }).join("");
+
     const rows = [
       ...(data.cycles || []).map((item) => ({ label: `${titleCasePlan(item.plan)} billing cycle`, amount: "Reset", date: item.createdAt })),
       ...(data.audit || []).map((item) => ({ label: item.reason, amount: item.actor, date: item.createdAt }))
     ].slice(0, 20);
     transactions.innerHTML = rows.length ? `
       <div class="transaction-list">
-        ${rows.map((row) => `<div><span>${escapeHtml(row.label)}</span><strong>${escapeHtml(row.amount)}</strong><time>${escapeHtml(row.date)}</time></div>`).join("")}
+        ${rows.map((row) => `<div><span>${escapeHtml(row.label)}</span><strong>${escapeHtml(row.amount)}</strong><time>${escapeHtml(formatDate(row.date) || row.date)}</time></div>`).join("")}
       </div>
     ` : emptyStateTemplate({ icon: "wallet", heading: "No activity yet", body: "Subscription cycles and plan changes appear here." });
   } catch (error) {

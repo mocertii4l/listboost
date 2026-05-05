@@ -249,6 +249,51 @@ test("app nav routes resolve to /app static page", () => {
   }
 });
 
+test("decorative overlays do not steal pointer events", () => {
+  const overlays = [
+    /\.hero-preview::before[\s\S]*?pointer-events:\s*none/,
+    /\.hero-preview::after[\s\S]*?pointer-events:\s*none/,
+    /\.pricing-card\.is-featured::before[\s\S]*?pointer-events:\s*none/,
+    /\.demo-generator-card::before[\s\S]*?pointer-events:\s*none/,
+    /body\.confetti::after[\s\S]*?pointer-events:\s*none/
+  ];
+  for (const pattern of overlays) {
+    assert.match(stylesCss, pattern, `expected decorative overlay to set pointer-events: none (pattern: ${pattern})`);
+  }
+});
+
+test("app-link interceptor only fires inside the app shell", () => {
+  assert.match(siteJs, /function isInsideApp/);
+  assert.match(siteJs, /document\.getElementById\("appRoute"\)/);
+  // The click handler must early-return when not inside /app
+  assert.match(siteJs, /if \(!isInsideApp\(\)\) return;/);
+});
+
+test("checkout success copy is honest about email and links to support", () => {
+  const successHtml = readFileSync(new URL("../public/checkout-success.html", import.meta.url), "utf8");
+  // Old false claim must be gone
+  assert.doesNotMatch(successHtml, /receipt will arrive/i);
+  assert.match(successHtml, /href="mailto:support@listboost\.uk"/);
+});
+
+test("subscription confirmation email is wired to billing-cycle start", () => {
+  assert.match(serverJs, /sendSubscriptionConfirmationEmail/);
+  assert.match(serverJs, /Your ListBoost .* subscription is active/);
+  assert.match(serverJs, /isFreshActivation/);
+});
+
+test("billing route shows plan, status, usage bar, benefits and truthful manage button", () => {
+  assert.match(siteJs, /function billingRouteTemplate/);
+  assert.match(siteJs, /js-current-plan/);
+  assert.match(siteJs, /js-billing-status-pill/);
+  assert.match(siteJs, /js-usage-bar/);
+  assert.match(siteJs, /billing-benefits-list/);
+  assert.match(siteJs, /planBenefitsFor/);
+  // Manage subscription should only render when isPaying
+  assert.match(siteJs, /const canPortal = isPaying/);
+  assert.match(siteJs, /data-manage-subscription/);
+});
+
 test("legacy credit wording is no longer surfaced to users", () => {
   for (const html of [indexHtml, pricingHtml, exampleHtml, supportHtml]) {
     assert.doesNotMatch(html, /credits\/month/);
@@ -319,10 +364,10 @@ test("subscription billing surfaces monthly plans and usage status", () => {
   assert.match(serverJs, /customer\.subscription\.updated/);
   assert.match(serverJs, /customer\.subscription\.deleted/);
   assert.match(siteJs, /Current plan/);
-  assert.match(siteJs, /Subscription status/);
-  assert.match(siteJs, /Listings used this month/);
+  assert.match(siteJs, /js-billing-status-pill/);
+  assert.match(siteJs, /Listings used this cycle/);
   assert.match(siteJs, /Cycle ends/);
-  assert.match(siteJs, /Subscribe monthly/);
+  assert.match(siteJs, /Subscribe monthly|Switch up or down/);
 });
 
 test("public pages include social metadata and legal pages use shared shell", () => {

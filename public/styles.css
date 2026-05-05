@@ -1054,6 +1054,7 @@ select[aria-invalid="true"] {
   position: absolute;
   top: calc(var(--space-3) * -1);
   left: 50%;
+  pointer-events: none;
   transform: translateX(-50%);
   padding: var(--space-1) var(--space-3);
   border-radius: var(--radius-xl);
@@ -1429,6 +1430,7 @@ select[aria-invalid="true"] {
   position: absolute;
   inset: -8% -6% -10% -6%;
   z-index: -1;
+  pointer-events: none;
   border-radius: var(--space-24);
   background:
     radial-gradient(60% 50% at 35% 30%, color-mix(in srgb, var(--primary) 32%, transparent), transparent 70%),
@@ -1442,6 +1444,7 @@ select[aria-invalid="true"] {
   position: absolute;
   z-index: -1;
   inset: var(--space-2) calc(var(--space-2) * -1) calc(var(--space-4) * -1) var(--space-3);
+  pointer-events: none;
   border-radius: var(--radius-xl);
   background: var(--card);
   border: 1px solid var(--border);
@@ -2707,6 +2710,33 @@ input[readonly] {
 .scaffold-bars span:nth-child(2) { width: 70%; }
 .scaffold-bars span:nth-child(3) { width: 55%; }
 
+@media (prefers-reduced-motion: no-preference) {
+  .scaffold-bars span {
+    background-size: 200% 100%;
+    background-position: 100% 0;
+    animation: lb-shimmer 2.4s ease-in-out infinite;
+  }
+  .scaffold-bars span:nth-child(2) { animation-delay: 0.3s; }
+  .scaffold-bars span:nth-child(3) { animation-delay: 0.6s; }
+}
+
+@keyframes lb-shimmer {
+  0%, 100% { background-position: 100% 0; }
+  50% { background-position: 0 0; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .result-set,
+  .demo-result-set {
+    animation: lb-fade-up 280ms ease-out both;
+  }
+}
+
+@keyframes lb-fade-up {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 .photo-empty {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(280px, 0.85fr);
@@ -3024,6 +3054,159 @@ input[readonly] {
   letter-spacing: 0.06em;
 }
 
+/* =================================================================
+   Billing route
+   ================================================================= */
+
+.billing-route {
+  display: grid;
+  gap: var(--space-6);
+}
+
+.billing-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--space-4);
+  align-items: stretch;
+}
+
+.billing-summary-card {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-6);
+  background:
+    radial-gradient(120% 80% at 0% 0%, color-mix(in srgb, var(--primary-soft) 70%, transparent), transparent 60%),
+    var(--card);
+  border-color: color-mix(in srgb, var(--primary) 22%, var(--border));
+}
+
+.billing-summary-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.billing-summary-head .status-pill {
+  text-transform: capitalize;
+}
+
+.billing-summary-head .status-pill[data-status="active"],
+.billing-summary-head .status-pill[data-status="trialing"] {
+  color: var(--success);
+  background: color-mix(in srgb, var(--success) 12%, var(--card));
+  border-color: color-mix(in srgb, var(--success) 28%, var(--border));
+}
+
+.billing-summary-head .status-pill[data-status="past_due"] {
+  color: var(--warning);
+  background: color-mix(in srgb, var(--warning) 12%, var(--card));
+  border-color: color-mix(in srgb, var(--warning) 28%, var(--border));
+}
+
+.billing-plan-name {
+  margin: 0;
+  font-size: 32px;
+  letter-spacing: -0.015em;
+}
+
+.billing-plan-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.billing-usage-card,
+.billing-cycle-card {
+  display: grid;
+  align-content: start;
+  gap: var(--space-2);
+  padding: var(--space-6);
+}
+
+.billing-usage-readout strong {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+
+.billing-usage-bar {
+  height: 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--bg-subtle) 80%, var(--card));
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.billing-usage-bar span {
+  display: block;
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--primary), var(--primary-hover));
+  transition: width 400ms ease;
+}
+
+.billing-usage-bar span[data-full="true"] {
+  background: linear-gradient(90deg, var(--accent), #ff9b8f);
+}
+
+.billing-cycle-card h3 {
+  margin: 0;
+  font-size: 22px;
+  letter-spacing: -0.01em;
+}
+
+.billing-benefits {
+  display: grid;
+  gap: var(--space-4);
+  padding: var(--space-6);
+}
+
+.billing-benefits-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.billing-benefits-list li {
+  display: grid;
+  grid-template-columns: 18px 1fr;
+  gap: var(--space-3);
+  align-items: start;
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.billing-benefits-list li svg {
+  width: 18px;
+  height: 18px;
+  color: var(--primary-hover);
+  margin-top: 2px;
+}
+
+.billing-support {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-4);
+  align-items: center;
+  padding: var(--space-5, 20px) var(--space-6);
+}
+
+.billing-support strong {
+  display: block;
+  font-size: 15px;
+}
+
+.billing-support p {
+  margin: var(--space-1) 0 0;
+}
+
 .demo-copy,
 .demo-results,
 .demo-generator-card,
@@ -3059,6 +3242,7 @@ input[readonly] {
   position: absolute;
   top: calc(var(--space-3) * -1);
   left: var(--space-6);
+  pointer-events: none;
   padding: var(--space-1) var(--space-3);
   border-radius: var(--radius-xl);
   color: var(--card);
@@ -3362,6 +3546,9 @@ body.confetti::after {
   .step-grid,
   .billing-overview,
   .billing-grid,
+  .billing-hero,
+  .billing-benefits-list,
+  .billing-support,
   .paywall-packs,
   .mini-cards,
   .skeleton-grid,

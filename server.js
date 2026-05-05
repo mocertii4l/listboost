@@ -1974,7 +1974,89 @@ function startBillingCycleOnce({ grantId, userId, subscriptionId, plan, billingP
     WHERE id = ?
   `).run(plan.id, limit, periodEnd, periodEnd, subscriptionId || null, now, userId);
   recordAudit(userId, source || "stripe:subscription", 0, `Billing cycle started on ${plan.name}`);
+
+  // Fire-and-forget: send a subscription confirmation email if this looks like a fresh activation.
+  // Renewals are silent (they would just re-confirm the existing plan).
+  const isFreshActivation = String(source || "").includes("subscription-start");
+  if (isFreshActivation) {
+    const user = db.prepare("SELECT * FROM users WHERE id = ?").get(userId);
+    if (user) {
+      sendSubscriptionConfirmationEmail(user, plan, periodEnd).catch((error) => {
+        console.error("[email] subscription confirmation failed:", error);
+      });
+    }
+  }
   return true;
+}
+
+async function sendSubscriptionConfirmationEmail(user, plan, periodEnd) {
+  if (!user?.email) return { delivered: false };
+  const limitLine = plan.monthlyLimit == null ? "Unlimited listings per month" : `${plan.monthlyLimit} listings per month`;
+  const cycleLine = periodEnd ? `Your first cycle ends ${new Date(periodEnd).toUTCString()}.` : "";
+  const link = `${appUrl}/app/notes`;
+  const subject = `Your ListBoost ${plan.name} subscription is active`;
+  const text = [
+    `Hi ${user.name || "there"},`,
+    "",
+    `Your ListBoost ${plan.name} plan is active.`,
+    `${limitLine}.`,
+    cycleLine,
+    "",
+    `Start generating: ${link}`,
+    "",
+    "Need help? Reply to this email or contact support@listboost.uk.",
+    "ListBoost is independent and is not affiliated with Vinted."
+  ].filter(Boolean).join("\n");
+  const html = `
+    <div style="margin:0;background:#fbfffd;padding:28px;font-family:Inter,Arial,sans-serif;color:#10201e">
+      <div style="max-width:520px;margin:0 auto;border:1px solid #dbe8e5;border-radius:18px;background:#ffffff;padding:28px">
+        <p style="margin:0 0 12px;color:#00b3a4;font-weight:800;letter-spacing:.08em;text-transform:uppercase">ListBoost</p>
+        <h1 style="margin:0 0 12px;font-size:24px;line-height:1.2">Your ${escapeHtmlSafe(plan.name)} plan is active</h1>
+        <p style="margin:0 0 12px;color:#5c716e;line-height:1.6">${escapeHtmlSafe(limitLine)}.</p>
+        ${cycleLine ? `<p style="margin:0 0 18px;color:#5c716e;line-height:1.6">${escapeHtmlSafe(cycleLine)}</p>` : ""}
+        <p style="margin:0 0 18px"><a href="${link}" style="display:inline-block;background:#00b3a4;color:#fff;text-decoration:none;padding:12px 18px;border-radius:10px;font-weight:800">Start generating</a></p>
+        <p style="margin:18px 0 0;color:#5c716e;font-size:13px">Need help? Reply to this email or contact <a href="mailto:support@listboost.uk" style="color:#007f75">support@listboost.uk</a>. ListBoost is independent and is not affiliated with Vinted.</p>
+      </div>
+    </div>
+  `;
+
+  if (process.env.RESEND_MOCK_EMAIL === "true") {
+    return { delivered: false };
+  }
+  if (!resendApiKey) {
+    console.log("=================================================================");
+    console.log(`[subscription-email] DEV preview for ${user.email} (${plan.id}): ${link}`);
+    console.log("=================================================================");
+    return { delivered: false };
+  }
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      authorization: `Bearer ${resendApiKey}`,
+      "content-type": "application/json"
+    },
+    body: JSON.stringify({
+      from: emailFrom,
+      to: [user.email],
+      subject,
+      html,
+      text
+    })
+  });
+  if (!response.ok) {
+    const body = await response.text().catch(() => "");
+    throw new Error(`Resend subscription email failed: ${response.status} ${body.slice(0, 200)}`);
+  }
+  return { delivered: true };
+}
+
+function escapeHtmlSafe(value) {
+  return String(value == null ? "" : value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 async function activateSubscriptionFromCheckout(session) {
