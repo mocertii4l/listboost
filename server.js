@@ -90,9 +90,9 @@ const dataDirEnv = dataDirDiagnostics.trimmed;
 const dataDir = dataDirDiagnostics.dataDir;
 const usagePath = join(dataDir, "usage.json");
 const dbPath = join(dataDir, "listboost.db");
-const freeCredits = Number(process.env.FREE_CREDITS || 5);
+const freeCredits = Math.min(Math.max(Number(process.env.FREE_CREDITS || 3), 0), 3);
 const creditPackSize = Number(process.env.CREDIT_PACK_SIZE || 50);
-const creditPackPricePence = Number(process.env.CREDIT_PACK_PRICE_PENCE || 500);
+const creditPackPricePence = Number(process.env.CREDIT_PACK_PRICE_PENCE || 700);
 const creditPacks = buildCreditPacks();
 const subscriptionPlans = buildSubscriptionPlans();
 const appUrl = normalizeAppUrl(process.env.APP_URL || `http://localhost:${port}`);
@@ -118,30 +118,30 @@ function buildCreditPacks() {
       id: "starter",
       name: "Starter",
       credits: 50,
-      pricePence: 500,
-      label: "Try it",
-      description: "A practical first pack for a wardrobe clear-out or first seller test."
+      pricePence: 700,
+      label: "Flexible top-up",
+      description: "A one-time pack for testing ListBoost or clearing out a small wardrobe batch."
     },
     {
       id: "seller",
       name: "Seller",
       credits: 150,
-      pricePence: 1200,
-      label: "Best value",
-      description: "The best value pack for regular Vinted sellers listing every week.",
+      pricePence: 1800,
+      label: "Popular top-up",
+      description: "A flexible top-up for regular Vinted sellers who are not ready to subscribe.",
       featured: true
     },
     {
       id: "reseller",
       name: "Reseller",
       credits: 400,
-      pricePence: 2500,
-      label: "Power seller",
-      description: "For bulk listing sessions, serious resellers and repeat sellers."
+      pricePence: 4500,
+      label: "Bulk top-up",
+      description: "A larger one-time pack for bulk sessions without monthly benefits."
     }
   ];
 
-  if (!process.env.CREDIT_PACKS_JSON) return fallback;
+  if (!process.env.CREDIT_PACKS_JSON) return fallback.map(enforceCreditPackEconomics);
 
   try {
     const parsed = JSON.parse(process.env.CREDIT_PACKS_JSON);
@@ -157,11 +157,40 @@ function buildCreditPacks() {
         featured: Boolean(pack.featured)
       }))
       .filter((pack) => pack.id && pack.name && Number.isFinite(pack.credits) && pack.credits > 0 && Number.isFinite(pack.pricePence) && pack.pricePence > 0);
-    return clean.length ? clean.slice(0, 6) : fallback;
+    return (clean.length ? clean.slice(0, 6) : fallback).map(enforceCreditPackEconomics);
   } catch (error) {
     console.warn("[launch-check] CREDIT_PACKS_JSON is invalid. Using default credit packs.");
-    return fallback;
+    return fallback.map(enforceCreditPackEconomics);
   }
+}
+
+function enforceCreditPackEconomics(pack) {
+  const standard = {
+    starter: {
+      pricePence: 700,
+      label: "Flexible top-up",
+      description: "A one-time pack for testing ListBoost or clearing out a small wardrobe batch."
+    },
+    seller: {
+      pricePence: 1800,
+      label: "Popular top-up",
+      description: "A flexible top-up for regular Vinted sellers who are not ready to subscribe.",
+      featured: true
+    },
+    reseller: {
+      pricePence: 4500,
+      label: "Bulk top-up",
+      description: "A larger one-time pack for bulk sessions without monthly benefits."
+    }
+  }[pack.id];
+  if (!standard) return pack;
+  return {
+    ...pack,
+    pricePence: Math.max(Number(pack.pricePence || 0), standard.pricePence),
+    label: standard.label,
+    description: standard.description,
+    featured: Boolean(pack.featured || standard.featured)
+  };
 }
 
 function normalizeAppUrl(value) {
@@ -189,7 +218,7 @@ function buildSubscriptionPlans() {
       credits: 50,
       pricePence: 500,
       label: "Monthly starter",
-      description: "For occasional sellers who want a steady monthly listing rhythm.",
+      description: "For casual sellers who want notes-to-listing and a steady monthly credit refill.",
       priceEnv: "STRIPE_PRICE_STARTER_MONTHLY"
     },
     {
@@ -198,7 +227,7 @@ function buildSubscriptionPlans() {
       credits: 150,
       pricePence: 1200,
       label: "Best value",
-      description: "For active sellers who list every week and want credits ready.",
+      description: "For weekly sellers who want photo listing, buyer replies and listing checks included.",
       featured: true,
       priceEnv: "STRIPE_PRICE_SELLER_MONTHLY"
     },
@@ -207,8 +236,8 @@ function buildSubscriptionPlans() {
       name: "Reseller",
       credits: 400,
       pricePence: 2500,
-      label: "Bulk seller",
-      description: "For resellers running larger batches and repeat listing sessions.",
+      label: "Reseller tools",
+      description: "For side-hustle sellers who need bulk workflow, templates and priority support.",
       priceEnv: "STRIPE_PRICE_RESELLER_MONTHLY"
     }
   ];
@@ -2412,6 +2441,14 @@ async function handleUpdateProfile(req, res) {
     }
 
     const emailChanged = email !== user.email;
+    if (emailChanged && Number(user.email_verified || 0) === 1) {
+      json(res, 400, {
+        error: "Verified email cannot be changed. Contact support if you need to update it.",
+        field: "email"
+      }, visitor.headers);
+      return;
+    }
+
     const now = new Date().toISOString();
     db.prepare(`
       UPDATE users
@@ -2879,6 +2916,7 @@ const prettyRoutes = {
   "/": "/index.html",
   "/example": "/example.html",
   "/pricing": "/pricing.html",
+  "/support": "/support.html",
   "/signup": "/auth.html",
   "/login": "/auth.html",
   "/verify-email": "/verify-email.html",

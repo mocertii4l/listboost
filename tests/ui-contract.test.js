@@ -15,9 +15,14 @@ test("public pricing shows multiple live credit packs", () => {
   assert.match(serverJs, /credits:\s*50/);
   assert.match(serverJs, /credits:\s*150/);
   assert.match(serverJs, /credits:\s*400/);
+  assert.match(serverJs, /pricePence:\s*700/);
+  assert.match(serverJs, /pricePence:\s*1800/);
+  assert.match(serverJs, /pricePence:\s*4500/);
   assert.match(serverJs, /pricePence:\s*500/);
   assert.match(serverJs, /pricePence:\s*1200/);
   assert.match(serverJs, /pricePence:\s*2500/);
+  assert.match(serverJs, /const freeCredits = Math\.min\(Math\.max\(Number\(process\.env\.FREE_CREDITS \|\| 3\), 0\), 3\)/);
+  assert.match(serverJs, /function enforceCreditPackEconomics/);
   assert.doesNotMatch(indexHtml, /4242 4242 4242 4242/);
   assert.doesNotMatch(indexHtml, /Test card/i);
 });
@@ -38,13 +43,15 @@ test("account bootstrap exposes pricing and environment metadata", () => {
 
 test("homepage renders premium marketing structure", () => {
   assert.match(indexHtml, /Turn messy item notes into sell-ready Vinted listings in seconds/);
-  assert.match(indexHtml, /Start with 5 free credits/);
+  assert.match(indexHtml, /Start with 3 free credits/);
   assert.match(indexHtml, /Try the demo/);
   assert.match(indexHtml, /data-listing-card="hero"/);
   assert.match(indexHtml, /id="before-after"/);
   assert.match(indexHtml, /zara dress size 10 worn twice navy blue/);
   assert.match(indexHtml, /class="demo-strip"/);
   assert.match(indexHtml, /id="how-it-works"/);
+  assert.match(indexHtml, /A safer way to list faster/);
+  assert.match(indexHtml, /No automation risk/);
   assert.match(indexHtml, /id="features"/);
   assert.match(indexHtml, /id="pricing"/);
   assert.match(indexHtml, /Questions sellers ask/);

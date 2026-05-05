@@ -13,6 +13,7 @@ const authUtilsJs = readFileSync(new URL("../public/auth-utils.js", import.meta.
 const indexHtml = readFileSync(new URL("../public/index.html", import.meta.url), "utf8");
 const privacyHtml = readFileSync(new URL("../public/privacy.html", import.meta.url), "utf8");
 const termsHtml = readFileSync(new URL("../public/terms.html", import.meta.url), "utf8");
+const supportHtml = readFileSync(new URL("../public/support.html", import.meta.url), "utf8");
 const verifyHtml = readFileSync(new URL("../public/verify-email.html", import.meta.url), "utf8");
 const notFoundHtml = readFileSync(new URL("../public/404.html", import.meta.url), "utf8");
 const publicFiles = readdirSync(new URL("../public", import.meta.url), { withFileTypes: true })
@@ -163,6 +164,10 @@ test("verification and account settings are first-class app flows", () => {
   assert.match(siteJs, /function accountRouteTemplate/);
   assert.match(siteJs, /\/api\/account\/profile/);
   assert.match(siteJs, /\/api\/account\/password/);
+  assert.match(siteJs, /Verified email/);
+  assert.match(siteJs, /readonly required/);
+  assert.match(siteJs, /data-theme-choice="system"/);
+  assert.match(serverJs, /Verified email cannot be changed/);
 });
 
 test("photo upload supports mobile camera and premium output", () => {
@@ -215,6 +220,11 @@ test("pricing page renders three buyable packs", () => {
   assert.match(pricingHtml, /400/);
   assert.match(pricingHtml, /Best value/);
   assert.match(pricingHtml, /Subscribe monthly/);
+  assert.match(pricingHtml, /Photo upload and buyer replies/);
+  assert.match(pricingHtml, /Priority support for serious sellers/);
+  assert.match(pricingHtml, /&pound;7 one-time/);
+  assert.match(pricingHtml, /&pound;18 one-time/);
+  assert.match(pricingHtml, /&pound;45 one-time/);
 });
 
 test("example demo uses anonymous live generation endpoint", () => {
@@ -224,11 +234,11 @@ test("example demo uses anonymous live generation endpoint", () => {
   assert.match(exampleHtml, /No Vinted login/);
   assert.match(exampleHtml, /No card needed/);
   assert.match(exampleHtml, /Copy &amp; paste manually/);
-  assert.match(exampleHtml, /Create free account · 5 free credits/);
+  assert.match(exampleHtml, /Create free account · 3 free credits/);
   assert.match(serverJs, /handleDemoGenerate/);
   assert.match(serverJs, /\/api\/demo-generate/);
   assert.match(siteJs, /\/api\/demo-generate/);
-  assert.match(siteJs, /Create free account and get 5 free credits/);
+  assert.match(siteJs, /Create free account and get 3 free credits/);
   assert.match(siteJs, /demoInput/);
   assert.doesNotMatch(siteJs, /Generated output appears here[\s\S]*api\/generate/);
 });
@@ -252,7 +262,7 @@ test("subscription billing surfaces monthly plans and refill status", () => {
 });
 
 test("public pages include social metadata and legal pages use shared shell", () => {
-  for (const html of [indexHtml, pricingHtml, exampleHtml, privacyHtml, termsHtml]) {
+  for (const html of [indexHtml, pricingHtml, exampleHtml, privacyHtml, termsHtml, supportHtml]) {
     assert.match(html, /og:title/);
     assert.match(html, /og:description/);
     assert.match(html, /og:image/);
@@ -264,6 +274,10 @@ test("public pages include social metadata and legal pages use shared shell", ()
   assert.match(termsHtml, /support@listboost\.uk/);
   assert.match(privacyHtml, /class="legal-links"/);
   assert.match(termsHtml, /class="legal-links"/);
+  assert.match(supportHtml, /Support FAQ/);
+  assert.match(supportHtml, /support@listboost\.uk/);
+  assert.match(serverJs, /"\/support": "\/support\.html"/);
+  assert.match(siteJs, /Support centre/);
   assert.doesNotMatch(privacyHtml, /hello@listboost\.app/);
   assert.doesNotMatch(termsHtml, /hello@listboost\.app/);
   assert.match(stylesCss, /\.page-wrap[\s\S]*width: min\(1240px/);

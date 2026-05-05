@@ -24,9 +24,9 @@ process.env.ADMIN_EMAIL = " admin@listboost.uk\n";
 process.env.ADMIN_PASSWORD = " secret\n";
 process.env.REQUIRE_EMAIL_VERIFICATION = "false";
 process.env.CREDIT_PACKS_JSON = JSON.stringify([
-  { id: "starter", name: "Starter", credits: 50, pricePence: 500, label: "Try it", description: "Starter pack" },
-  { id: "seller", name: "Seller", credits: 150, pricePence: 1200, label: "Best value", description: "Seller pack", featured: true },
-  { id: "reseller", name: "Reseller", credits: 400, pricePence: 2500, label: "Power seller", description: "Reseller pack" }
+  { id: "starter", name: "Starter", credits: 50, pricePence: 700, label: "Flexible top-up", description: "Starter pack" },
+  { id: "seller", name: "Seller", credits: 150, pricePence: 1800, label: "Popular top-up", description: "Seller pack", featured: true },
+  { id: "reseller", name: "Reseller", credits: 400, pricePence: 4500, label: "Bulk top-up", description: "Reseller pack" }
 ]);
 
 const moduleUnderTest = await import("../server.js");
@@ -228,7 +228,7 @@ test("subscription checkout starts monthly billing and webhook grants refill cre
   assert.equal(afterStart.body.subscription.plan, "seller");
   assert.equal(afterStart.body.subscription.status, "active");
   assert.equal(afterStart.body.credits.subscriptionCredits, 150);
-  assert.equal(afterStart.body.credits.remaining, 155);
+  assert.equal(afterStart.body.credits.remaining, 153);
   assert.equal(afterStart.body.refills[0].credits, 150);
 
   const renewalEvent = await stripeWebhook(port, {
@@ -256,7 +256,7 @@ test("subscription checkout starts monthly billing and webhook grants refill cre
   const afterRenewal = await request(port, "/api/billing", { headers: { cookie } });
   assert.equal(afterRenewal.response.status, 200);
   assert.equal(afterRenewal.body.credits.subscriptionCredits, 300);
-  assert.equal(afterRenewal.body.credits.remaining, 305);
+  assert.equal(afterRenewal.body.credits.remaining, 303);
   assert.equal(afterRenewal.body.refills.length, 2);
   await close();
 });
@@ -276,7 +276,7 @@ test("generation consumes credits and returns a paywall response at zero", async
     assert.equal(signup.response.status, 200);
     const cookie = signup.response.headers.get("set-cookie");
 
-    for (let index = 0; index < 5; index += 1) {
+    for (let index = 0; index < 3; index += 1) {
       const generated = await request(port, "/api/generate", {
         method: "POST",
         headers: { cookie },
@@ -288,7 +288,7 @@ test("generation consumes credits and returns a paywall response at zero", async
         })
       });
       assert.equal(generated.response.status, 200);
-      assert.equal(generated.body.credits.remaining, 4 - index);
+      assert.equal(generated.body.credits.remaining, 2 - index);
       assert.match(generated.body.title, /Zara|dress|Vinted|Black/i);
     }
 

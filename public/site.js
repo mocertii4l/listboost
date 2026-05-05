@@ -43,6 +43,11 @@ function applyTheme(theme) {
     button.setAttribute("aria-pressed", next === "dark" ? "true" : "false");
     button.innerHTML = `${iconSvg(next === "dark" ? "sun" : "moon")}<span>${next === "dark" ? "Light" : "Dark"}</span>`;
   });
+  $$("[data-theme-choice]").forEach((button) => {
+    const active = button.dataset.themeChoice === next;
+    button.classList.toggle("is-active", active);
+    button.setAttribute("aria-pressed", active ? "true" : "false");
+  });
 }
 
 function installTheme() {
@@ -50,6 +55,12 @@ function installTheme() {
   if (themeToggleInstalled) return;
   themeToggleInstalled = true;
   document.addEventListener("click", (event) => {
+    const themeChoice = event.target.closest("[data-theme-choice]");
+    if (themeChoice) {
+      applyTheme(themeChoice.dataset.themeChoice || "system");
+      toast("Appearance updated.", "success");
+      return;
+    }
     if (!event.target.closest(".theme-toggle")) return;
     const current = document.documentElement.dataset.theme;
     applyTheme(current === "dark" ? "light" : "dark");
@@ -178,9 +189,7 @@ function pricingCardTemplate({ variant = "one-time", id = "", name = "", credits
   const cardId = isSubscription ? `subscribe-${id}` : id;
   const price = isSubscription ? formatMonthlyPrice({ pricePence }) : `${formatPrice(pricePence)} one-time`;
   const creditLabel = isSubscription ? "credits/month" : "credits";
-  const compare = isSubscription
-    ? ["Monthly credit refill", "Good for regular listing sessions", "Switch plans from billing"]
-    : ["One credit per generated listing", "Saved history and copy tools", "Buyer replies and price guidance"];
+  const compare = pricingFeaturesFor(id, variant);
   const buttonAttrs = isSubscription
     ? { "data-subscription-plan": id }
     : { "data-checkout-pack": id, "data-pack-id": id };
@@ -196,6 +205,34 @@ function pricingCardTemplate({ variant = "one-time", id = "", name = "", credits
       ${buttonTemplate({ variant: featured ? "primary" : "secondary", label: buttonLabel, className: "pricing-buy", attributes: buttonAttrs, disabled: current })}
     </article>
   `;
+}
+
+function pricingFeaturesFor(id = "", variant = "one-time") {
+  if (variant === "one-time") {
+    return [
+      "Same credit amount as monthly plans",
+      "No monthly seller tools unlocked",
+      "Flexible top-up when you need it"
+    ];
+  }
+  const features = {
+    starter: [
+      "Notes-to-listing generator",
+      "Titles, descriptions and keywords",
+      "Basic saved history"
+    ],
+    seller: [
+      "Everything in Starter",
+      "Photo upload and buyer replies",
+      "Price guidance and listing score"
+    ],
+    reseller: [
+      "Everything in Seller",
+      "Bulk-friendly workflow and reusable templates",
+      "Priority support for serious sellers"
+    ]
+  };
+  return features[id] || ["Monthly credit refill", "Switch plans from billing", "Cancel any time"];
 }
 
 function authShellTemplate({ heading = "", subtext = "", body = "" } = {}) {
@@ -263,9 +300,8 @@ function publicHeaderTemplate() {
       <a href="/pricing">Pricing</a>
     </nav>
     <div class="nav-actions">
-      <button class="theme-toggle btn btn-ghost" type="button" aria-pressed="false">${iconSvg("moon")}<span>Dark</span></button>
       <a class="btn btn-ghost nav-login js-public-login" href="/login">Log in</a>
-      <a class="btn btn-primary nav-start js-public-start" href="/signup" aria-label="Start free with 5 credits">Start with 5 free credits</a>
+      <a class="btn btn-primary nav-start js-public-start" href="/signup" aria-label="Start free with 3 credits">Start with 3 free credits</a>
       <a class="btn btn-secondary js-public-app hidden" href="/app">${iconSvg("user")}<span>Open app</span></a>
       <button class="btn btn-ghost js-public-logout hidden" type="button" data-logout>${iconSvg("log-out")}<span>Sign out</span></button>
     </div>
@@ -277,6 +313,7 @@ function installPublicShell() {
     "/",
     "/pricing",
     "/example",
+    "/support",
     "/privacy",
     "/terms",
     "/checkout/success",
@@ -302,13 +339,27 @@ function installPublicShell() {
     document.body.insertAdjacentHTML("beforeend", `
       <footer class="app-footer public-footer">
         <div class="footer-inner">
-          <a class="lb-brand" href="/"><img src="/logo.svg" alt="" />ListBoost</a>
-          <nav class="footer-links" aria-label="Footer">
+          <div class="footer-brand-column">
+            <a class="lb-brand" href="/"><img src="/logo.svg" alt="" />ListBoost</a>
+            <p>Professional listing tools for UK Vinted sellers. Independent - not affiliated with Vinted.</p>
+          </div>
+          <nav class="footer-links" aria-label="Product links">
+            <strong>Product</strong>
+            <a href="/example">Example</a>
+            <a href="/pricing">Pricing</a>
+            <a href="/#how-it-works">How it works</a>
+          </nav>
+          <nav class="footer-links" aria-label="Help links">
+            <strong>Help</strong>
+            <a href="/support">Support centre</a>
+            <a href="/support#faq">FAQ</a>
+            <a href="mailto:support@listboost.uk">Email support</a>
+          </nav>
+          <nav class="footer-links" aria-label="Legal links">
+            <strong>Legal</strong>
             <a href="/privacy">Privacy</a>
             <a href="/terms">Terms</a>
-            <a href="mailto:support@listboost.uk">Support</a>
           </nav>
-          <p class="footer-disclaimer">Independent - not affiliated with Vinted.</p>
         </div>
       </footer>
     `);
@@ -350,9 +401,9 @@ function formatDate(value) {
 
 function fallbackCreditPacks() {
   return [
-    { id: "starter", name: "Starter", credits: 50, pricePence: 500, label: "One-time" },
-    { id: "seller", name: "Seller", credits: 150, pricePence: 1200, label: "Best value", featured: true },
-    { id: "reseller", name: "Reseller", credits: 400, pricePence: 2500, label: "Bulk pack" }
+    { id: "starter", name: "Starter", credits: 50, pricePence: 700, label: "Flexible top-up" },
+    { id: "seller", name: "Seller", credits: 150, pricePence: 1800, label: "Popular top-up", featured: true },
+    { id: "reseller", name: "Reseller", credits: 400, pricePence: 4500, label: "Bulk top-up" }
   ];
 }
 
@@ -360,7 +411,7 @@ function fallbackSubscriptionPlans() {
   return [
     { id: "starter", name: "Starter", credits: 50, pricePence: 500, label: "Monthly starter" },
     { id: "seller", name: "Seller", credits: 150, pricePence: 1200, label: "Best value", featured: true },
-    { id: "reseller", name: "Reseller", credits: 400, pricePence: 2500, label: "Bulk seller" }
+    { id: "reseller", name: "Reseller", credits: 400, pricePence: 2500, label: "Reseller tools" }
   ];
 }
 
@@ -500,7 +551,7 @@ function installAuthMode() {
   const nameInput = authForm.elements.name;
   authForm.dataset.mode = isSignup ? "signup" : "login";
   if (heading) heading.textContent = isSignup ? "Create account" : "Sign in";
-  if (intro) intro.textContent = isSignup ? "Get 5 free credits - no card needed." : "Your credits, history and listings stay with this account.";
+  if (intro) intro.textContent = isSignup ? "Get 3 free credits - no card needed." : "Your credits, history and listings stay with this account.";
   if (button) button.textContent = isSignup ? "Create account" : "Sign in";
   if (nameField) nameField.classList.toggle("hidden", !isSignup);
   if (nameInput) nameInput.required = isSignup;
@@ -532,6 +583,7 @@ function navigateApp(path, push = true) {
   installPasswordToggles();
   hydrateAppRoute(accountState);
   updateAccountChrome(accountState);
+  applyTheme();
   $("#main")?.scrollIntoView({ block: "start" });
 }
 
@@ -820,10 +872,19 @@ function accountRouteTemplate() {
           <div class="section-head compact"><p class="eyebrow">Profile</p><h2>Your details</h2></div>
           <form id="accountProfileForm">
             <label>Full name<input name="name" autocomplete="name" maxlength="80" required /><p class="field-error" aria-live="polite"></p></label>
-            <label>Email<input name="email" type="email" autocomplete="email" required /><p class="field-error" aria-live="polite"></p></label>
-            <p class="field-helper">Changing email will ask you to verify the new address before using the app again.</p>
+            <label>Verified email<input name="email" type="email" autocomplete="email" readonly required /><p class="field-error" aria-live="polite"></p></label>
+            <p class="field-helper">Your verified email is locked for account security. Contact support if you need to change it.</p>
             ${buttonTemplate({ variant: "primary", label: "Save profile", icon: "save", type: "submit" })}
           </form>
+        </section>
+        <section class="card account-panel">
+          <div class="section-head compact"><p class="eyebrow">Appearance</p><h2>Theme</h2></div>
+          <p class="muted">Choose how ListBoost looks on this device.</p>
+          <div class="theme-choice-group" role="group" aria-label="Theme preference">
+            <button class="btn btn-secondary theme-choice" type="button" data-theme-choice="system" aria-pressed="false">System</button>
+            <button class="btn btn-secondary theme-choice" type="button" data-theme-choice="light" aria-pressed="false">Light</button>
+            <button class="btn btn-secondary theme-choice" type="button" data-theme-choice="dark" aria-pressed="false">Dark</button>
+          </div>
         </section>
         <section class="card account-panel">
           <div class="section-head compact"><p class="eyebrow">Security</p><h2>Change password</h2></div>
@@ -856,6 +917,8 @@ function hydrateAccountSettings(me = accountState) {
   if (!form || !me.user) return;
   form.elements.name.value = me.user.name || "";
   form.elements.email.value = me.user.email || "";
+  form.elements.email.readOnly = true;
+  form.elements.email.setAttribute("aria-readonly", "true");
 }
 
 async function loadDashboardHistory(me = accountState) {
@@ -1322,7 +1385,7 @@ function outputTemplate(data = {}, options = {}) {
   const reply = buyerReplyText(data);
   const allCopy = listingCopyText({ ...data, photoChecklist: photoItems });
   const creditNote = options.creditUsed ? `<p class="credit-feedback">${options.creditUsed} credit used</p>` : "";
-  const demoCta = options.demo ? '<a class="btn btn-primary result-cta" href="/signup">Create free account and get 5 free credits</a>' : "";
+  const demoCta = options.demo ? '<a class="btn btn-primary result-cta" href="/signup">Create free account and get 3 free credits</a>' : "";
   const inputText = options.inputText || data.input?.itemDetails || "";
   const momentumNote = options.momentumCount ? `<p class="momentum-feedback">${escapeHtml(momentumMessage(options.momentumCount))}</p>` : "";
 
