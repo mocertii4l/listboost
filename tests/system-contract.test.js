@@ -195,6 +195,69 @@ test("copy buttons use the shared toast confirmation", () => {
   assert.match(siteJs, /setTimeout\(\(\) =>/);
 });
 
+test("checkout success page links back to app and shows plan/usage", () => {
+  const successHtml = readFileSync(new URL("../public/checkout-success.html", import.meta.url), "utf8");
+  assert.match(successHtml, /href="\/app\/notes"/);
+  assert.match(successHtml, /href="\/app\/billing"/);
+  assert.match(successHtml, /href="\/app"/);
+  assert.match(successHtml, /Start generating listings/);
+  assert.match(successHtml, /View billing/);
+  assert.match(successHtml, /Go to dashboard/);
+  assert.match(successHtml, /class="js-current-plan"/);
+  assert.match(successHtml, /class="js-usage"/);
+  assert.match(successHtml, /class="js-success-headline"/);
+});
+
+test("public CTAs have valid hrefs and pricing has subscribe buttons", () => {
+  assert.match(indexHtml, /href="\/signup"/);
+  assert.match(indexHtml, /href="\/example"/);
+  assert.match(pricingHtml, /href="\/signup"/);
+  for (const plan of ["starter", "seller", "reseller"]) {
+    assert.match(pricingHtml, new RegExp(`data-subscription-plan="${plan}"[^>]*>Subscribe`));
+    assert.match(indexHtml, new RegExp(`data-subscription-plan="${plan}"`));
+  }
+  for (const html of [indexHtml, pricingHtml]) {
+    for (const match of html.matchAll(/<button(\s[^>]*)?>/g)) {
+      const attrs = match[1] || "";
+      assert.match(attrs, /type="(button|submit)"/, `button missing type at: ${match[0]}`);
+    }
+  }
+});
+
+test("homepage shows seller-example product cards (Zara, Nike, Kids bundle)", () => {
+  assert.match(indexHtml, /class="seller-cards"/);
+  assert.match(indexHtml, /Zara Navy Satin Midi Dress/);
+  assert.match(indexHtml, /Nike Air Force 1/);
+  assert.match(indexHtml, /Kids Winter Bundle/);
+  assert.match(indexHtml, /class="seller-tags"/);
+  assert.match(indexHtml, /class="seller-price"/);
+});
+
+test("app generator empty states scaffold the upcoming output", () => {
+  assert.match(siteJs, /scaffoldPreviewTemplate/);
+  assert.match(siteJs, /photoStepsTemplate/);
+  assert.match(siteJs, /Upload up to 4 photos/);
+  assert.match(siteJs, /Add missing details/);
+  assert.match(siteJs, /Generate listing/);
+  assert.match(stylesCss, /\.scaffold-preview/);
+  assert.match(stylesCss, /\.photo-empty/);
+});
+
+test("app nav routes resolve to /app static page", () => {
+  for (const route of ["/app", "/app/notes", "/app/photo", "/app/billing", "/app/account", "/app/history"]) {
+    assert.match(serverJs, new RegExp(`"${route.replace(/\//g, "\\/")}":\\s*"\\/app.html"`));
+  }
+});
+
+test("legacy credit wording is no longer surfaced to users", () => {
+  for (const html of [indexHtml, pricingHtml, exampleHtml, supportHtml]) {
+    assert.doesNotMatch(html, /credits\/month/);
+    assert.doesNotMatch(html, /one-time pack/i);
+  }
+  assert.doesNotMatch(siteJs, /credits remaining/i);
+  assert.doesNotMatch(siteJs, /Buy credits/);
+});
+
 test("404 page renders with the site shell", () => {
   assert.match(notFoundHtml, /Page not found/);
   assert.match(notFoundHtml, /class="auth-shell"/);

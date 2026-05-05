@@ -251,6 +251,73 @@ function emptyStateTemplate({ icon = "sparkles", heading = "Nothing here yet", b
   `;
 }
 
+const previewSections = [
+  ["file-text", "Title", "Sell-ready Vinted title with brand, size, condition."],
+  ["list-check", "Description", "Clean bullet-style description, easy to paste."],
+  ["tag", "Keywords", "Plain search terms buyers type into Vinted."],
+  ["badge-pound", "Price guidance", "Fast / fair / max price suggestions in GBP."],
+  ["image", "Photo checklist", "The shots to take before publishing."],
+  ["message-circle", "Buyer reply", "Polite reply for offers and questions."]
+];
+
+function scaffoldPreviewTemplate({ heading = "Output appears here", body = "" } = {}) {
+  return `
+    <div class="scaffold-preview" aria-hidden="false">
+      <div class="scaffold-preview-head">
+        <span class="badge badge-brand">${iconSvg("sparkles")} Preview</span>
+        <h3>${escapeHtml(heading)}</h3>
+        ${body ? `<p class="muted">${escapeHtml(body)}</p>` : ""}
+      </div>
+      <div class="scaffold-grid">
+        ${previewSections.map(([icon, label, desc]) => `
+          <article class="scaffold-card">
+            <div class="scaffold-icon">${iconSvg(icon)}</div>
+            <strong>${escapeHtml(label)}</strong>
+            <span>${escapeHtml(desc)}</span>
+            <div class="scaffold-bars" aria-hidden="true">
+              <span></span><span></span><span></span>
+            </div>
+          </article>
+        `).join("")}
+      </div>
+    </div>
+  `;
+}
+
+function photoStepsTemplate() {
+  const steps = [
+    ["image-up", "Upload up to 4 photos", "Front, back, label, any flaws."],
+    ["file-text", "Add missing details", "Brand, size, condition the camera can't see."],
+    ["sparkles", "Generate listing", "Copy title, description, keywords and price."]
+  ];
+  return `
+    <div class="photo-empty">
+      <div class="photo-empty-steps">
+        ${steps.map(([icon, title, copy], i) => `
+          <article class="photo-empty-step">
+            <span class="photo-empty-num">${i + 1}</span>
+            <div class="photo-empty-icon">${iconSvg(icon)}</div>
+            <strong>${escapeHtml(title)}</strong>
+            <span>${escapeHtml(copy)}</span>
+          </article>
+        `).join("")}
+      </div>
+      <div class="photo-empty-mock" aria-hidden="true">
+        <div class="photo-empty-mock-img">
+          <span class="photo-empty-mock-shape"></span>
+        </div>
+        <div class="photo-empty-mock-card">
+          <span class="badge badge-brand">${iconSvg("sparkles")} Sell-ready</span>
+          <strong>Zara Navy Satin Midi Dress UK 10</strong>
+          <p>Lovely navy Zara midi dress, worn twice, clean and ready to post.</p>
+          <div class="photo-empty-mock-tags"><span>zara dress</span><span>uk 10</span><span>navy satin</span></div>
+          <div class="photo-empty-mock-price">£18 fair price</div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 const marketingListingExamples = {
   hero: {
     title: "Zara Navy Satin Midi Dress UK 10",
@@ -718,10 +785,9 @@ function notesRouteTemplate() {
           ${appTrustStrip()}
         </form>
         <section class="results-panel output-stack results-stack" id="output" aria-live="polite">
-          ${emptyStateTemplate({
-            icon: "file-text",
-            heading: "Your listing output will appear here",
-            body: "Generate once, then copy the title, description, keywords, price guidance, photo checklist and buyer reply."
+          ${scaffoldPreviewTemplate({
+            heading: "Your sell-ready listing will appear here",
+            body: "6 sections, copy-ready, in seconds."
           })}
         </section>
       </div>
@@ -751,11 +817,7 @@ function photoRouteTemplate() {
         <button class="btn btn-primary generator-cta" type="submit">${iconSvg("sparkles")}<span>Generate from photos</span></button>
       </form>
       <section class="output-stack results-panel" id="photoRouteOutput">
-        ${emptyStateTemplate({
-          icon: "camera",
-          heading: "Photo listing output will appear here",
-          body: "Use your phone camera or photo library, then copy every generated section."
-        })}
+        ${photoStepsTemplate()}
       </section>
     </section>
   `;
@@ -1824,10 +1886,14 @@ function installCheckoutSuccess() {
   if (!status) return;
   const sessionId = new URLSearchParams(location.search).get("session_id");
   if (!sessionId) {
-    status.innerHTML = "<strong>Missing checkout session.</strong><span>Email support@listboost.uk if you completed payment.</span>";
+    status.innerHTML = "<strong>Missing checkout session.</strong><span>Email <a href='mailto:support@listboost.uk'>support@listboost.uk</a> if you completed payment.</span>";
+    $$(".js-success-headline").forEach((node) => { node.textContent = "Awaiting payment reference"; });
     return;
   }
   let attempts = 0;
+  const setHeadline = (text) => {
+    $$(".js-success-headline").forEach((node) => { node.textContent = text; });
+  };
   const timer = setInterval(async () => {
     attempts += 1;
     try {
@@ -1837,16 +1903,19 @@ function installCheckoutSuccess() {
       if (!data.pending || attempts >= 15) {
         clearInterval(timer);
         if (!data.pending) {
-          status.innerHTML = `<strong>Subscription active.</strong><span>You're on ${escapeHtml(planName)}. Usage resets each cycle.</span>`;
+          status.innerHTML = `<strong>Your subscription is active.</strong><span>You're on ${escapeHtml(planName)}. Usage resets each billing cycle.</span>`;
+          setHeadline("Subscription active");
           document.body.classList.add("confetti");
         } else {
-          status.innerHTML = "<strong>Subscription not active yet?</strong><span>Email support@listboost.uk with your reference.</span>";
+          status.innerHTML = "<strong>Subscription not active yet?</strong><span>Email <a href='mailto:support@listboost.uk'>support@listboost.uk</a> with your payment reference.</span>";
+          setHeadline("Awaiting webhook");
         }
       }
     } catch {
       if (attempts >= 15) {
         clearInterval(timer);
-        status.innerHTML = "Payment received. If your subscription is not active shortly, contact support@listboost.uk.";
+        status.innerHTML = "Payment received. If your subscription is not active shortly, contact <a href='mailto:support@listboost.uk'>support@listboost.uk</a>.";
+        setHeadline("Awaiting webhook");
       }
     }
   }, 2000);
