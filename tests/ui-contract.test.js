@@ -54,7 +54,8 @@ test("homepage renders premium marketing structure", () => {
   assert.match(indexHtml, /Turn messy item notes into[\s\S]*?sell-ready Vinted listings[\s\S]*?in seconds/);
   assert.match(indexHtml, /Start with 3 free listings/);
   assert.match(indexHtml, /Try the demo/);
-  assert.match(indexHtml, /data-listing-card="hero"/);
+  // Hero now renders the Vinted-specific item card; the old generic data-listing-card hero is gone.
+  assert.match(indexHtml, /class="hero-item-card/);
   assert.match(indexHtml, /id="before-after"/);
   assert.match(indexHtml, /zara dress size 10 worn twice navy blue/);
   assert.match(indexHtml, /class="demo-strip"/);

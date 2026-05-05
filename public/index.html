@@ -35,27 +35,37 @@
             <li>Made for UK Vinted sellers</li>
           </ul>
         </div>
-        <aside class="hero-preview" aria-label="Generated listing preview">
-          <div class="hero-mock">
-            <div class="hero-mock-chrome" aria-hidden="true">
-              <span class="hero-mock-dot"></span>
-              <span class="hero-mock-dot"></span>
-              <span class="hero-mock-dot"></span>
-              <span class="hero-mock-tab">listboost.uk &middot; Listing</span>
+        <aside class="hero-preview hero-vinted" aria-label="Generated Vinted listing preview">
+          <article class="hero-item-card">
+            <div class="hero-item-art" aria-hidden="true">
+              <span class="hero-item-shape"></span>
+              <span class="hero-item-tag">£14&ndash;£18</span>
+              <span class="hero-item-pill"><span class="hero-item-dot"></span>Generated in 2.4s</span>
             </div>
-            <div class="hero-mock-body">
-              <div class="hero-mock-input">
-                <span class="hero-mock-input-label">Your notes</span>
-                <p>zara navy satin midi dress, uk 10, worn twice, no marks</p>
+            <div class="hero-item-body">
+              <div class="hero-item-note">
+                <span class="hero-item-eyebrow">Your note</span>
+                <p>navy dress size 10 worn twice</p>
               </div>
-              <div class="hero-mock-arrow" aria-hidden="true"></div>
-              <div data-listing-card="hero" data-elevated="true"></div>
-              <div class="hero-mock-meta" aria-hidden="true">
-                <span class="hero-mock-pill"><span class="hero-mock-dot is-live"></span>Generated in 2.4s</span>
-                <span class="hero-mock-pill">Score 92/100</span>
+              <div class="hero-item-arrow" aria-hidden="true"></div>
+              <div class="hero-item-output">
+                <span class="hero-item-eyebrow">Vinted-ready listing</span>
+                <h3 class="hero-item-title">Navy Satin Midi Dress &mdash; UK 10</h3>
+                <p class="hero-item-desc">Lovely navy satin midi dress, worn twice for evenings. No marks, zip back, flattering bias cut. Ready to post.</p>
+                <ul class="hero-item-tags">
+                  <li>navy midi</li>
+                  <li>uk 10</li>
+                  <li>evening</li>
+                  <li>satin</li>
+                </ul>
+                <div class="hero-item-prices">
+                  <span><strong>Fast</strong>&pound;12</span>
+                  <span class="is-fair"><strong>Fair</strong>&pound;15</span>
+                  <span><strong>Max</strong>&pound;18</span>
+                </div>
               </div>
             </div>
-          </div>
+          </article>
         </aside>
       </section>
 
@@ -206,6 +216,40 @@
         </div>
       </section>
 
+      <section class="section trust-section" id="trust" aria-labelledby="trust-title">
+        <header class="section-head">
+          <p class="eyebrow">Built around real seller problems</p>
+          <h2 id="trust-title">Designed around the parts of selling on Vinted that take the longest.</h2>
+          <p class="section-sub">No fake testimonials. We&rsquo;re a small UK team building this in public &mdash; honest about what it does and what&rsquo;s coming.</p>
+        </header>
+        <div class="trust-problems">
+          <article class="trust-problem">
+            <span class="badge">Problem</span>
+            <h3>&ldquo;I don&rsquo;t know what to write.&rdquo;</h3>
+            <p class="muted">Staring at the title field, retyping the same description, hoping the keywords are right.</p>
+            <p class="trust-fix"><strong>How ListBoost helps.</strong> Paste rough notes &rarr; get a full Vinted-ready package in seconds.</p>
+          </article>
+          <article class="trust-problem">
+            <span class="badge">Problem</span>
+            <h3>&ldquo;Pricing takes too long.&rdquo;</h3>
+            <p class="muted">Hunting for sold listings, second-guessing the number, leaving money on the table.</p>
+            <p class="trust-fix"><strong>How ListBoost helps.</strong> Fast / fair / max guidance per listing, plus a starting price suggestion.</p>
+          </article>
+          <article class="trust-problem">
+            <span class="badge">Problem</span>
+            <h3>&ldquo;Buyer replies are repetitive.&rdquo;</h3>
+            <p class="muted">Same offers, same questions, same postage queries &mdash; over and over.</p>
+            <p class="trust-fix"><strong>How ListBoost helps.</strong> One reply you can copy, polite and on-brand for the listing.</p>
+          </article>
+        </div>
+        <ul class="trust-stats" aria-label="Transparent trust facts">
+          <li><strong>No Vinted login</strong><span>We never log into Vinted on your behalf.</span></li>
+          <li><strong>3 free listings</strong><span>Try the full output before subscribing. No card needed.</span></li>
+          <li><strong>Stripe checkout</strong><span>Card details stay with Stripe. We never see them.</span></li>
+          <li><strong>Email verified</strong><span>Generation requires a verified email to keep abuse low.</span></li>
+        </ul>
+      </section>
+
       <section class="section pricing-section" id="pricing" aria-labelledby="pricing-title">
         <header class="section-head">
           <p class="eyebrow">Pricing</p>
@@ -215,7 +259,7 @@
         <div id="packGrid" aria-live="polite">
           <div class="pricing-mode-section recommended">
             <div class="section-head compact"><p class="eyebrow">Subscribe monthly</p><h2>Pick the plan that fits your listing volume</h2></div>
-            <div class="pricing-grid">
+            <div class="pricing-grid" data-pricing-grid="true">
               <article class="pricing-card subscription" id="subscribe-starter"><span class="badge">Monthly starter</span><h3>Starter</h3><p class="pricing-price"><strong>20</strong><span>listings/month</span></p><p class="pricing-meta">&pound;6.99/month</p><p class="pricing-fit">Best for casual sellers</p><p class="pricing-copy">For occasional listings when you need the core generator.</p><ul class="pricing-compare"><li>20 listings per month</li><li>Notes-to-listing generator</li><li>Titles, descriptions and keywords</li></ul><button class="btn btn-secondary pricing-buy" type="button" data-subscription-plan="starter">Subscribe Starter</button></article>
               <article class="pricing-card subscription is-featured featured" id="subscribe-seller"><span class="badge badge-brand">Best value</span><h3>Seller</h3><p class="pricing-price"><strong>75</strong><span>listings/month</span></p><p class="pricing-meta">&pound;14.99/month</p><p class="pricing-fit">Best for regular sellers</p><p class="pricing-copy">The full toolkit regular Vinted sellers need.</p><ul class="pricing-compare"><li>75 listings per month</li><li>Everything in Starter</li><li>Photo upload listing generator</li><li>Price guidance</li><li>Buyer reply generator</li><li>Listing score checker</li></ul><button class="btn btn-primary pricing-buy" type="button" data-subscription-plan="seller">Subscribe Seller</button></article>
               <article class="pricing-card subscription" id="subscribe-reseller"><span class="badge">Elite tools</span><h3>Elite</h3><p class="pricing-price"><strong>250</strong><span>listings/month</span></p><p class="pricing-meta">&pound;29.99/month</p><p class="pricing-fit">Best for daily sellers</p><p class="pricing-copy">For serious resellers running larger volumes with priority support.</p><ul class="pricing-compare"><li>250 listings per month</li><li>Everything in Seller</li><li>Built for serious resellers</li><li>Advanced photo checklist</li><li>More detailed price guidance</li><li>Listing history</li><li>Reusable listing templates (coming soon)</li><li>Priority support</li><li>Best for daily sellers</li><li>Early access to new selling tools</li></ul><button class="btn btn-secondary pricing-buy" type="button" data-subscription-plan="reseller">Subscribe Elite</button></article>

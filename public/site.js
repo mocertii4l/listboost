@@ -189,45 +189,52 @@ function publicPlanName(id, fallbackName = "") {
   return fallbackName || (id ? id.charAt(0).toUpperCase() + id.slice(1) : "");
 }
 
-function pricingCardTemplate({ id = "", name = "", monthlyLimit = null, unlimited = false, pricePence = 0, label = "", featured = false, description = "", ctaLabel = "", current = false } = {}) {
-  const cardId = `subscribe-${id}`;
-  const displayName = publicPlanName(id, name);
-  const price = formatMonthlyPrice({ pricePence });
-  const isUnlimited = unlimited || monthlyLimit == null;
-  const limitDisplay = isUnlimited ? "Unlimited" : String(Number(monthlyLimit || 0));
-  const limitSub = "listings/month";
-  const compare = pricingFeaturesFor(id);
-  const buttonAttrs = { "data-subscription-plan": id };
-  const buttonLabel = ctaLabel || (current ? "Current plan" : `Subscribe ${displayName}`);
-  return `
-    <article class="pricing-card subscription ${featured ? "is-featured featured" : ""}" id="${escapeHtml(cardId)}">
-      <span class="badge ${featured ? "badge-brand" : ""}">${escapeHtml(featured ? "Best value" : label || "Monthly")}</span>
-      <h3>${escapeHtml(displayName)}</h3>
-      <p class="pricing-price"><strong>${escapeHtml(limitDisplay)}</strong><span>${escapeHtml(limitSub)}</span></p>
-      <p class="pricing-meta">${escapeHtml(price)}</p>
-      <p class="pricing-copy">${escapeHtml(description || "Monthly subscription with included Vinted listing tools.")}</p>
-      <ul class="pricing-compare">${compare.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
-      ${buttonTemplate({ variant: featured ? "primary" : "secondary", label: buttonLabel, className: "pricing-buy", attributes: buttonAttrs, disabled: current })}
-    </article>
-  `;
-}
-
-function pricingFeaturesFor(id = "") {
-  const features = {
-    starter: [
+// =====================================================================
+// Single source of truth for the pricing surface.
+// Every page (homepage, /pricing, /app/billing, paywall modal) renders
+// from this catalogue so copy never drifts. Backend plan ids stay stable
+// (starter / seller / reseller); only the public display swaps "reseller"
+// to "Elite" via publicPlanName().
+// =====================================================================
+const PRICING_CATALOGUE = [
+  {
+    id: "starter",
+    monthlyLimit: 20,
+    pricePence: 699,
+    label: "Monthly starter",
+    fit: "Best for casual sellers",
+    copy: "For occasional listings when you need the core generator.",
+    features: [
       "20 listings per month",
       "Notes-to-listing generator",
       "Titles, descriptions and keywords"
-    ],
-    seller: [
+    ]
+  },
+  {
+    id: "seller",
+    monthlyLimit: 75,
+    pricePence: 1499,
+    label: "Best value",
+    featured: true,
+    fit: "Best for regular sellers",
+    copy: "The full toolkit regular Vinted sellers need.",
+    features: [
       "75 listings per month",
       "Everything in Starter",
       "Photo upload listing generator",
       "Price guidance",
       "Buyer reply generator",
       "Listing score checker"
-    ],
-    reseller: [
+    ]
+  },
+  {
+    id: "reseller",
+    monthlyLimit: 250,
+    pricePence: 2999,
+    label: "Elite tools",
+    fit: "Best for daily sellers",
+    copy: "For serious resellers running larger volumes with priority support.",
+    features: [
       "250 listings per month",
       "Everything in Seller",
       "Built for serious resellers",
@@ -239,8 +246,63 @@ function pricingFeaturesFor(id = "") {
       "Best for daily sellers",
       "Early access to new selling tools"
     ]
-  };
-  return features[id] || ["Monthly subscription", "Switch plans from billing", "Cancel any time"];
+  }
+];
+
+function pricingPlanFor(id) {
+  return PRICING_CATALOGUE.find((p) => p.id === id) || null;
+}
+
+function pricingFeaturesFor(id = "") {
+  const plan = pricingPlanFor(id);
+  if (plan) return plan.features.slice();
+  return ["Monthly subscription", "Switch plans from billing", "Cancel any time"];
+}
+
+function pricingCardTemplate(opts = {}) {
+  const plan = pricingPlanFor(opts.id) || {};
+  const id = opts.id || plan.id || "";
+  const displayName = publicPlanName(id, opts.name || "");
+  const monthlyLimit = opts.monthlyLimit != null ? opts.monthlyLimit : plan.monthlyLimit;
+  const pricePence = opts.pricePence != null ? opts.pricePence : plan.pricePence;
+  const featured = Boolean(opts.featured ?? plan.featured);
+  const label = opts.label || plan.label || "Monthly";
+  const description = opts.description || plan.copy || "Monthly subscription with included Vinted listing tools.";
+  const fit = plan.fit || "";
+  const features = pricingFeaturesFor(id);
+  const current = Boolean(opts.current);
+  const ctaLabel = opts.ctaLabel || (current ? "Current plan" : `Subscribe ${displayName}`);
+  const cardId = `subscribe-${id}`;
+  const limitDisplay = monthlyLimit == null ? "Unlimited" : String(Number(monthlyLimit));
+  const price = formatMonthlyPrice({ pricePence });
+  return `
+    <article class="pricing-card subscription ${featured ? "is-featured featured" : ""}" id="${escapeHtml(cardId)}" data-plan-id="${escapeHtml(id)}">
+      <span class="badge ${featured ? "badge-brand" : ""}">${escapeHtml(featured ? "Best value" : label)}</span>
+      <h3>${escapeHtml(displayName)}</h3>
+      <p class="pricing-price"><strong>${escapeHtml(price)}</strong><span>per month</span></p>
+      <p class="pricing-meta">${escapeHtml(limitDisplay)} listings/month</p>
+      ${fit ? `<p class="pricing-fit">${escapeHtml(fit)}</p>` : ""}
+      <p class="pricing-copy">${escapeHtml(description)}</p>
+      <ul class="pricing-compare">${features.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
+      ${buttonTemplate({ variant: featured ? "primary" : "secondary", label: ctaLabel, className: "pricing-buy", attributes: { "data-subscription-plan": id }, disabled: current })}
+    </article>
+  `;
+}
+
+function pricingGridHtml(options = {}) {
+  return PRICING_CATALOGUE.map((plan) => pricingCardTemplate({
+    id: plan.id,
+    current: options.currentPlanId === plan.id && options.isPaying === true
+  })).join("");
+}
+
+function hydratePricingGrids() {
+  // Replace static pricing-card markup on any page that opts in by giving
+  // its grid the `data-pricing-grid="true"` attribute. The render is keyed
+  // off PRICING_CATALOGUE so all surfaces stay in lockstep.
+  $$("[data-pricing-grid]").forEach((grid) => {
+    grid.innerHTML = pricingGridHtml({});
+  });
 }
 
 function authShellTemplate({ heading = "", subtext = "", body = "" } = {}) {
@@ -550,15 +612,10 @@ function momentumMessage(count) {
 function renderSubscriptionPlansGrid() {
   const grid = $("#packGrid");
   if (!grid) return;
-  const subscriptionCards = getSubscriptionPlans().map((plan) => pricingCardTemplate({
-    ...plan,
-    label: plan.featured ? "Best value" : plan.label || "Monthly",
-    ctaLabel: plan.featured ? "Subscribe monthly" : `Subscribe ${plan.name}`
-  })).join("");
   grid.innerHTML = `
     <div class="pricing-mode-section recommended" data-pricing-panel="subscriptions">
       <div class="section-head compact"><p class="eyebrow">Subscribe monthly</p><h2>Pick the plan that fits your listing volume</h2></div>
-      <div class="pricing-grid">${subscriptionCards}</div>
+      <div class="pricing-grid" data-pricing-grid="true">${pricingGridHtml({})}</div>
     </div>
   `;
 }
@@ -575,6 +632,7 @@ async function bootstrap() {
     const me = await api("/api/me");
     accountState = me;
     renderSubscriptionPlansGrid();
+    hydratePricingGrids();
     updateAccountChrome(me);
     hydrateAppRoute(me);
     if (location.pathname === "/verify-email" && me.user?.emailVerified) {
@@ -1445,6 +1503,90 @@ function outputSection(title, html, copyText, copyLabel, valueLabel = "", icon =
   `;
 }
 
+// =====================================================================
+// Editable result section.
+// `field` is the data-key the section maps to ("title", "description",
+// "keywords", "priceGuidance", "photoChecklist", "buyerReply"). The
+// textarea holds the AI-generated value initially; user edits are read
+// live by the copy buttons via `readEditableField()` so Copy/CopyAll/
+// Save-to-history all reflect the edited value.
+// =====================================================================
+function editableSection({
+  field,
+  title,
+  icon = "file-text",
+  valueLabel = "",
+  copyLabel = "Copy",
+  initialValue = "",
+  multiline = true,
+  rows = 4,
+  helper = "",
+  aiOriginal = ""
+} = {}) {
+  const value = String(initialValue == null ? "" : initialValue);
+  const original = aiOriginal === "" ? value : String(aiOriginal);
+  const inputId = `result-${field}-${Math.random().toString(36).slice(2, 8)}`;
+  const isMulti = multiline;
+  const control = isMulti
+    ? `<textarea id="${inputId}" class="result-edit" data-result-field="${escapeHtml(field)}" data-ai-original="${escapeHtml(original)}" rows="${rows}" aria-label="${escapeHtml(title)}">${escapeHtml(value)}</textarea>`
+    : `<input id="${inputId}" class="result-edit result-edit-single" data-result-field="${escapeHtml(field)}" data-ai-original="${escapeHtml(original)}" type="text" value="${escapeHtml(value)}" aria-label="${escapeHtml(title)}" />`;
+  return `
+    <section class="output-card result-card result-editable" data-result-section="${escapeHtml(field)}">
+      <div class="result-card-head">
+        <div class="result-card-title">
+          <div class="feature-icon">${iconSvg(icon)}</div>
+          <div>
+            <h3><label for="${inputId}">${escapeHtml(title)}</label></h3>
+            ${valueLabel ? `<span class="badge">${escapeHtml(valueLabel)}</span>` : ""}
+          </div>
+        </div>
+        <div class="result-card-actions">
+          <button class="btn btn-ghost btn-sm result-reset" type="button" data-reset-field="${escapeHtml(field)}" title="Reset to AI version">${iconSvg("repeat")}<span>Reset</span></button>
+          <button class="btn btn-secondary copy-button" type="button" data-copy-field="${escapeHtml(field)}">${iconSvg("copy")}<span>${escapeHtml(copyLabel)}</span></button>
+        </div>
+      </div>
+      <div class="result-body">${control}</div>
+      ${helper ? `<p class="result-helper muted small">${escapeHtml(helper)}</p>` : ""}
+    </section>
+  `;
+}
+
+// Read the current edited value for a given result field, falling back to
+// the AI original if no editable element is present.
+function readEditableField(field) {
+  const node = document.querySelector(`[data-result-field="${field}"]`);
+  if (!node) return "";
+  return String(node.value == null ? "" : node.value);
+}
+
+function readAllEditableFields() {
+  const fields = ["title", "description", "keywords", "priceGuidance", "photoChecklist", "buyerReply"];
+  const out = {};
+  for (const f of fields) {
+    const node = document.querySelector(`[data-result-field="${f}"]`);
+    if (node) out[f] = String(node.value || "");
+  }
+  return out;
+}
+
+function buildAllCopyFromEditable() {
+  const f = readAllEditableFields();
+  const lines = [
+    "TITLE", f.title || "",
+    "",
+    "DESCRIPTION", f.description || "",
+    "",
+    "KEYWORDS", f.keywords || "",
+    "",
+    "PRICE GUIDANCE", f.priceGuidance || "",
+    "",
+    "PHOTO CHECKLIST", f.photoChecklist || "",
+    "",
+    "BUYER REPLY", f.buyerReply || ""
+  ];
+  return lines.join("\n").trim();
+}
+
 function transformationTemplate(inputText, data = {}) {
   if (!inputText) return "";
   const generated = [data.title, ...linesFromText(data.description).slice(0, 3)].filter(Boolean).join("\n");
@@ -1471,7 +1613,6 @@ function outputTemplate(data = {}, options = {}) {
   const priceText = priceGuidanceText(data);
   const photoItems = data.photoChecklist?.length ? data.photoChecklist : ["Front photo in natural light", "Label or size close-up", "Any flaws shown clearly", "Back view"];
   const reply = buyerReplyText(data);
-  const allCopy = listingCopyText({ ...data, photoChecklist: photoItems });
   const usageNote = options.usageNote ? `<p class="credit-feedback">${escapeHtml(options.usageNote)}</p>` : "";
   const demoCta = options.demo ? '<a class="btn btn-primary result-cta" href="/signup">Create free account - 3 listings on us</a>' : "";
   const inputText = options.inputText || data.input?.itemDetails || "";
@@ -1483,30 +1624,24 @@ function outputTemplate(data = {}, options = {}) {
         <div>
           <span class="badge badge-brand">${iconSvg("check-circle")} Ready</span>
           <h2>Your listing is ready</h2>
+          <p class="result-helper muted small">Edit anything before copying to Vinted. Changes save with your listing if you press Save.</p>
           ${usageNote}
           ${momentumNote}
         </div>
         <div class="result-summary-actions">
-          ${copyButton("Copy all", allCopy)}
-          <button class="btn btn-secondary" type="button" data-toast-message="Saved to history">${iconSvg("save")}<span>Save to history</span></button>
+          <button class="btn btn-secondary copy-button" type="button" data-copy-all>${iconSvg("copy")}<span>Copy all</span></button>
+          <button class="btn btn-secondary" type="button" data-save-edited data-toast-message="Saved to history">${iconSvg("save")}<span>Save to history</span></button>
           ${demoCta}
         </div>
       </div>
       ${listingCardTemplate(listingCardDataFromOutput(data), { elevated: true, className: "result-listing-preview" })}
       ${transformationTemplate(inputText, data)}
-      ${outputSection("Title", `<p class="result-title">${escapeHtml(data.title || "Vinted-ready listing title")}</p>`, data.title || "", "Copy title", "Optimised for Vinted search", "file-text")}
-      ${outputSection("Description", descriptionHtml(data.description), data.description || "", "Copy description", "High-conversion description", "list-check")}
-      ${outputSection("Keywords", `<p>${escapeHtml(keywords || "vinted, preloved, wardrobe clearout")}</p>`, keywords, "Copy keywords", "Search terms ready", "tag")}
-      ${outputSection("Price guidance", `
-        <div class="mini-cards">
-          <span><strong>Fast</strong>${escapeHtml(price.fastSale || "-")}</span>
-          <span><strong>Fair</strong>${escapeHtml(price.fairPrice || "-")}</span>
-          <span><strong>Max</strong>${escapeHtml(price.maxPrice || "-")}</span>
-        </div>
-        <p>${escapeHtml(data.priceGuidance || "Check similar sold Vinted items before posting.")}</p>
-      `, priceText, "Copy price", "Suggested competitive pricing", "badge-pound")}
-      ${outputSection("Photo checklist", listHtml(photoItems), photoItems.join("\n"), "Copy checklist", "Listing-photo checklist", "image")}
-      ${outputSection("Suggested buyer reply", `<p>${escapeHtml(reply)}</p>`, reply, "Copy reply", "Natural seller reply", "message-circle")}
+      ${editableSection({ field: "title", title: "Title", icon: "file-text", valueLabel: "Optimised for Vinted search", copyLabel: "Copy title", initialValue: data.title || "", multiline: false })}
+      ${editableSection({ field: "description", title: "Description", icon: "list-check", valueLabel: "High-conversion description", copyLabel: "Copy description", initialValue: data.description || "", rows: 8 })}
+      ${editableSection({ field: "keywords", title: "Keywords", icon: "tag", valueLabel: "Search terms ready", copyLabel: "Copy keywords", initialValue: keywords || "vinted, preloved, wardrobe clearout", rows: 2 })}
+      ${editableSection({ field: "priceGuidance", title: "Price guidance", icon: "badge-pound", valueLabel: "Suggested competitive pricing", copyLabel: "Copy price", initialValue: priceText, rows: 5, helper: `Fast ${price.fastSale || "-"} · Fair ${price.fairPrice || "-"} · Max ${price.maxPrice || "-"}` })}
+      ${editableSection({ field: "photoChecklist", title: "Photo checklist", icon: "image", valueLabel: "Listing-photo checklist", copyLabel: "Copy checklist", initialValue: photoItems.join("\n"), rows: photoItems.length + 1 })}
+      ${editableSection({ field: "buyerReply", title: "Suggested buyer reply", icon: "message-circle", valueLabel: "Natural seller reply", copyLabel: "Copy reply", initialValue: reply, rows: 4 })}
     </section>
   `;
 }
@@ -1642,32 +1777,68 @@ function fileToDataUrl(file) {
 function installCopyFeedback() {
   if (globalCopyHandlerInstalled) return;
   globalCopyHandlerInstalled = true;
+
+  const flash = (button, label = "Copied!") => {
+    const original = button.dataset.idleHtml || button.innerHTML;
+    button.dataset.idleHtml = original;
+    button.innerHTML = `<span>${label}</span>`;
+    button.setAttribute("aria-live", "polite");
+    copySuccessCount += 1;
+    toast(copySuccessCount >= 3 ? "You're ready to list this item" : "Copied to clipboard", "success");
+    setTimeout(() => {
+      button.innerHTML = button.dataset.idleHtml || original;
+      button.removeAttribute("aria-live");
+    }, 1600);
+  };
+
   document.addEventListener("click", async (event) => {
+    // Reset a single section back to the AI-generated original.
+    const reset = event.target.closest("[data-reset-field]");
+    if (reset) {
+      const field = reset.dataset.resetField;
+      const node = document.querySelector(`[data-result-field="${field}"]`);
+      if (node) {
+        node.value = node.dataset.aiOriginal || "";
+        toast("Reset to AI version.", "success");
+      }
+      return;
+    }
+
+    // Per-section copy: read live edited value before copying.
+    const copyField = event.target.closest("[data-copy-field]");
+    if (copyField) {
+      const field = copyField.dataset.copyField;
+      await navigator.clipboard.writeText(readEditableField(field));
+      flash(copyField);
+      return;
+    }
+
+    // Copy all: composite of every edited value, in section order.
+    const copyAll = event.target.closest("[data-copy-all]");
+    if (copyAll) {
+      await navigator.clipboard.writeText(buildAllCopyFromEditable());
+      flash(copyAll, "All copied!");
+      return;
+    }
+
+    // Toast-only buttons (e.g. "Save to history" stub).
     const toastButton = event.target.closest("[data-toast-message]");
     if (toastButton) {
       toast(toastButton.dataset.toastMessage || "Done", "success");
       return;
     }
+
+    // Legacy / generic copy buttons keep working with data-copy="..."
     const copy = event.target.closest("[data-copy]");
     if (!copy) return;
     await navigator.clipboard.writeText(copy.dataset.copy || "");
-    const original = copy.textContent;
-    copy.textContent = "Copied!";
-    copy.setAttribute("aria-live", "polite");
-    copySuccessCount += 1;
-    toast(copySuccessCount >= 3 ? "You're ready to list this item" : "Copied to clipboard", "success");
-    setTimeout(() => {
-      copy.textContent = original;
-      copy.removeAttribute("aria-live");
-    }, 2000);
+    flash(copy);
   });
 }
 
 function showPaywallModal() {
   $(".paywall-backdrop")?.remove();
-  const plans = getSubscriptionPlans();
   const createdCount = Number(accountState.usage?.usageThisMonth || 0);
-  const featuredPlan = plans.find((plan) => plan.featured) || plans[0];
   document.body.insertAdjacentHTML("beforeend", `
     <div class="paywall-backdrop" role="presentation">
       <section class="paywall-modal" role="dialog" aria-modal="true" aria-labelledby="paywallTitle">
@@ -1676,28 +1847,11 @@ function showPaywallModal() {
         <h2 id="paywallTitle">Upgrade your plan to continue generating listings</h2>
         <p class="paywall-proof">You've created ${createdCount} ${createdCount === 1 ? "listing" : "listings"} this cycle.</p>
         <p class="muted">Pick the monthly plan that matches your listing volume.</p>
-        ${featuredPlan ? `
-          <article class="paywall-pack is-featured is-dominant subscription-paywall">
-            <span>Recommended monthly</span>
-            <strong>${escapeHtml(publicPlanName(featuredPlan.id, featuredPlan.name))} - ${featuredPlan.unlimited || featuredPlan.monthlyLimit == null ? "Unlimited" : Number(featuredPlan.monthlyLimit || 0)} listings/month</strong>
-            <p>${escapeHtml(formatMonthlyPrice(featuredPlan))}</p>
-            <button type="button" class="pricing-buy" data-subscription-plan="${escapeHtml(featuredPlan.id)}">Subscribe monthly</button>
-          </article>
-        ` : ""}
-        <div class="paywall-packs">
-          ${plans.filter((plan) => !featuredPlan || plan.id !== featuredPlan.id).map((plan) => `
-            <article class="paywall-pack">
-              <span>${escapeHtml(plan.label || "Monthly")}</span>
-              <strong>${plan.unlimited || plan.monthlyLimit == null ? "Unlimited" : Number(plan.monthlyLimit || 0)} listings/month</strong>
-              <p>${escapeHtml(formatMonthlyPrice(plan))}</p>
-              <button type="button" class="pricing-buy" data-subscription-plan="${escapeHtml(plan.id)}">Subscribe ${escapeHtml(publicPlanName(plan.id, plan.name))}</button>
-            </article>
-          `).join("")}
-        </div>
+        <div class="pricing-grid paywall-pricing-grid" data-pricing-grid="true">${pricingGridHtml({})}</div>
       </section>
     </div>
   `);
-  $(".paywall-modal button")?.focus();
+  $(".paywall-modal [data-close-paywall]")?.focus();
 }
 
 function handleGenerationError(error) {
@@ -2041,14 +2195,17 @@ async function loadBilling(me = accountState) {
       `).join("");
     }
 
-    subscriptions.innerHTML = (data.subscriptionPlans || []).map((plan) => {
+    // Use the shared pricing renderer so /app/billing always matches the
+    // homepage and /pricing. The only billing-specific override is the CTA
+    // label ("Switch to X" vs "Subscribe X") when the user is already paying.
+    subscriptions.dataset.pricingGrid = "true";
+    subscriptions.innerHTML = PRICING_CATALOGUE.map((plan) => {
       const isCurrent = currentPlan === plan.id && isPaying;
-      return pricingCardTemplate({
-        ...plan,
-        current: isCurrent,
-        label: plan.featured ? "Best value" : plan.label || "Monthly",
-        ctaLabel: isCurrent ? "Current plan" : currentPlan === "free" ? `Subscribe ${plan.name}` : `Switch to ${plan.name}`
-      });
+      const display = publicPlanName(plan.id);
+      const ctaLabel = isCurrent
+        ? "Current plan"
+        : currentPlan === "free" ? `Subscribe ${display}` : `Switch to ${display}`;
+      return pricingCardTemplate({ id: plan.id, current: isCurrent, ctaLabel });
     }).join("");
 
     const rows = [
@@ -2066,6 +2223,11 @@ async function loadBilling(me = accountState) {
 }
 
 function installCheckoutButtons() {
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && $(".paywall-backdrop")) {
+      $(".paywall-backdrop")?.remove();
+    }
+  });
   document.addEventListener("click", async (event) => {
     if (event.target.closest("[data-close-paywall]") || event.target.classList.contains("paywall-backdrop")) {
       $(".paywall-backdrop")?.remove();

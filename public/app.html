@@ -13,11 +13,26 @@
     <header class="lb-header">
       <a class="lb-brand" href="/app"><img src="/logo.svg" alt="" />ListBoost</a>
       <nav class="app-nav" aria-label="App">
-        <a href="/app">Dashboard</a>
-        <a href="/app/notes">Generator</a>
-        <a href="/app/photo">Photo</a>
-        <a href="/app/history">History</a>
-        <a href="/app/billing">Billing</a>
+        <a href="/app" data-app-nav="dashboard">
+          <svg class="app-nav-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+          <span>Dashboard</span>
+        </a>
+        <a href="/app/notes" data-app-nav="notes">
+          <svg class="app-nav-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9"/><path d="M14 3v6h6"/><path d="M8 13h8"/><path d="M8 17h6"/></svg>
+          <span>Generator</span>
+        </a>
+        <a href="/app/photo" data-app-nav="photo">
+          <svg class="app-nav-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L8 6H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-3z"/><circle cx="12" cy="13" r="3"/></svg>
+          <span>Photo</span>
+        </a>
+        <a href="/app/history" data-app-nav="history">
+          <svg class="app-nav-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 3v6h6"/><path d="M12 7v5l4 2"/></svg>
+          <span>History</span>
+        </a>
+        <a href="/app/billing" data-app-nav="billing">
+          <svg class="app-nav-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/><path d="M6 15h4"/></svg>
+          <span>Billing</span>
+        </a>
       </nav>
       <div class="nav-actions">
         <span class="status-pill js-usage">Loading usage</span>

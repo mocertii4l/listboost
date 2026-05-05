@@ -103,11 +103,11 @@ test("copy feedback nudges users toward listing", () => {
 test("usage-limit paywall pushes subscription upgrade", () => {
   assert.match(siteJs, /You've created/);
   assert.match(siteJs, /Pick the monthly plan that matches your listing volume/);
-  assert.match(siteJs, /Recommended monthly/);
+  // Paywall now renders directly from PRICING_CATALOGUE so its plans cannot drift.
+  assert.match(siteJs, /paywall-pricing-grid/);
+  assert.match(siteJs, /pricingGridHtml\(\{\}\)/);
   assert.match(siteJs, /data-subscription-plan/);
   assert.match(siteJs, /Upgrade your plan to continue generating listings/);
-  assert.match(siteJs, /is-dominant/);
-  assert.match(stylesCss, /\.paywall-pack\.is-dominant/);
   assert.match(stylesCss, /\.paywall-proof/);
 });
 
@@ -366,6 +366,107 @@ test("pricing card layout keeps bullets compact and buttons pinned to the bottom
   assert.match(stylesCss, /\.pricing-compare\s*\{[^}]*grid-auto-rows:\s*max-content/);
   // The buy button uses margin-top: auto to pin to the bottom edge.
   assert.match(stylesCss, /\.pricing-buy\s*\{[^}]*margin-top:\s*auto/);
+});
+
+test("pricing surfaces use the single PRICING_CATALOGUE source of truth", () => {
+  // The catalogue exists in site.js with all three plan ids, current prices, and the Elite display name.
+  assert.match(siteJs, /const PRICING_CATALOGUE\s*=\s*\[/);
+  assert.match(siteJs, /id:\s*"starter"[\s\S]*?monthlyLimit:\s*20[\s\S]*?pricePence:\s*699/);
+  assert.match(siteJs, /id:\s*"seller"[\s\S]*?monthlyLimit:\s*75[\s\S]*?pricePence:\s*1499[\s\S]*?featured:\s*true/);
+  assert.match(siteJs, /id:\s*"reseller"[\s\S]*?monthlyLimit:\s*250[\s\S]*?pricePence:\s*2999/);
+  // Static HTML opts in to JS hydration via data-pricing-grid.
+  assert.match(indexHtml, /class="pricing-grid"\s+data-pricing-grid="true"/);
+  assert.match(pricingHtml, /class="pricing-grid"\s+data-pricing-grid="true"/);
+  // Bootstrap calls hydratePricingGrids().
+  assert.match(siteJs, /hydratePricingGrids\(\)/);
+  // Paywall modal also renders from the catalogue (no bespoke per-plan paywall markup remains).
+  assert.match(siteJs, /paywall-pricing-grid/);
+  assert.match(siteJs, /pricingGridHtml\(\{\}\)/);
+});
+
+test("static pricing HTML cannot drift from the catalogue copy", () => {
+  // Each plan's exact bullet list as rendered in static HTML must match the catalogue.
+  const catalogue = {
+    starter: ["20 listings per month", "Notes-to-listing generator", "Titles, descriptions and keywords"],
+    seller: ["75 listings per month", "Everything in Starter", "Photo upload listing generator", "Price guidance", "Buyer reply generator", "Listing score checker"],
+    reseller: ["250 listings per month", "Everything in Seller", "Built for serious resellers", "Advanced photo checklist", "More detailed price guidance", "Listing history", "Reusable listing templates (coming soon)", "Priority support", "Best for daily sellers", "Early access to new selling tools"]
+  };
+  for (const [planId, bullets] of Object.entries(catalogue)) {
+    for (const html of [pricingHtml, indexHtml]) {
+      const block = html.match(new RegExp(`id="subscribe-${planId}"[\\s\\S]*?</article>`))[0];
+      for (const bullet of bullets) {
+        assert.match(block, new RegExp(bullet.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), `${planId} bullet missing in static HTML: ${bullet}`);
+      }
+    }
+  }
+});
+
+test("editable result sections render textareas and use edited values for copy", () => {
+  assert.match(siteJs, /function editableSection/);
+  assert.match(siteJs, /function readEditableField/);
+  assert.match(siteJs, /function buildAllCopyFromEditable/);
+  // outputTemplate uses editableSection for all six fields.
+  assert.match(siteJs, /editableSection\(\{ field: "title"/);
+  assert.match(siteJs, /editableSection\(\{ field: "description"/);
+  assert.match(siteJs, /editableSection\(\{ field: "keywords"/);
+  assert.match(siteJs, /editableSection\(\{ field: "priceGuidance"/);
+  assert.match(siteJs, /editableSection\(\{ field: "photoChecklist"/);
+  assert.match(siteJs, /editableSection\(\{ field: "buyerReply"/);
+  // Helper copy is present and actionable.
+  assert.match(siteJs, /Edit anything before copying to Vinted/);
+  // The copy handler reads live values, not the originally-rendered AI text.
+  assert.match(siteJs, /data-copy-field/);
+  assert.match(siteJs, /data-copy-all/);
+  assert.match(siteJs, /data-reset-field/);
+  assert.match(siteJs, /Reset to AI version/);
+  // Copy-all button replaces the old static data-copy="..." flow.
+  assert.match(siteJs, /readEditableField\(field\)/);
+  assert.match(siteJs, /buildAllCopyFromEditable\(\)/);
+});
+
+test("paywall modal can be dismissed with Escape and renders from the catalogue", () => {
+  assert.match(siteJs, /event\.key === "Escape"[\s\S]{0,200}paywall-backdrop/);
+  // No bespoke per-plan paywall markup remains.
+  assert.doesNotMatch(siteJs, /paywall-pack is-featured is-dominant/);
+});
+
+test("homepage hero is Vinted-specific (note → title → tags → fast/fair/max)", () => {
+  assert.match(indexHtml, /hero-vinted/);
+  assert.match(indexHtml, /hero-item-card/);
+  assert.match(indexHtml, /hero-item-note/);
+  assert.match(indexHtml, /Navy Satin Midi Dress/);
+  assert.match(indexHtml, /hero-item-tags/);
+  assert.match(indexHtml, /hero-item-prices/);
+  // Old browser-chrome mock and emoji-style Vinted dressing must not return.
+  assert.doesNotMatch(indexHtml, /hero-mock-chrome/);
+  assert.doesNotMatch(indexHtml, /listboost\.uk &middot; Listing/);
+});
+
+test("homepage trust section uses honest 'real seller problems' framing without fake testimonials", () => {
+  assert.match(indexHtml, /trust-section/);
+  assert.match(indexHtml, /Built around real seller problems/);
+  assert.match(indexHtml, /trust-problem/);
+  assert.match(indexHtml, /trust-stats/);
+  // No fake testimonials: forbid quote-attribution patterns.
+  assert.doesNotMatch(indexHtml, /\bsays\b\s+[A-Z][a-z]+,\s*[A-Z]/);
+  assert.doesNotMatch(indexHtml, /class="testimonial/);
+  // Three problem cards.
+  const problems = (indexHtml.match(/trust-problem/g) || []).length;
+  assert.equal(problems >= 3, true, `expected 3+ trust-problem cards, found ${problems}`);
+});
+
+test("mobile app nav uses inline SVG icons + visible labels", () => {
+  const appHtml = readFileSync(new URL("../public/app.html", import.meta.url), "utf8");
+  // Each nav item has a stacked icon + text label.
+  for (const route of ["dashboard", "notes", "photo", "history", "billing"]) {
+    assert.match(appHtml, new RegExp(`data-app-nav="${route}"`));
+  }
+  // Inline SVGs (5 nav items, each with one <svg>).
+  const svgCount = (appHtml.match(/class="app-nav-icon"/g) || []).length;
+  assert.equal(svgCount, 5, `expected 5 inline nav SVGs, found ${svgCount}`);
+  assert.match(stylesCss, /\.app-nav-icon/);
+  // 56px tap target on mobile.
+  assert.match(stylesCss, /\.app-nav a\s*\{[^}]*min-height:\s*56px/);
 });
 
 test("public UI never shows old launch prices, old limits, or unlimited claims", () => {
