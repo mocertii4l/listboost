@@ -729,6 +729,34 @@ function clearAuthHeaders() {
   return { "set-cookie": createCookie("lb_session", "", { clear: true, maxAge: 0 }) };
 }
 
+// Spread-friendly merge for headers that may both contain set-cookie. Node's
+// http supports an array value for set-cookie, so when both sides set a cookie
+// we surface both rather than letting Object.assign drop one.
+function mergeHeaders(...sources) {
+  const out = {};
+  const cookies = [];
+  for (const src of sources) {
+    if (!src) continue;
+    for (const [key, value] of Object.entries(src)) {
+      if (key.toLowerCase() === "set-cookie") {
+        if (Array.isArray(value)) cookies.push(...value);
+        else if (value != null) cookies.push(value);
+      } else {
+        out[key] = value;
+      }
+    }
+  }
+  if (cookies.length === 1) out["set-cookie"] = cookies[0];
+  else if (cookies.length > 1) out["set-cookie"] = cookies;
+  return out;
+}
+
+function deleteExpiredSessionsForUser(userId) {
+  // Clear stale sessions periodically as a safety net (does not affect the active session).
+  db.prepare("DELETE FROM sessions WHERE user_id = ? AND expires_at <= ?")
+    .run(userId, new Date().toISOString());
+}
+
 async function loadUsage() {
   try {
     return JSON.parse(await readFile(usagePath, "utf8"));
@@ -2924,7 +2952,7 @@ async function handleSignup(req, res) {
       verificationRequired: requireEmailVerification,
       verificationEmailDelivered: verificationDelivery.delivered,
       verificationEmailError: verificationDelivery.error || null
-    }, { ...visitor.headers, ...authHeaders(token) });
+    }, mergeHeaders(visitor.headers, authHeaders(token)));
   } catch (error) {
     if (error.code === "SQLITE_CONSTRAINT_UNIQUE") {
       json(res, 409, { error: "An account with this email already exists. Sign in instead." }, visitor.headers);
@@ -2963,6 +2991,7 @@ async function handleLogin(req, res) {
       return;
     }
 
+    deleteExpiredSessionsForUser(user.id);
     const token = createSession(user.id);
     json(res, 200, {
       user: publicUser(user),
@@ -2975,7 +3004,7 @@ async function handleLogin(req, res) {
       subscription: publicSubscriptionForUser(user),
       emailVerified: Boolean(user.email_verified),
       verificationRequired: requireEmailVerification
-    }, { ...visitor.headers, ...authHeaders(token) });
+    }, mergeHeaders(visitor.headers, authHeaders(token)));
   } catch (error) {
     console.error(error);
     json(res, 500, { error: "Could not sign in." }, visitor.headers);
@@ -3222,6 +3251,34 @@ const server = createServer((req, res) => {
   }
 
   if (req.url && req.url.startsWith("/api/")) {
+    // Distinguish 405 (known route, wrong method) from 404 (unknown route).
+    const pathOnly = req.url.split("?")[0];
+    const apiMethodMap = {
+      "/api/signup": ["POST"],
+      "/api/login": ["POST"],
+      "/api/logout": ["POST"],
+      "/api/me": ["GET"],
+      "/api/resend-verification": ["POST"],
+      "/api/forgot-password": ["POST"],
+      "/api/reset-password": ["POST"],
+      "/api/reset-password/validate": ["GET"],
+      "/api/account/profile": ["POST"],
+      "/api/account/password": ["POST"],
+      "/api/generate": ["POST"],
+      "/api/demo-generate": ["POST"],
+      "/api/generate-from-photos": ["POST"],
+      "/api/history": ["GET"],
+      "/api/billing": ["GET"],
+      "/api/stripe-webhook": ["POST"],
+      "/api/create-checkout-session": ["POST"],
+      "/api/create-subscription-checkout-session": ["POST"],
+      "/api/create-billing-portal-session": ["POST"]
+    };
+    const allowed = apiMethodMap[pathOnly];
+    if (allowed) {
+      json(res, 405, { error: "Method not allowed." }, { allow: allowed.join(", ") });
+      return;
+    }
     json(res, 404, { error: "Unknown API route." });
     return;
   }
@@ -3250,6 +3307,7 @@ export {
   findCreditPack,
   findSubscriptionPlan,
   createPasswordResetToken,
+  createVerificationToken,
   getPasswordResetCountForUser,
   publicCreditPacks,
   publicSubscriptionPlans,

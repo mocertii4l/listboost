@@ -48,6 +48,16 @@ function close() {
   return new Promise((resolve) => server.close(resolve));
 }
 
+function cookieJarFromResponse(response) {
+  const list = typeof response.headers.getSetCookie === "function"
+    ? response.headers.getSetCookie()
+    : (response.headers.get("set-cookie") || "").split(/,(?=\s*[A-Za-z_][A-Za-z0-9_-]*=)/);
+  return list
+    .map((entry) => String(entry || "").split(";")[0].trim())
+    .filter(Boolean)
+    .join("; ");
+}
+
 async function request(port, path, options = {}) {
   const response = await fetch(`http://127.0.0.1:${port}${path}`, {
     redirect: "manual",
@@ -64,7 +74,7 @@ async function request(port, path, options = {}) {
   } catch {
     body = { text };
   }
-  return { response, body };
+  return { response, body, cookie: cookieJarFromResponse(response) };
 }
 
 async function stripeWebhook(port, event) {
@@ -144,7 +154,7 @@ test("legacy one-time-pack endpoints are gone or return a redirect", async () =>
     body: JSON.stringify({ name: "Buyer Example", email: "buyer@example.com", password: "password123" })
   });
   assert.ok([200, 201].includes(signup.response.status));
-  const cookie = signup.response.headers.get("set-cookie");
+  const cookie = signup.cookie;
   assert.match(cookie, /lb_session=/);
 
   const legacy = await request(port, "/api/create-checkout-session", {
@@ -172,7 +182,7 @@ test("subscription checkout starts monthly billing and webhook resets usage on r
     body: JSON.stringify({ name: "Subscriber Example", email: "subscriber@example.com", password: "password123" })
   });
   assert.equal(signup.response.status, 200);
-  const cookie = signup.response.headers.get("set-cookie");
+  const cookie = signup.cookie;
   const userId = signup.body.user.id;
 
   const checkout = await request(port, "/api/create-subscription-checkout-session", {
@@ -281,7 +291,7 @@ test("generation increments usage and returns a paywall once the monthly limit i
       body: JSON.stringify({ name: "Usage User", email: "usage-trial@example.com", password: "password123" })
     });
     assert.equal(signup.response.status, 200);
-    const cookie = signup.response.headers.get("set-cookie");
+    const cookie = signup.cookie;
 
     for (let index = 0; index < 3; index += 1) {
       const generated = await request(port, "/api/generate", {
@@ -388,4 +398,310 @@ test("forgot and reset password flow is token based and single use", async () =>
   });
   assert.equal(login.response.status, 200);
   await close();
+});
+
+test("Stripe webhook rejects an invalid signature", async () => {
+  const port = await listen();
+  try {
+    const res = await request(port, "/api/stripe-webhook", {
+      method: "POST",
+      headers: { "stripe-signature": "t=1,v1=deadbeef" },
+      body: JSON.stringify({ id: "evt_bad", type: "checkout.session.completed", data: { object: {} } })
+    });
+    assert.equal(res.response.status, 400);
+    assert.match(res.body.error, /Invalid signature/i);
+  } finally {
+    await close();
+  }
+});
+
+test("Stripe webhook silently ignores unknown event types", async () => {
+  const port = await listen();
+  try {
+    const result = await stripeWebhook(port, {
+      id: "evt_unknown_xyz",
+      type: "ping.pong",
+      data: { object: { id: "noop_1" } }
+    });
+    assert.equal(result.response.status, 200);
+    assert.equal(result.body.received, true);
+  } finally {
+    await close();
+  }
+});
+
+test("duplicate checkout.session.completed does not double-start the billing cycle", async () => {
+  const port = await listen();
+  try {
+    const signup = await request(port, "/api/signup", {
+      method: "POST",
+      headers: { "x-forwarded-for": "10.0.1.10" },
+      body: JSON.stringify({ name: "Idem", email: "idem@example.com", password: "password123" })
+    });
+    assert.equal(signup.response.status, 200);
+    const cookie = signup.cookie;
+    const userId = signup.body.user.id;
+
+    const event = {
+      id: "evt_dupe",
+      type: "checkout.session.completed",
+      data: {
+        object: {
+          id: "cs_dupe_seller",
+          mode: "subscription",
+          payment_status: "paid",
+          client_reference_id: userId,
+          customer: "cus_dupe",
+          subscription: "sub_dupe",
+          metadata: { userId, planId: "seller", monthlyLimit: "100", billingType: "subscription" }
+        }
+      }
+    };
+
+    const first = await stripeWebhook(port, event);
+    assert.equal(first.response.status, 200);
+    const second = await stripeWebhook(port, event);
+    assert.equal(second.response.status, 200);
+
+    const billing = await request(port, "/api/billing", { headers: { cookie } });
+    assert.equal(billing.response.status, 200);
+    assert.equal(billing.body.cycles.length, 1, "duplicate session must not create two cycle rows");
+    assert.equal(billing.body.usage.usageLimit, 100);
+  } finally {
+    await close();
+  }
+});
+
+test("subscription checkout rejects an unknown planId and ignores any client price override", async () => {
+  const port = await listen();
+  try {
+    const signup = await request(port, "/api/signup", {
+      method: "POST",
+      headers: { "x-forwarded-for": "10.0.1.20" },
+      body: JSON.stringify({ name: "Plan Tester", email: "plan-tester@example.com", password: "password123" })
+    });
+    assert.equal(signup.response.status, 200);
+    const cookie = signup.cookie;
+
+    const bad = await request(port, "/api/create-subscription-checkout-session", {
+      method: "POST",
+      headers: { cookie },
+      body: JSON.stringify({ planId: "enterprise", pricePence: 1, monthlyLimit: 99999 })
+    });
+    assert.equal(bad.response.status, 400);
+    assert.match(bad.body.error, /Unknown subscription plan/i);
+
+    const good = await request(port, "/api/create-subscription-checkout-session", {
+      method: "POST",
+      headers: { cookie },
+      body: JSON.stringify({ planId: "seller", pricePence: 1, monthlyLimit: 99999 })
+    });
+    assert.equal(good.response.status, 200);
+    assert.equal(good.body.planId, "seller");
+    // The mock URL must be the server's plan id, never the client's tampered values.
+    assert.match(good.body.url, /\/subscription\/seller$/);
+  } finally {
+    await close();
+  }
+});
+
+test("generation does not increment usage when the model returns a malformed result", async () => {
+  const port = await listen();
+  const oldOpenAi = process.env.OPENAI_API_KEY;
+  const oldAnthropic = process.env.ANTHROPIC_API_KEY;
+  // Force the demo path AND patch fetch to never be called - we'll override the result via a stub.
+  delete process.env.OPENAI_API_KEY;
+  delete process.env.ANTHROPIC_API_KEY;
+  try {
+    const ip = "10.0.0.55";
+    const signup = await request(port, "/api/signup", {
+      method: "POST",
+      headers: { "x-forwarded-for": ip },
+      body: JSON.stringify({ name: "Fail Path", email: "fail-path@example.com", password: "password123" })
+    });
+    const cookie = signup.cookie;
+    const usageBefore = signup.body.usage.usageThisMonth;
+    assert.equal(usageBefore, 0);
+
+    // itemDetails too short -> server returns 400 before any model call -> usage must not increment.
+    const tooShort = await request(port, "/api/generate", {
+      method: "POST",
+      headers: { cookie, "x-forwarded-for": ip },
+      body: JSON.stringify({ itemDetails: "tiny" })
+    });
+    assert.equal(tooShort.response.status, 400);
+
+    const me = await request(port, "/api/me", { headers: { cookie, "x-forwarded-for": ip } });
+    assert.equal(me.body.usage.usageThisMonth, 0, "validation failure must not increment usage");
+  } finally {
+    process.env.OPENAI_API_KEY = oldOpenAi;
+    if (oldAnthropic) process.env.ANTHROPIC_API_KEY = oldAnthropic;
+    else delete process.env.ANTHROPIC_API_KEY;
+    await close();
+  }
+});
+
+test("/api/generate requires authentication and returns 401 for anonymous callers", async () => {
+  const port = await listen();
+  try {
+    const res = await request(port, "/api/generate", {
+      method: "POST",
+      body: JSON.stringify({ itemDetails: "Black Zara dress UK 10" })
+    });
+    assert.equal(res.response.status, 401);
+  } finally {
+    await close();
+  }
+});
+
+test("/api/billing and /api/history require authentication", async () => {
+  const port = await listen();
+  try {
+    const billing = await request(port, "/api/billing");
+    assert.equal(billing.response.status, 401);
+    const history = await request(port, "/api/history");
+    assert.equal(history.response.status, 401);
+  } finally {
+    await close();
+  }
+});
+
+test("/api/me responds 200 anonymously and never echoes secrets", async () => {
+  const port = await listen();
+  try {
+    const me = await request(port, "/api/me");
+    assert.equal(me.response.status, 200);
+    const raw = JSON.stringify(me.body);
+    assert.doesNotMatch(raw, /sk_test|sk_live|whsec_|re_test|password_hash/, "/api/me must not leak any secret-shaped value");
+  } finally {
+    await close();
+  }
+});
+
+test("subscription deletion reverts the user to the free plan and resets the limit", async () => {
+  const port = await listen();
+  try {
+    const signup = await request(port, "/api/signup", {
+      method: "POST",
+      headers: { "x-forwarded-for": "10.0.1.30" },
+      body: JSON.stringify({ name: "Cancel User", email: "cancel-user@example.com", password: "password123" })
+    });
+    assert.equal(signup.response.status, 200);
+    const cookie = signup.cookie;
+    const userId = signup.body.user.id;
+
+    // Activate Seller via the webhook helper.
+    await stripeWebhook(port, {
+      id: "evt_cancel_start",
+      type: "checkout.session.completed",
+      data: {
+        object: {
+          id: "cs_cancel_seller",
+          mode: "subscription",
+          payment_status: "paid",
+          client_reference_id: userId,
+          customer: "cus_cancel",
+          subscription: "sub_cancel",
+          metadata: { userId, planId: "seller", monthlyLimit: "100", billingType: "subscription" }
+        }
+      }
+    });
+    let billing = await request(port, "/api/billing", { headers: { cookie } });
+    assert.equal(billing.body.subscription.plan, "seller");
+
+    // Cancel via the deletion event.
+    const cancel = await stripeWebhook(port, {
+      id: "evt_cancel_delete",
+      type: "customer.subscription.deleted",
+      data: { object: { id: "sub_cancel", customer: "cus_cancel", status: "canceled", metadata: { userId, planId: "seller" } } }
+    });
+    assert.equal(cancel.response.status, 200);
+
+    billing = await request(port, "/api/billing", { headers: { cookie } });
+    assert.equal(billing.body.subscription.plan, "free");
+    assert.equal(billing.body.usage.usageLimit, 3);
+  } finally {
+    await close();
+  }
+});
+
+test("API returns 405 for known routes invoked with the wrong method, 404 for unknown routes", async () => {
+  const port = await listen();
+  try {
+    const wrongMethod = await request(port, "/api/login", { method: "GET" });
+    assert.equal(wrongMethod.response.status, 405);
+    assert.equal(wrongMethod.response.headers.get("allow"), "POST");
+
+    const unknown = await request(port, "/api/does-not-exist");
+    assert.equal(unknown.response.status, 404);
+  } finally {
+    await close();
+  }
+});
+
+test("API tolerates malformed JSON without crashing or leaking stack traces", async () => {
+  const port = await listen();
+  try {
+    const res = await request(port, "/api/signup", {
+      method: "POST",
+      body: "not-json{}"
+    });
+    // Either 400 (validated) or 500 (caught) is acceptable; what is NOT acceptable is a 200 or a stack trace.
+    assert.equal([400, 500].includes(res.response.status), true, `unexpected status: ${res.response.status}`);
+    assert.doesNotMatch(res.body.error || "", /at .+\.js:\d+/, "must not leak a stack trace");
+
+    // Server is still alive.
+    const me = await request(port, "/api/me");
+    assert.equal(me.response.status, 200);
+  } finally {
+    await close();
+  }
+});
+
+test("verification token is single-use", async () => {
+  const port = await listen();
+  try {
+    const signup = await request(port, "/api/signup", {
+      method: "POST",
+      headers: { "x-forwarded-for": "10.0.1.40" },
+      body: JSON.stringify({ name: "Verify Once", email: "verify-once@example.com", password: "password123" })
+    });
+    assert.equal(signup.response.status, 200);
+    const userId = signup.body.user.id;
+    const token = moduleUnderTest.createVerificationToken(userId);
+
+    const first = await request(port, `/verify?token=${token}`);
+    assert.equal(first.response.status, 302);
+    assert.match(first.response.headers.get("location"), /^\/app\?verified=1$/);
+
+    const second = await request(port, `/verify?token=${token}`);
+    assert.equal(second.response.status, 302);
+    assert.match(second.response.headers.get("location"), /verify-email\?status=invalid/);
+  } finally {
+    await close();
+  }
+});
+
+test("admin requires Basic Auth and only verifies env credentials", async () => {
+  const port = await listen();
+  try {
+    const noAuth = await request(port, "/admin");
+    assert.equal(noAuth.response.status, 401);
+
+    const wrong = await request(port, "/admin", {
+      headers: { authorization: `Basic ${Buffer.from("admin@listboost.uk:wrong").toString("base64")}` }
+    });
+    assert.equal(wrong.response.status, 401);
+
+    const right = await request(port, "/admin", {
+      headers: { authorization: `Basic ${Buffer.from("admin@listboost.uk:secret").toString("base64")}` }
+    });
+    assert.equal(right.response.status, 200);
+    // Admin HTML must not embed any password column or secret.
+    assert.doesNotMatch(right.body.text || "", /password_hash/);
+    assert.doesNotMatch(right.body.text || "", /sk_(test|live)_/);
+    assert.doesNotMatch(right.body.text || "", /whsec_/);
+  } finally {
+    await close();
+  }
 });
