@@ -43,7 +43,7 @@ test("account bootstrap exposes subscription plans and environment metadata", ()
 });
 
 test("homepage renders premium marketing structure", () => {
-  assert.match(indexHtml, /Turn messy item notes into sell-ready Vinted listings in seconds/);
+  assert.match(indexHtml, /Turn messy item notes into[\s\S]*?sell-ready Vinted listings[\s\S]*?in seconds/);
   assert.match(indexHtml, /Start with 3 free listings/);
   assert.match(indexHtml, /Try the demo/);
   assert.match(indexHtml, /data-listing-card="hero"/);

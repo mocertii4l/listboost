@@ -249,10 +249,16 @@ small {
   align-items: center;
   gap: var(--space-2);
   margin: 0;
+  padding: var(--space-1) var(--space-3);
+  width: fit-content;
+  border-radius: var(--radius-xl);
   color: var(--primary-hover);
-  font-size: 14px;
-  font-weight: 600;
+  background: color-mix(in srgb, var(--primary-soft) 80%, transparent);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
   line-height: 1.5;
+  text-transform: uppercase;
 }
 
 .mono {
@@ -964,19 +970,55 @@ select[aria-invalid="true"] {
 
 .pricing-card {
   position: relative;
-  display: grid;
-  align-content: start;
+  display: flex;
+  flex-direction: column;
   gap: var(--space-4);
   min-height: calc(var(--space-24) * 3);
-  padding: var(--space-6);
+  padding: var(--space-8) var(--space-6);
+  transition: transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease;
+}
+
+.pricing-card > * {
+  flex: 0 0 auto;
+}
+
+.pricing-card .pricing-compare {
+  flex: 1 1 auto;
 }
 
 .pricing-card.is-featured,
 .pricing-card.featured {
-  border-color: color-mix(in srgb, var(--primary) 50%, var(--border));
+  border-color: color-mix(in srgb, var(--primary) 60%, var(--border));
   background:
-    linear-gradient(180deg, var(--primary-soft), transparent 42%),
+    radial-gradient(120% 60% at 50% 0%, color-mix(in srgb, var(--primary-soft) 90%, transparent), transparent 70%),
     var(--card);
+  box-shadow: var(--shadow-lg), 0 0 0 1px color-mix(in srgb, var(--primary) 22%, transparent);
+  transform: translateY(calc(var(--space-2) * -1));
+}
+
+.pricing-card.is-featured::before,
+.pricing-card.featured::before {
+  content: "Most popular";
+  position: absolute;
+  top: calc(var(--space-3) * -1);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-xl);
+  color: var(--card);
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  box-shadow: 0 6px 20px -6px color-mix(in srgb, var(--primary) 60%, transparent);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.pricing-card h3 {
+  margin: 0;
+  font-size: 22px;
+  letter-spacing: -0.01em;
 }
 
 .pricing-price,
@@ -990,10 +1032,14 @@ select[aria-invalid="true"] {
 .pricing-price strong,
 .price strong {
   color: var(--text);
-  font-size: 36px;
-  font-weight: 600;
-  line-height: 1.15;
-  letter-spacing: -0.01em;
+  font-size: 44px;
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+  background: linear-gradient(135deg, var(--text) 0%, color-mix(in srgb, var(--text) 75%, var(--primary)) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .pricing-price span,
@@ -1002,11 +1048,58 @@ select[aria-invalid="true"] {
   font-weight: 600;
 }
 
+.pricing-meta {
+  font-size: 15px;
+  letter-spacing: 0.01em;
+}
+
+.pricing-copy {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 15px;
+  line-height: 1.55;
+}
+
 .pricing-compare {
   display: grid;
   gap: var(--space-2);
   margin: 0;
-  padding-left: var(--space-4);
+  padding: 0;
+  list-style: none;
+}
+
+.pricing-compare li {
+  position: relative;
+  padding-left: calc(var(--space-6) + var(--space-1));
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.pricing-compare li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 4px;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background:
+    linear-gradient(135deg, var(--primary-soft), color-mix(in srgb, var(--primary-soft) 60%, var(--card))) padding-box,
+    linear-gradient(135deg, var(--primary), var(--primary-hover)) border-box;
+  border: 1px solid transparent;
+}
+
+.pricing-compare li::after {
+  content: "";
+  position: absolute;
+  left: 5px;
+  top: 8px;
+  width: 8px;
+  height: 4px;
+  border-left: 2px solid var(--primary-hover);
+  border-bottom: 2px solid var(--primary-hover);
+  transform: rotate(-45deg);
 }
 
 .pricing-buy {
@@ -1016,14 +1109,18 @@ select[aria-invalid="true"] {
 
 .pricing-mode-section {
   display: grid;
-  gap: var(--space-4);
+  gap: var(--space-6);
 }
 
 .pricing-mode-section.recommended {
-  padding: var(--space-6);
-  border: 1px solid color-mix(in srgb, var(--primary) 30%, var(--border));
-  border-radius: var(--radius-xl);
-  background: linear-gradient(180deg, var(--primary-soft), transparent);
+  padding: 0;
+  border: none;
+  background: none;
+}
+
+.pricing-grid {
+  align-items: stretch;
+  padding-top: var(--space-4);
 }
 
 /* =================================================================
@@ -1054,16 +1151,26 @@ select[aria-invalid="true"] {
 .home-hero h1,
 .premium-hero h1 {
   max-width: 780px;
-  font-size: 56px;
-  line-height: 1.05;
-  letter-spacing: -0.02em;
+  font-size: 60px;
+  line-height: 1.02;
+  letter-spacing: -0.025em;
+  font-weight: 700;
+}
+
+.home-hero h1 .accent,
+.premium-hero h1 .accent {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .home-hero .lede,
 .premium-hero .lede {
-  max-width: 640px;
-  font-size: 16px;
-  line-height: 1.6;
+  max-width: 560px;
+  font-size: 18px;
+  line-height: 1.55;
+  color: var(--text-muted);
 }
 
 .hero-cta,
@@ -1107,11 +1214,43 @@ select[aria-invalid="true"] {
 }
 
 .hero-preview {
-  transform: rotate(-2deg);
+  position: relative;
+  isolation: isolate;
+  padding: var(--space-6);
+  transform: rotate(-1.5deg);
+}
+
+.hero-preview::before {
+  content: "";
+  position: absolute;
+  inset: -8% -6% -10% -6%;
+  z-index: -1;
+  border-radius: var(--space-24);
+  background:
+    radial-gradient(60% 50% at 35% 30%, color-mix(in srgb, var(--primary) 32%, transparent), transparent 70%),
+    radial-gradient(55% 45% at 70% 75%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 75%);
+  filter: blur(14px);
+  opacity: 0.85;
+}
+
+.hero-preview::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: var(--space-2) calc(var(--space-2) * -1) calc(var(--space-4) * -1) var(--space-3);
+  border-radius: var(--radius-xl);
+  background: var(--card);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-md);
+  transform: rotate(3.5deg);
+  opacity: 0.7;
 }
 
 .hero-preview .listing-card {
-  box-shadow: var(--shadow-lg);
+  box-shadow:
+    var(--shadow-lg),
+    0 24px 60px -22px color-mix(in srgb, var(--primary) 35%, transparent);
+  border-color: color-mix(in srgb, var(--primary) 22%, var(--border));
 }
 
 .comparison-grid,
@@ -1123,6 +1262,7 @@ select[aria-invalid="true"] {
 }
 
 .comparison-side {
+  position: relative;
   display: grid;
   align-content: start;
   gap: var(--space-4);
@@ -1134,20 +1274,50 @@ select[aria-invalid="true"] {
 }
 
 .comparison-before {
-  background: var(--bg-subtle);
+  background:
+    repeating-linear-gradient(45deg, transparent 0 12px, color-mix(in srgb, var(--text-subtle) 6%, transparent) 12px 13px),
+    var(--bg-subtle);
 }
 
 .comparison-after {
-  border-color: color-mix(in srgb, var(--primary) 32%, var(--border));
+  border-color: color-mix(in srgb, var(--primary) 38%, var(--border));
+  background:
+    radial-gradient(80% 60% at 0% 0%, color-mix(in srgb, var(--primary) 10%, transparent), transparent 60%),
+    var(--card);
+  box-shadow:
+    var(--shadow-md),
+    0 0 0 1px color-mix(in srgb, var(--primary) 18%, transparent);
+}
+
+.comparison-tag {
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  font-size: 12px;
 }
 
 .comparison-arrow {
   display: grid;
   place-items: center;
   width: var(--space-12);
-  color: var(--primary-hover);
-  font-size: 28px;
-  font-weight: 600;
+  height: var(--space-12);
+  align-self: center;
+  margin-block: var(--space-4);
+  border-radius: 999px;
+  color: var(--card);
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  box-shadow:
+    0 12px 24px -10px color-mix(in srgb, var(--primary) 60%, transparent),
+    0 0 0 6px color-mix(in srgb, var(--primary) 12%, transparent);
+  font-size: 0;
+}
+
+.comparison-arrow::before {
+  content: "";
+  width: 14px;
+  height: 14px;
+  border-top: 2.5px solid currentColor;
+  border-right: 2.5px solid currentColor;
+  transform: translateX(-2px) rotate(45deg);
 }
 
 .how-trust {
@@ -1326,7 +1496,7 @@ select[aria-invalid="true"] {
 
 .notes-route {
   display: grid;
-  gap: var(--space-6);
+  gap: var(--space-8);
 }
 
 .notes-layout {
@@ -1334,6 +1504,30 @@ select[aria-invalid="true"] {
   grid-template-columns: minmax(320px, 0.78fr) minmax(0, 1.22fr);
   gap: var(--space-8);
   align-items: start;
+}
+
+.notes-layout .generator-panel {
+  position: sticky;
+  top: var(--space-8);
+  background:
+    radial-gradient(120% 80% at 0% 0%, color-mix(in srgb, var(--primary-soft) 60%, transparent), transparent 55%),
+    var(--card);
+  box-shadow: var(--shadow-md);
+}
+
+.notes-layout .results-panel {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.notes-layout .empty-state,
+.results-stack .empty-state {
+  padding: var(--space-12) var(--space-6);
+  border: 1px dashed color-mix(in srgb, var(--primary) 18%, var(--border-strong));
+  border-radius: var(--radius-xl);
+  background:
+    repeating-linear-gradient(90deg, transparent 0 24px, color-mix(in srgb, var(--text-subtle) 5%, transparent) 24px 25px),
+    color-mix(in srgb, var(--card) 90%, var(--bg-subtle));
 }
 
 .dashboard-grid {
@@ -1357,6 +1551,13 @@ select[aria-invalid="true"] {
   display: grid;
   align-content: start;
   gap: var(--space-4);
+}
+
+.dashboard-top-row .quick-action-card {
+  background:
+    radial-gradient(120% 80% at 100% 0%, color-mix(in srgb, var(--primary-soft) 90%, transparent), transparent 60%),
+    var(--card);
+  border-color: color-mix(in srgb, var(--primary) 26%, var(--border));
 }
 
 .welcome-card {
@@ -1905,7 +2106,7 @@ input[readonly] {
 
 .demo-hero {
   display: grid;
-  grid-template-columns: minmax(0, 0.9fr) minmax(320px, 0.78fr);
+  grid-template-columns: minmax(0, 0.9fr) minmax(320px, 0.85fr);
   gap: var(--space-12);
   align-items: center;
   min-height: min(620px, calc(100vh - var(--space-24)));
@@ -1925,13 +2126,47 @@ input[readonly] {
 }
 
 .demo-copy h1 {
-  font-size: 56px;
+  font-size: 52px;
   line-height: 1.05;
   letter-spacing: -0.02em;
 }
 
 .demo-generator-card {
+  position: relative;
   padding: var(--space-8);
+  background:
+    radial-gradient(120% 80% at 100% 0%, color-mix(in srgb, var(--primary-soft) 80%, transparent), transparent 60%),
+    var(--card);
+  box-shadow:
+    var(--shadow-lg),
+    0 24px 60px -28px color-mix(in srgb, var(--primary) 28%, transparent);
+}
+
+.demo-generator-card::before {
+  content: "Live demo";
+  position: absolute;
+  top: calc(var(--space-3) * -1);
+  left: var(--space-6);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-xl);
+  color: var(--card);
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  box-shadow: 0 6px 16px -6px color-mix(in srgb, var(--primary) 60%, transparent);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.demo-output .empty-state,
+.demo-result-set .empty-state {
+  position: relative;
+  padding: var(--space-12) var(--space-6);
+  border: 1px dashed color-mix(in srgb, var(--primary) 22%, var(--border-strong));
+  border-radius: var(--radius-xl);
+  background:
+    repeating-linear-gradient(90deg, transparent 0 24px, color-mix(in srgb, var(--text-subtle) 6%, transparent) 24px 25px),
+    color-mix(in srgb, var(--card) 90%, var(--bg-subtle));
 }
 
 .mobile-sticky-cta {
@@ -2072,11 +2307,40 @@ body.confetti::after {
   .shell,
   .marketing-home,
   .premium-home {
-    padding-block: var(--space-8) var(--space-12);
+    padding-block: var(--space-6) var(--space-12);
   }
 
   .section {
-    padding-block: var(--space-12);
+    padding-block: var(--space-8);
+  }
+
+  .pricing-card.is-featured,
+  .pricing-card.featured {
+    transform: none;
+  }
+
+  .home-hero,
+  .premium-hero,
+  .demo-hero {
+    min-height: auto;
+    gap: var(--space-8);
+  }
+
+  .hero-preview {
+    transform: none;
+    padding: var(--space-3);
+  }
+
+  .hero-preview::before {
+    inset: -4% -4% -6% -4%;
+  }
+
+  .hero-preview::after {
+    display: none;
+  }
+
+  .notes-layout .generator-panel {
+    position: static;
   }
 
   .lb-header {
