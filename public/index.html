@@ -19,121 +19,140 @@
     <div class="toast-region" id="toastRegion" aria-live="polite"></div>
     <header class="lb-header"></header>
 
-    <main class="page-wrap premium-home" id="main">
-      <section class="premium-hero" aria-labelledby="hero-title">
-        <div class="premium-hero-copy">
-          <p class="eyebrow">ListBoost for Vinted sellers</p>
-          <h1 id="hero-title">Turn messy item notes into sell-ready Vinted listings in seconds</h1>
-          <p class="lede">Paste rough notes, generate a human listing package, then copy the title, description, keywords, price guidance, photo checklist and buyer reply into Vinted.</p>
-          <div class="hero-cta">
-            <a class="button primary" href="/signup">Start with 5 free credits</a>
-            <a class="button secondary" href="/example">Try demo</a>
+    <main class="page-wrap marketing-home" id="main">
+      <section class="home-hero" aria-labelledby="hero-title">
+        <div class="home-hero-copy">
+          <p class="eyebrow">Made for UK Vinted sellers</p>
+          <h1 class="display" id="hero-title">Turn messy item notes into sell-ready Vinted listings in seconds</h1>
+          <p class="lede">Paste rough notes, generate a polished listing package, then copy every section straight into Vinted.</p>
+          <div class="hero-cta" aria-label="Homepage actions">
+            <a class="btn btn-primary" href="/signup">Start with 5 free credits</a>
+            <a class="btn btn-secondary" href="/example">Try the demo</a>
           </div>
-          <ul class="trust-strip hero-trust" aria-label="Trust signals">
-            <li>No Vinted login needed</li>
-            <li>Copy &amp; paste manually</li>
-            <li>Independent tool</li>
+          <ul class="trust-row" aria-label="Quick trust signals">
+            <li>No card needed</li>
+            <li>5 free credits</li>
+            <li>Made for UK Vinted sellers</li>
           </ul>
         </div>
-        <aside class="product-preview" aria-label="Generated Vinted listing preview">
-          <img src="/og-image.svg" alt="" class="product-preview-media" />
-          <div class="preview-output">
-            <span class="badge">Generated output</span>
-            <h2>Zara Black Midi Dress UK 10</h2>
-            <p>Lovely black Zara midi dress in good preloved condition. Easy to style for evenings, workwear or a simple capsule wardrobe outfit.</p>
-            <div class="preview-chips"><span>Title</span><span>Description</span><span>Keywords</span><span>Price</span><span>Replies</span></div>
-          </div>
-        </aside>
+        <aside class="hero-preview" data-listing-card="hero" aria-label="Generated listing preview"></aside>
       </section>
 
-      <section class="example-section" id="example" aria-labelledby="example-title">
+      <section class="section" id="before-after" aria-labelledby="before-after-title">
         <header class="section-head">
           <p class="eyebrow">Before and after</p>
-          <h2 id="example-title">A better listing from the same rough note.</h2>
+          <h2 id="before-after-title">From rough note to ready listing.</h2>
+          <p class="section-sub">Keep the seller's details intact, but make the output clear, searchable and easy to paste.</p>
         </header>
-        <div class="comparison-card">
+        <div class="comparison-grid">
           <article class="comparison-side comparison-before">
-            <div class="comparison-header"><span class="comparison-tag">Before</span><span class="comparison-mood">Hard to search</span></div>
-            <p class="comparison-title">black dress</p>
-            <p class="comparison-body">black zara dress size 10 worn twice good condition</p>
-            <ul class="comparison-issues">
-              <li>Missing searchable title</li>
-              <li>No selling details</li>
-              <li>No price or reply guidance</li>
-            </ul>
+            <div class="comparison-header">
+              <span class="comparison-tag">Before</span>
+              <span class="muted small">Rough note</span>
+            </div>
+            <p class="comparison-note">zara dress size 10 worn twice navy blue</p>
+            <p class="comparison-body">Useful details, but no title, selling angle, keywords, price guidance or buyer reply.</p>
           </article>
+          <div class="comparison-arrow" aria-hidden="true">&rarr;</div>
           <article class="comparison-side comparison-after">
-            <div class="comparison-header"><span class="comparison-tag">After</span><span class="comparison-mood">Ready to paste</span></div>
-            <p class="comparison-title">Zara Black Midi Dress UK 10 - Good Condition</p>
-            <p class="comparison-body">Lovely black Zara midi dress in a UK size 10. Worn twice and still in good condition. Great for evenings, workwear or simple smart-casual outfits.</p>
-            <ul class="comparison-tags">
-              <li>zara black dress</li>
-              <li>uk 10 midi dress</li>
-              <li>smart casual</li>
-              <li>vinted keywords</li>
-            </ul>
+            <div class="comparison-header">
+              <span class="comparison-tag">After</span>
+              <span class="muted small">Ready to paste</span>
+            </div>
+            <div data-listing-card="after" data-elevated="false"></div>
           </article>
         </div>
       </section>
 
-      <section class="how-it-works" id="how-it-works" aria-labelledby="how-title">
+      <section class="demo-strip" aria-labelledby="demo-title">
+        <div class="section-head compact">
+          <p class="eyebrow">See it first</p>
+          <h2 id="demo-title">Try a real prefilled example.</h2>
+          <p class="section-sub">Generate a full premium output before creating an account.</p>
+        </div>
+        <a class="btn btn-secondary" href="/example">Try demo</a>
+      </section>
+
+      <section class="section" id="how-it-works" aria-labelledby="how-title">
         <header class="section-head">
           <p class="eyebrow">How it works</p>
           <h2 id="how-title">Paste, generate, copy.</h2>
+          <p class="section-sub">Fast enough for a Sunday listing session, structured enough for regular resellers.</p>
         </header>
         <div class="step-grid">
-          <article class="step-card"><span>1</span><h3>Paste rough notes</h3><p>Add the honest item details you already have.</p></article>
-          <article class="step-card"><span>2</span><h3>Generate listing</h3><p>ListBoost structures the title, description, price and buyer reply.</p></article>
-          <article class="step-card"><span>3</span><h3>Copy to Vinted</h3><p>Use the copy buttons and paste each section manually.</p></article>
+          <article class="step-card">
+            <span class="step-number">1</span>
+            <h3>Paste notes</h3>
+            <p>Add the honest item details you already have.</p>
+          </article>
+          <article class="step-card">
+            <span class="step-number">2</span>
+            <h3>Generate listing</h3>
+            <p>ListBoost turns the details into a structured Vinted package.</p>
+          </article>
+          <article class="step-card">
+            <span class="step-number">3</span>
+            <h3>Copy to Vinted</h3>
+            <p>Use the copy buttons and paste each section manually.</p>
+          </article>
         </div>
       </section>
 
-      <section class="benefits" aria-labelledby="benefits-title">
+      <section class="section" id="features" aria-labelledby="features-title">
         <header class="section-head">
           <p class="eyebrow">What you get</p>
-          <h2 id="benefits-title">Every output is built for Vinted.</h2>
+          <h2 id="features-title">Every output is built for Vinted.</h2>
+          <p class="section-sub">No generic fluff. Just the listing parts sellers need before publishing.</p>
         </header>
-        <div class="benefit-grid premium-benefits">
-          <article class="benefit-card"><h3>Titles</h3><p>Short, searchable Vinted titles with the right item signals.</p></article>
-          <article class="benefit-card"><h3>Descriptions</h3><p>Concise, human descriptions that feel trustworthy.</p></article>
-          <article class="benefit-card"><h3>Keywords</h3><p>Plain search terms buyers actually type.</p></article>
-          <article class="benefit-card"><h3>Price guidance</h3><p>Fast, fair and max pricing suggestions in GBP.</p></article>
-          <article class="benefit-card"><h3>Photo checklist</h3><p>The photos to take before you publish.</p></article>
-          <article class="benefit-card"><h3>Buyer replies</h3><p>Polite replies for offers, postage and condition questions.</p></article>
+        <div class="feature-grid">
+          <article class="feature-tile"><div class="feature-icon" data-icon="file-text" aria-hidden="true"></div><h3>Titles</h3><p>Short, searchable titles with brand, size and item type.</p></article>
+          <article class="feature-tile"><div class="feature-icon" data-icon="list-check" aria-hidden="true"></div><h3>Descriptions</h3><p>Human, concise descriptions that make condition and styling clear.</p></article>
+          <article class="feature-tile"><div class="feature-icon" data-icon="tag" aria-hidden="true"></div><h3>Keywords</h3><p>Plain search terms buyers actually type into Vinted.</p></article>
+          <article class="feature-tile"><div class="feature-icon" data-icon="badge-pound" aria-hidden="true"></div><h3>Price guidance</h3><p>Fast, fair and max price suggestions in GBP.</p></article>
+          <article class="feature-tile"><div class="feature-icon" data-icon="image" aria-hidden="true"></div><h3>Photo checklist</h3><p>The shots to take before publishing, including labels and flaws.</p></article>
+          <article class="feature-tile"><div class="feature-icon" data-icon="message-circle" aria-hidden="true"></div><h3>Buyer replies</h3><p>Polite replies for offers, postage and condition questions.</p></article>
         </div>
       </section>
 
-      <section class="pricing-section" id="pricing" aria-labelledby="pricing-title">
+      <section class="section pricing-section" id="pricing" aria-labelledby="pricing-title">
         <header class="section-head">
           <p class="eyebrow">Pricing</p>
           <h2 id="pricing-title">Buy credits once, or subscribe monthly.</h2>
           <p class="section-sub">Monthly plans are recommended for sellers who list every week and want credits ready.</p>
         </header>
         <div id="packGrid" aria-live="polite">
+          <div class="pricing-mode-section recommended">
+            <div class="section-head compact"><p class="eyebrow">Subscribe monthly</p><h2>Recommended for active sellers</h2></div>
+            <div class="pricing-grid">
+              <article class="pricing-card subscription-card" id="subscribe-starter"><span class="badge">Monthly</span><h3>Starter</h3><p class="pricing-price"><strong>50</strong><span>credits/month</span></p><p class="pricing-meta">&pound;5/month</p><p class="pricing-copy">For occasional sellers building a steady routine.</p><button class="btn btn-secondary pricing-buy" type="button" data-subscription-plan="starter">Subscribe Starter</button></article>
+              <article class="pricing-card subscription-card is-featured featured" id="subscribe-seller"><span class="badge badge-brand">Best value</span><h3>Seller</h3><p class="pricing-price"><strong>150</strong><span>credits/month</span></p><p class="pricing-meta">&pound;12/month</p><p class="pricing-copy">For active sellers who list every week.</p><button class="btn btn-primary pricing-buy" type="button" data-subscription-plan="seller">Subscribe monthly</button></article>
+              <article class="pricing-card subscription-card" id="subscribe-reseller"><span class="badge">Bulk seller</span><h3>Reseller</h3><p class="pricing-price"><strong>400</strong><span>credits/month</span></p><p class="pricing-meta">&pound;25/month</p><p class="pricing-copy">For larger batches and repeat listing sessions.</p><button class="btn btn-secondary pricing-buy" type="button" data-subscription-plan="reseller">Subscribe Reseller</button></article>
+            </div>
+          </div>
           <div class="pricing-mode-section">
             <div class="section-head compact"><p class="eyebrow">Buy credits</p><h2>One-time packs</h2></div>
             <div class="pricing-grid">
-              <article class="pricing-card" id="starter"><span class="badge">One-time</span><h3>Starter</h3><p class="pricing-price"><strong>50</strong><span>credits</span></p><p class="pricing-meta">&pound;5 one-time</p><button class="pricing-buy" type="button" data-checkout-pack="starter" data-pack-id="starter">Buy Starter</button></article>
-              <article class="pricing-card is-featured featured" id="seller"><span class="badge">Best value</span><h3>Seller</h3><p class="pricing-price"><strong>150</strong><span>credits</span></p><p class="pricing-meta">&pound;12 one-time</p><button class="pricing-buy" type="button" data-checkout-pack="seller" data-pack-id="seller">Buy Seller</button></article>
-              <article class="pricing-card" id="reseller"><span class="badge">Bulk pack</span><h3>Reseller</h3><p class="pricing-price"><strong>400</strong><span>credits</span></p><p class="pricing-meta">&pound;25 one-time</p><button class="pricing-buy" type="button" data-checkout-pack="reseller" data-pack-id="reseller">Buy Reseller</button></article>
-            </div>
-          </div>
-          <div class="pricing-mode-section recommended">
-            <div class="section-head compact"><p class="eyebrow">Subscribe monthly</p><h2>Recommended</h2></div>
-            <div class="pricing-grid">
-              <article class="pricing-card subscription-card" id="subscribe-starter"><span class="badge">Monthly</span><h3>Starter</h3><p class="pricing-price"><strong>50</strong><span>credits/month</span></p><p class="pricing-meta">&pound;5/month</p><button class="pricing-buy" type="button" data-subscription-plan="starter">Subscribe Starter</button></article>
-              <article class="pricing-card subscription-card is-featured featured" id="subscribe-seller"><span class="badge">Best value</span><h3>Seller</h3><p class="pricing-price"><strong>150</strong><span>credits/month</span></p><p class="pricing-meta">&pound;12/month</p><button class="pricing-buy" type="button" data-subscription-plan="seller">Subscribe monthly</button></article>
-              <article class="pricing-card subscription-card" id="subscribe-reseller"><span class="badge">Bulk seller</span><h3>Reseller</h3><p class="pricing-price"><strong>400</strong><span>credits/month</span></p><p class="pricing-meta">&pound;25/month</p><button class="pricing-buy" type="button" data-subscription-plan="reseller">Subscribe Reseller</button></article>
+              <article class="pricing-card" id="starter"><span class="badge">One-time</span><h3>Starter</h3><p class="pricing-price"><strong>50</strong><span>credits</span></p><p class="pricing-meta">&pound;5 one-time</p><p class="pricing-copy">A practical first pack for a wardrobe clear-out.</p><button class="btn btn-secondary pricing-buy" type="button" data-checkout-pack="starter" data-pack-id="starter">Buy Starter</button></article>
+              <article class="pricing-card is-featured featured" id="seller"><span class="badge badge-brand">Best value</span><h3>Seller</h3><p class="pricing-price"><strong>150</strong><span>credits</span></p><p class="pricing-meta">&pound;12 one-time</p><p class="pricing-copy">The best value one-time pack for regular listing.</p><button class="btn btn-primary pricing-buy" type="button" data-checkout-pack="seller" data-pack-id="seller">Buy Seller</button></article>
+              <article class="pricing-card" id="reseller"><span class="badge">Bulk pack</span><h3>Reseller</h3><p class="pricing-price"><strong>400</strong><span>credits</span></p><p class="pricing-meta">&pound;25 one-time</p><p class="pricing-copy">For bulk sessions and serious resellers.</p><button class="btn btn-secondary pricing-buy" type="button" data-checkout-pack="reseller" data-pack-id="reseller">Buy Reseller</button></article>
             </div>
           </div>
         </div>
+        <ul class="trust-strip final-trust" aria-label="Trust strip">
+          <li>No Vinted login needed</li>
+          <li>Copy &amp; paste manually</li>
+          <li>Independent tool</li>
+        </ul>
       </section>
 
-      <ul class="trust-strip final-trust" aria-label="Trust strip">
-        <li>No Vinted login needed</li>
-        <li>Copy &amp; paste manually</li>
-        <li>Independent tool</li>
-      </ul>
+      <section class="section faq" id="faq" aria-labelledby="faq-title">
+        <h2 id="faq-title">Questions sellers ask</h2>
+        <article class="faq-item"><button type="button" aria-expanded="false">Do I need to connect Vinted?</button><p>No. ListBoost is independent. You copy and paste everything manually.</p></article>
+        <article class="faq-item"><button type="button" aria-expanded="false">Can I use the free credits without a card?</button><p>Yes. Create an account and start with 5 free credits, no card needed.</p></article>
+        <article class="faq-item"><button type="button" aria-expanded="false">What does one credit create?</button><p>One credit creates a complete listing package with title, description, keywords, price guidance, photo checklist and buyer reply.</p></article>
+        <article class="faq-item"><button type="button" aria-expanded="false">Why subscribe monthly?</button><p>Monthly plans keep credits ready for sellers who list regularly and want a faster routine.</p></article>
+        <article class="faq-item"><button type="button" aria-expanded="false">Is the output ready to paste?</button><p>Yes. The output is structured into copyable sections built for Vinted listings.</p></article>
+      </section>
     </main>
 
     <script type="module" src="/site.js"></script>

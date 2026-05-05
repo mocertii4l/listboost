@@ -40,7 +40,7 @@ function applyTheme(theme) {
   localStorage.setItem("lb_theme", next);
   $$(".theme-toggle").forEach((button) => {
     button.setAttribute("aria-pressed", next === "dark" ? "true" : "false");
-    button.textContent = next === "dark" ? "Light" : "Dark";
+    button.innerHTML = `${iconSvg(next === "dark" ? "sun" : "moon")}<span>${next === "dark" ? "Light" : "Dark"}</span>`;
   });
 }
 
@@ -54,21 +54,186 @@ function installTheme() {
   });
 }
 
+function iconSvg(name) {
+  const icons = {
+    "arrow-right": '<path d="M5 12h14"></path><path d="m13 6 6 6-6 6"></path>',
+    "badge-pound": '<path d="M6 18h12"></path><path d="M8 12h7"></path><path d="M10 18c2-3 2-9 0-12"></path><path d="M10 6h5"></path>',
+    check: '<path d="m5 12 4 4L19 6"></path>',
+    "check-circle": '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><path d="m9 11 3 3L22 4"></path>',
+    copy: '<rect width="14" height="14" x="8" y="8" rx="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path>',
+    "credit-card": '<rect width="20" height="14" x="2" y="5" rx="2"></rect><path d="M2 10h20"></path>',
+    "file-text": '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><path d="M14 2v6h6"></path><path d="M16 13H8"></path><path d="M16 17H8"></path><path d="M10 9H8"></path>',
+    history: '<path d="M3 12a9 9 0 1 0 3-6.7"></path><path d="M3 3v6h6"></path><path d="M12 7v5l4 2"></path>',
+    image: '<rect width="18" height="18" x="3" y="3" rx="2"></rect><circle cx="9" cy="9" r="2"></circle><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"></path>',
+    "list-check": '<path d="m3 17 2 2 4-4"></path><path d="M13 6h8"></path><path d="M13 12h8"></path><path d="M13 18h8"></path><path d="m3 7 2 2 4-4"></path>',
+    menu: '<path d="M4 6h16"></path><path d="M4 12h16"></path><path d="M4 18h16"></path>',
+    "message-circle": '<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22z"></path>',
+    moon: '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>',
+    repeat: '<path d="m17 2 4 4-4 4"></path><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><path d="m7 22-4-4 4-4"></path><path d="M21 13v2a4 4 0 0 1-4 4H3"></path>',
+    save: '<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"></path><path d="M17 21v-8H7v8"></path><path d="M7 3v5h8"></path>',
+    search: '<circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path>',
+    shield: '<path d="M20 13c0 5-3.5 7.5-7.7 8.9a1 1 0 0 1-.6 0C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.2-2.4a1.4 1.4 0 0 1 1.6 0C14.5 3.8 17 5 19 5a1 1 0 0 1 1 1z"></path><path d="m9 12 2 2 4-4"></path>',
+    sparkles: '<path d="M9.9 10.8 8 17l-1.9-6.2L0 9l6.1-1.8L8 1l1.9 6.2L16 9z"></path><path d="M19 17.5 18 21l-1-3.5-3.5-1 3.5-1 1-3.5 1 3.5 3.5 1z"></path>',
+    sun: '<circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path>',
+    tag: '<path d="M12.6 2H4a2 2 0 0 0-2 2v8.6a2 2 0 0 0 .6 1.4l7.4 7.4a2 2 0 0 0 2.8 0l8.6-8.6a2 2 0 0 0 0-2.8L14 2.6A2 2 0 0 0 12.6 2Z"></path><circle cx="7.5" cy="7.5" r=".5"></circle>',
+    wallet: '<path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3v3a1 1 0 0 1-1 1H5a2 2 0 0 1-2-2V5"></path><path d="M18 12h.01"></path>',
+    x: '<path d="M18 6 6 18"></path><path d="m6 6 12 12"></path>'
+  };
+  return `<svg class="icon icon-${escapeHtml(name)}" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${icons[name] || icons.sparkles}</svg>`;
+}
+
+function htmlAttributes(attributes = {}) {
+  return Object.entries(attributes)
+    .filter(([, value]) => value !== false && value != null)
+    .map(([key, value]) => value === true ? escapeHtml(key) : `${escapeHtml(key)}="${escapeHtml(value)}"`)
+    .join(" ");
+}
+
+function buttonTemplate({
+  variant = "primary",
+  label,
+  icon = "",
+  href = "",
+  type = "button",
+  className = "",
+  attributes = {},
+  disabled = false
+} = {}) {
+  const content = `${icon ? iconSvg(icon) : ""}<span>${escapeHtml(label || "")}</span>`;
+  const classes = `btn btn-${variant} ${className}`.trim();
+  const attrs = htmlAttributes({ ...attributes, class: classes, ...(disabled ? { disabled: true } : {}) });
+  if (href) return `<a href="${escapeHtml(href)}" ${attrs}>${content}</a>`;
+  return `<button type="${escapeHtml(type)}" ${attrs}>${content}</button>`;
+}
+
+function cardTemplate({ eyebrow = "", title = "", body = "", icon = "", footer = "", className = "", attributes = {}, elevated = false, interactive = false } = {}) {
+  const classes = ["card", elevated ? "card-elevated" : "", interactive ? "card-interactive" : "", className].filter(Boolean).join(" ");
+  return `
+    <article ${htmlAttributes({ ...attributes, class: classes })}>
+      ${icon ? `<div class="feature-icon">${iconSvg(icon)}</div>` : ""}
+      ${eyebrow ? `<span class="badge">${escapeHtml(eyebrow)}</span>` : ""}
+      ${title ? `<h3>${escapeHtml(title)}</h3>` : ""}
+      ${body ? `<p>${escapeHtml(body)}</p>` : ""}
+      ${footer}
+    </article>
+  `;
+}
+
+function listingCardTemplate({ title = "Vinted-ready listing title", price = "£18", keywords = [], description = "" } = {}, options = {}) {
+  const chips = (Array.isArray(keywords) ? keywords : String(keywords).split(",")).map((item) => String(item).trim()).filter(Boolean).slice(0, 5);
+  const classes = ["listing-card", options.elevated ? "is-elevated" : "", options.className || ""].filter(Boolean).join(" ");
+  return `
+    <article class="${classes}" aria-label="Generated listing preview">
+      <div class="listing-card-header">
+        <div class="listing-card-title">
+          <span class="badge badge-brand">${iconSvg("sparkles")} Sell-ready listing</span>
+          <h3>${escapeHtml(title)}</h3>
+        </div>
+        <strong class="listing-price">${escapeHtml(price)}</strong>
+      </div>
+      <p class="listing-description">${escapeHtml(description)}</p>
+      <div class="listing-keywords" aria-label="Suggested keywords">
+        ${chips.map((keyword) => `<span>${escapeHtml(keyword)}</span>`).join("")}
+      </div>
+      ${options.actions ? `<div class="listing-card-actions">${options.actions}</div>` : ""}
+    </article>
+  `;
+}
+
+function pricingCardTemplate({ variant = "one-time", id = "", name = "", credits = 0, pricePence = 0, label = "", featured = false, description = "", ctaLabel = "", current = false } = {}) {
+  const isSubscription = variant === "subscription";
+  const isOneTime = variant === "one-time";
+  const cardId = isSubscription ? `subscribe-${id}` : id;
+  const price = isSubscription ? formatMonthlyPrice({ pricePence }) : `${formatPrice(pricePence)} one-time`;
+  const creditLabel = isSubscription ? "credits/month" : "credits";
+  const compare = isSubscription
+    ? ["Monthly credit refill", "Good for regular listing sessions", "Switch plans from billing"]
+    : ["One credit per generated listing", "Saved history and copy tools", "Buyer replies and price guidance"];
+  const buttonAttrs = isSubscription
+    ? { "data-subscription-plan": id }
+    : { "data-checkout-pack": id, "data-pack-id": id };
+  const buttonLabel = ctaLabel || (current ? "Current plan" : isSubscription ? `Subscribe ${name}` : `Buy ${name}`);
+  return `
+    <article class="pricing-card ${variant} ${isSubscription ? "subscription-card" : ""} ${featured ? "is-featured featured" : ""}" id="${escapeHtml(cardId)}">
+      <span class="badge ${featured ? "badge-brand" : ""}">${escapeHtml(featured ? "Best value" : label || (isSubscription ? "Monthly" : "One-time"))}</span>
+      <h3>${escapeHtml(name)}</h3>
+      <p class="pricing-price"><strong>${Number(credits || 0)}</strong><span>${escapeHtml(creditLabel)}</span></p>
+      <p class="pricing-meta">${escapeHtml(price)}</p>
+      <p class="pricing-copy">${escapeHtml(description || (isSubscription ? "Fresh credits every month for consistent Vinted listing." : "Credits for listings, price guidance and buyer replies."))}</p>
+      <ul class="pricing-compare">${compare.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
+      ${buttonTemplate({ variant: featured ? "primary" : "secondary", label: buttonLabel, className: "pricing-buy", attributes: buttonAttrs, disabled: current })}
+    </article>
+  `;
+}
+
+function authShellTemplate({ heading = "", subtext = "", body = "" } = {}) {
+  return `
+    <main class="auth-shell" id="main">
+      <a class="btn btn-ghost auth-back" href="/">${iconSvg("arrow-right")}<span>Back to home</span></a>
+      <a class="lb-brand" href="/"><img src="/logo.svg" alt="" />ListBoost</a>
+      <section class="card auth-card">
+        ${heading ? `<h1>${escapeHtml(heading)}</h1>` : ""}
+        ${subtext ? `<p class="muted">${escapeHtml(subtext)}</p>` : ""}
+        ${body}
+      </section>
+    </main>
+  `;
+}
+
+function emptyStateTemplate({ icon = "sparkles", heading = "Nothing here yet", body = "", cta = "" } = {}) {
+  return `
+    <div class="empty-state">
+      <div class="empty-state-icon">${iconSvg(icon)}</div>
+      <h3>${escapeHtml(heading)}</h3>
+      ${body ? `<p>${escapeHtml(body)}</p>` : ""}
+      ${cta}
+    </div>
+  `;
+}
+
+const marketingListingExamples = {
+  hero: {
+    title: "Zara Navy Satin Midi Dress UK 10",
+    price: "£18",
+    keywords: ["zara dress", "uk 10", "navy satin"],
+    description: "Elegant navy satin midi dress from Zara in a UK 10. Worn twice and in lovely condition, perfect for dinners, events or smart weekend plans."
+  },
+  after: {
+    title: "Zara Navy Midi Dress UK 10 - Worn Twice",
+    price: "£18",
+    keywords: ["zara dress", "navy midi", "uk 10"],
+    description: "Lovely navy Zara midi dress in a UK size 10. Worn twice, clean and ready to post. Easy to style with heels, boots or a simple jacket."
+  }
+};
+
+function hydrateListingCardPlaceholders(root = document) {
+  $$("[data-listing-card]", root).forEach((node) => {
+    const key = node.dataset.listingCard || "hero";
+    const example = marketingListingExamples[key] || marketingListingExamples.hero;
+    node.innerHTML = listingCardTemplate(example, { elevated: node.dataset.elevated !== "false" });
+  });
+}
+
+function hydrateIconPlaceholders(root = document) {
+  $$("[data-icon]", root).forEach((node) => {
+    node.innerHTML = iconSvg(node.dataset.icon || "sparkles");
+  });
+}
+
 function publicHeaderTemplate() {
+  // Public marketing header intentionally omits account chrome: js-email and Log out stay app-only.
   return `
     <a class="lb-brand" href="/"><img src="/logo.svg" alt="" />ListBoost</a>
-    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="publicNav">Menu</button>
+    <button class="nav-toggle btn btn-ghost btn-icon" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="publicNav">${iconSvg("menu")}</button>
     <nav id="publicNav" class="public-nav" aria-label="Primary">
       <a href="/#how-it-works">How it works</a>
       <a href="/example">Example</a>
       <a href="/pricing">Pricing</a>
     </nav>
     <div class="nav-actions">
-      <button class="theme-toggle" type="button" aria-pressed="false">Dark</button>
-      <span class="signed-in-only nav-email js-email"></span>
-      <button class="signed-in-only nav-logout" type="button" data-logout>Log out</button>
-      <a class="signed-out-only nav-login" href="/login">Log in</a>
-      <a class="signed-out-only button primary nav-start" href="/signup">Start free</a>
+      <button class="theme-toggle btn btn-ghost" type="button" aria-pressed="false">${iconSvg("moon")}<span>Dark</span></button>
+      <a class="btn btn-ghost nav-login" href="/login">Log in</a>
+      <a class="btn btn-primary nav-start" href="/signup" aria-label="Start free with 5 credits">Start with 5 free credits</a>
     </div>
   `;
 }
@@ -135,7 +300,7 @@ function installPublicShell() {
 }
 
 function formatPrice(pence) {
-  return `GBP ${(Number(pence || 0) / 100).toFixed(2).replace(/\.00$/, "")}`;
+  return `£${(Number(pence || 0) / 100).toFixed(2).replace(/\.00$/, "")}`;
 }
 
 function formatMonthlyPrice(plan) {
@@ -230,28 +395,17 @@ function momentumMessage(count) {
 function renderPacks(packs) {
   const grid = $("#packGrid");
   if (!grid || !Array.isArray(packs)) return;
-  const creditCards = packs.map((pack) => `
-    <article class="pricing-card ${pack.featured ? "is-featured featured" : ""}" id="${escapeHtml(pack.id)}">
-      <span class="badge">${escapeHtml(pack.label || "One-time")}</span>
-      <h3>${escapeHtml(pack.name)}</h3>
-      <p class="pricing-price"><strong>${Number(pack.credits || 0)}</strong><span>credits</span></p>
-      <p class="pricing-meta">${escapeHtml(formatPrice(pack.pricePence))} one-time</p>
-      <p class="pricing-copy">${escapeHtml(pack.description || "Credits for listings, price guidance and buyer replies.")}</p>
-      <ul class="pricing-compare"><li>One credit per generated listing</li><li>Saved history and copy tools</li><li>Buyer replies and price guidance</li></ul>
-      <button class="pricing-buy" type="button" data-checkout-pack="${escapeHtml(pack.id)}" data-pack-id="${escapeHtml(pack.id)}">Buy ${escapeHtml(pack.name)}</button>
-    </article>
-  `).join("");
-  const subscriptionCards = getSubscriptionPlans().map((plan) => `
-    <article class="pricing-card subscription-card ${plan.featured ? "is-featured featured" : ""}" id="subscribe-${escapeHtml(plan.id)}">
-      <span class="badge">${escapeHtml(plan.featured ? "Recommended" : plan.label || "Monthly")}</span>
-      <h3>${escapeHtml(plan.name)}</h3>
-      <p class="pricing-price"><strong>${Number(plan.credits || 0)}</strong><span>credits/month</span></p>
-      <p class="pricing-meta">${escapeHtml(formatMonthlyPrice(plan))}</p>
-      <p class="pricing-copy">${escapeHtml(plan.description || "Fresh credits every month for consistent Vinted listing.")}</p>
-      <ul class="pricing-compare"><li>Monthly credit refill</li><li>Good for regular listing sessions</li><li>Cancel or switch plans from billing</li></ul>
-      <button class="pricing-buy" type="button" data-subscription-plan="${escapeHtml(plan.id)}">${plan.featured ? "Subscribe monthly" : `Subscribe ${escapeHtml(plan.name)}`}</button>
-    </article>
-  `).join("");
+  const creditCards = packs.map((pack) => pricingCardTemplate({
+    variant: "one-time",
+    ...pack,
+    ctaLabel: `Buy ${pack.name}`
+  })).join("");
+  const subscriptionCards = getSubscriptionPlans().map((plan) => pricingCardTemplate({
+    variant: "subscription",
+    ...plan,
+    label: plan.featured ? "Best value" : plan.label || "Monthly",
+    ctaLabel: plan.featured ? "Subscribe monthly" : `Subscribe ${plan.name}`
+  })).join("");
   grid.innerHTML = `
     <div class="pricing-mode-section">
       <div class="section-head compact"><p class="eyebrow">Buy credits</p><h2>One-time packs</h2></div>
@@ -266,6 +420,8 @@ function renderPacks(packs) {
 
 async function bootstrap() {
   installPublicShell();
+  hydrateListingCardPlaceholders();
+  hydrateIconPlaceholders();
   renderAppRoute();
   installTheme();
   installPasswordToggles();
