@@ -348,6 +348,8 @@ test("demo generation works without signup and returns the submitted input", asy
       body: JSON.stringify({ itemDetails: "back lv belt" })
     });
     assert.equal(beltDemo.response.status, 200);
+    assert.equal(beltDemo.body.input.size, "");
+    assert.equal(beltDemo.body.input.condition, "");
     assert.match(beltDemo.body.title, /belt/i);
     assert.doesNotMatch(`${beltDemo.body.title} ${(beltDemo.body.tags || []).join(" ")} ${(beltDemo.body.searchTerms || []).join(" ")}`, /zara|midi dress/i);
   } finally {

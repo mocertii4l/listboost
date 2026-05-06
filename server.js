@@ -902,6 +902,7 @@ function buildPrompt({ tone, itemDetails, category, size, condition, buyerQuesti
     "KEYWORDS: include strong plain search terms buyers would actually type. No hashtags.",
     "BUYER REPLY: write in a natural UK seller tone. Friendly, honest, concise, and useful.",
     "Use UK spelling and practical postage wording only when provided by the seller.",
+    "If rough notes are short or contain obvious typos, infer cautiously from the words provided. For example, 'back' before a fashion item may mean 'black', but do not invent unrelated brands, sizes, conditions, or examples.",
     "Give a listing score out of 100 and explain what would improve it before posting.",
     "Give three price options: fastSale, fairPrice, maxPrice. Also include lowestOffer, startPrice, autoCounterOffer, and bundleDiscount.",
     "Include buyer replies for common Vinted messages, offers, postage questions, authenticity questions, and condition questions.",
@@ -1488,12 +1489,12 @@ async function handleDemoGenerate(req, res) {
     const body = JSON.parse(raw || "{}");
     const itemDetails = String(body.itemDetails || "Black Zara dress size 10 worn twice good condition").trim().slice(0, 600);
     const input = {
-      category: "Clothing",
+      category: String(body.category || "").trim().slice(0, 80),
       tone: "friendly",
       sellerMode: "clearout",
       negotiationGoal: "friendly",
-      size: "UK 10",
-      condition: "Good condition",
+      size: String(body.size || "").trim().slice(0, 80),
+      condition: String(body.condition || "").trim().slice(0, 80),
       itemDetails: itemDetails.length >= 8 ? itemDetails : "Black Zara dress size 10 worn twice good condition",
       buyerQuestion: ""
     };
