@@ -1587,3 +1587,133 @@ body[data-page="app-v3"] .history-toolbar input:focus {
     padding-bottom: 110px;
   }
 }
+
+@media (max-width: 640px) {
+  body[data-page="app-v3"] .lb-header {
+    min-height: 64px;
+    padding: 10px 12px;
+    gap: 8px;
+  }
+
+  body[data-page="app-v3"] .lb-brand {
+    gap: 8px;
+    font-size: 15px;
+  }
+
+  body[data-page="app-v3"] .lb-brand img {
+    width: 26px;
+    height: 26px;
+  }
+
+  body[data-page="app-v3"] .nav-actions {
+    gap: 6px;
+    min-width: 0;
+  }
+
+  body[data-page="app-v3"] .status-pill.js-usage {
+    padding: 7px 9px;
+    font-size: 11px;
+    gap: 6px;
+  }
+
+  body[data-page="app-v3"] .avatar-menu {
+    padding: 4px;
+    border-radius: 999px;
+  }
+
+  body[data-page="app-v3"] .avatar-circle {
+    width: 30px;
+    height: 30px;
+    font-size: 12px;
+  }
+
+  body[data-page="app-v3"] .nav-actions [data-logout].btn-ghost {
+    display: none;
+  }
+
+  body[data-page="app-v3"] .app-route-shell {
+    width: min(100% - 24px, 1240px);
+    padding-top: 18px;
+    padding-bottom: calc(104px + env(safe-area-inset-bottom));
+  }
+
+  body[data-page="app-v3"] .route-head {
+    margin-bottom: 18px;
+  }
+
+  body[data-page="app-v3"] .route-head h1,
+  body[data-page="app-v3"] .dashboard-head h1,
+  body[data-page="app-v3"] .generator-panel > h1 {
+    font-size: 30px;
+    line-height: 1.08;
+  }
+
+  body[data-page="app-v3"] .route-head .muted,
+  body[data-page="app-v3"] .generator-panel > .muted {
+    font-size: 14.5px;
+    line-height: 1.55;
+  }
+
+  body[data-page="app-v3"] .generator-panel,
+  body[data-page="app-v3"] .notes-layout .generator-panel {
+    gap: 14px;
+    padding: 18px;
+    border-radius: 16px;
+  }
+
+  body[data-page="app-v3"] .tool-layout,
+  body[data-page="app-v3"] .notes-layout {
+    gap: 16px;
+  }
+
+  body[data-page="app-v3"] .photo-dropzone {
+    padding: 18px;
+    border-radius: 14px;
+  }
+
+  body[data-page="app-v3"] .photo-dropzone .feature-icon {
+    width: 38px;
+    height: 38px;
+  }
+
+  body[data-page="app-v3"] .photo-upload-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  body[data-page="app-v3"] .photo-upload-actions .btn {
+    width: 100%;
+  }
+
+  body[data-page="app-v3"] textarea,
+  body[data-page="app-v3"] input[type="text"],
+  body[data-page="app-v3"] input[type="email"],
+  body[data-page="app-v3"] input[type="password"],
+  body[data-page="app-v3"] input[type="number"],
+  body[data-page="app-v3"] select,
+  body[data-page="app-v3"] .result-edit {
+    font-size: 14.5px;
+    padding: 11px 12px;
+    border-radius: 11px;
+  }
+
+  body[data-page="app-v3"] .app-nav {
+    left: 10px;
+    right: 10px;
+    bottom: calc(10px + env(safe-area-inset-bottom));
+    padding: 6px;
+    border-radius: 16px;
+  }
+
+  body[data-page="app-v3"] .app-nav a {
+    min-height: 52px;
+    font-size: 10.5px;
+  }
+
+  body[data-page="app-v3"] .app-nav-icon {
+    width: 20px;
+    height: 20px;
+  }
+}

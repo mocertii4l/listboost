@@ -203,11 +203,12 @@ const PRICING_CATALOGUE = [
     pricePence: 699,
     label: "Monthly starter",
     fit: "Best for casual sellers",
-    copy: "For occasional listings when you need the core generator.",
+    copy: "For wardrobe clear-outs when you want clean listings without writing prompts.",
     features: [
       "20 listings per month",
       "Notes-to-listing generator",
-      "Titles, descriptions and keywords"
+      "Vinted-style titles, descriptions and keywords",
+      "Editable sections with copy buttons"
     ]
   },
   {
@@ -217,14 +218,15 @@ const PRICING_CATALOGUE = [
     label: "Best value",
     featured: true,
     fit: "Best for regular sellers",
-    copy: "The full toolkit regular Vinted sellers need.",
+    copy: "The weekly seller toolkit: photos, pricing, replies, scoring and saved history.",
     features: [
       "75 listings per month",
       "Everything in Starter",
-      "Photo upload listing generator",
-      "Price guidance",
+      "Photo upload from phone",
+      "Fast / fair / max price guidance",
       "Buyer reply generator",
-      "Listing score checker"
+      "Listing score checker",
+      "Saved history for repeat sellers"
     ]
   },
   {
@@ -233,18 +235,18 @@ const PRICING_CATALOGUE = [
     pricePence: 2999,
     label: "Elite tools",
     fit: "Best for daily sellers",
-    copy: "For serious resellers running larger volumes with priority support.",
+    copy: "For serious resellers who list in batches and want the fastest workflow.",
     features: [
       "250 listings per month",
       "Everything in Seller",
-      "Built for serious resellers",
+      "Batch-friendly reseller workflow",
       "Advanced photo checklist",
       "More detailed price guidance",
       "Listing history",
       "Reusable listing templates (coming soon)",
       "Priority support",
-      "Best for daily sellers",
-      "Early access to new selling tools"
+      "Early access to new selling tools",
+      "Best for daily sellers"
     ]
   }
 ];
@@ -2154,27 +2156,29 @@ function planBenefitsFor(planId) {
     starter: [
       "20 listings per month",
       "Notes-to-listing generator",
-      "Titles, descriptions and keywords"
+      "Vinted-style titles, descriptions and keywords",
+      "Editable sections with copy buttons"
     ],
     seller: [
       "75 listings per month",
       "Everything in Starter",
-      "Photo upload listing generator",
-      "Price guidance",
+      "Photo upload from phone",
+      "Fast / fair / max price guidance",
       "Buyer reply generator",
-      "Listing score checker"
+      "Listing score checker",
+      "Saved history for repeat sellers"
     ],
     reseller: [
       "250 listings per month",
       "Everything in Seller",
-      "Built for serious resellers",
+      "Batch-friendly reseller workflow",
       "Advanced photo checklist",
       "More detailed price guidance",
       "Listing history",
       "Reusable listing templates (coming soon)",
       "Priority support",
-      "Best for daily sellers",
-      "Early access to new selling tools"
+      "Early access to new selling tools",
+      "Best for daily sellers"
     ]
   };
   return benefits[planId] || benefits.free;
@@ -2184,8 +2188,8 @@ function planStrapline(planId) {
   return ({
     free: "Try 3 listings on us, then choose a monthly plan.",
     starter: "Light, monthly plan for casual sellers.",
-    seller: "The full toolkit regular Vinted sellers need.",
-    reseller: "250 listings a month and priority support for serious resellers."
+    seller: "Photos, pricing, replies, scoring and history for regular sellers.",
+    reseller: "250 listings a month, batch-friendly workflow and priority support."
   })[planId] || "";
 }
 

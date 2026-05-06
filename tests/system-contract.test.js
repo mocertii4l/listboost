@@ -412,9 +412,9 @@ test("pricing surfaces use the single PRICING_CATALOGUE source of truth", () => 
 test("static pricing HTML cannot drift from the catalogue copy", () => {
   // Each plan's exact bullet list as rendered in static HTML must match the catalogue.
   const catalogue = {
-    starter: ["20 listings per month", "Notes-to-listing generator", "Titles, descriptions and keywords"],
-    seller: ["75 listings per month", "Everything in Starter", "Photo upload listing generator", "Price guidance", "Buyer reply generator", "Listing score checker"],
-    reseller: ["250 listings per month", "Everything in Seller", "Built for serious resellers", "Advanced photo checklist", "More detailed price guidance", "Listing history", "Reusable listing templates (coming soon)", "Priority support", "Best for daily sellers", "Early access to new selling tools"]
+    starter: ["20 listings per month", "Notes-to-listing generator", "Vinted-style titles, descriptions and keywords", "Editable sections with copy buttons"],
+    seller: ["75 listings per month", "Everything in Starter", "Photo upload from phone", "Fast / fair / max price guidance", "Buyer reply generator", "Listing score checker", "Saved history for repeat sellers"],
+    reseller: ["250 listings per month", "Everything in Seller", "Batch-friendly reseller workflow", "Advanced photo checklist", "More detailed price guidance", "Listing history", "Reusable listing templates (coming soon)", "Priority support", "Early access to new selling tools", "Best for daily sellers"]
   };
   for (const [planId, bullets] of Object.entries(catalogue)) {
     for (const html of [pricingHtml, indexHtml]) {
@@ -513,11 +513,26 @@ test("public UI never shows old launch prices, old limits, or unlimited claims",
   assert.doesNotMatch(siteJs, /"Unlimited listings"/);
 });
 
+test("public marketing explains why ListBoost beats generic chat prompts", () => {
+  assert.match(indexHtml, /Why not just use ChatGPT/);
+  assert.match(indexHtml, /ChatGPT and Claude can write a listing/);
+  assert.match(indexHtml, /ListBoost is the Vinted workflow/);
+  assert.match(indexHtml, /structured listing out, copy buttons ready/);
+  assert.match(pricingHtml, /blank chatbot prompt/);
+  assert.match(pricingHtml, /You are paying for the workflow/);
+  for (const html of [indexHtml, pricingHtml]) {
+    assert.doesNotMatch(html, /Backend plan ids/i);
+    assert.doesNotMatch(html, /internally it remains/i);
+  }
+});
+
 test("homepage pricing teaser matches the new feature lists", () => {
   const sellerBlock = indexHtml.match(/id="subscribe-seller"[\s\S]*?<\/article>/)[0];
   assert.match(sellerBlock, /75 listings per month/);
-  assert.match(sellerBlock, /Photo upload listing generator/);
+  assert.match(sellerBlock, /Photo upload from phone/);
+  assert.match(sellerBlock, /Fast \/ fair \/ max price guidance/);
   assert.match(sellerBlock, /Listing score checker/);
+  assert.match(sellerBlock, /Saved history for repeat sellers/);
   // V3 layout: <strong>£X.XX</strong><span>per month</span>.
   assert.match(sellerBlock, /<strong>&pound;14\.99<\/strong>/);
   const eliteBlock = indexHtml.match(/id="subscribe-reseller"[\s\S]*?<\/article>/)[0];
@@ -540,11 +555,11 @@ test("plan id 'reseller' stays stable internally even though display says Elite"
 
 test("billing route benefits list matches the per-plan public spec", () => {
   // Starter — 20/month + 3 spec features
-  assert.match(siteJs, /starter:\s*\[\s*"20 listings per month"[\s\S]*?"Notes-to-listing generator"[\s\S]*?"Titles, descriptions and keywords"/);
+  assert.match(siteJs, /starter:\s*\[\s*"20 listings per month"[\s\S]*?"Notes-to-listing generator"[\s\S]*?"Vinted-style titles, descriptions and keywords"[\s\S]*?"Editable sections with copy buttons"/);
   // Seller — 75/month + 6 spec features
-  assert.match(siteJs, /seller:\s*\[\s*"75 listings per month"[\s\S]*?"Everything in Starter"[\s\S]*?"Photo upload listing generator"[\s\S]*?"Price guidance"[\s\S]*?"Buyer reply generator"[\s\S]*?"Listing score checker"/);
+  assert.match(siteJs, /seller:\s*\[\s*"75 listings per month"[\s\S]*?"Everything in Starter"[\s\S]*?"Photo upload from phone"[\s\S]*?"Fast \/ fair \/ max price guidance"[\s\S]*?"Buyer reply generator"[\s\S]*?"Listing score checker"[\s\S]*?"Saved history for repeat sellers"/);
   // Elite — 250/month + honest templates copy + priority support; no unlimited claim
-  assert.match(siteJs, /reseller:\s*\[\s*"250 listings per month"[\s\S]*?"Reusable listing templates \(coming soon\)"[\s\S]*?"Priority support"[\s\S]*?"Early access to new selling tools"/);
+  assert.match(siteJs, /reseller:\s*\[\s*"250 listings per month"[\s\S]*?"Batch-friendly reseller workflow"[\s\S]*?"Reusable listing templates \(coming soon\)"[\s\S]*?"Priority support"[\s\S]*?"Early access to new selling tools"/);
   assert.doesNotMatch(siteJs, /"Unlimited listings"/);
 });
 
@@ -636,16 +651,18 @@ test("pricing page renders Starter / Seller / Elite subscription tiers with laun
   const starterBlock = pricingHtml.match(/id="subscribe-starter"[\s\S]*?<\/article>/)[0];
   assert.match(starterBlock, /20 listings per month/);
   assert.match(starterBlock, /Notes-to-listing generator/);
-  assert.match(starterBlock, /Titles, descriptions and keywords/);
+  assert.match(starterBlock, /Vinted-style titles, descriptions and keywords/);
+  assert.match(starterBlock, /Editable sections with copy buttons/);
 
   // Seller must show 75/month + the 6 spec features.
   const sellerBlock = pricingHtml.match(/id="subscribe-seller"[\s\S]*?<\/article>/)[0];
   assert.match(sellerBlock, /75 listings per month/);
   assert.match(sellerBlock, /Everything in Starter/);
-  assert.match(sellerBlock, /Photo upload listing generator/);
-  assert.match(sellerBlock, /Price guidance/);
+  assert.match(sellerBlock, /Photo upload from phone/);
+  assert.match(sellerBlock, /Fast \/ fair \/ max price guidance/);
   assert.match(sellerBlock, /Buyer reply generator/);
   assert.match(sellerBlock, /Listing score checker/);
+  assert.match(sellerBlock, /Saved history for repeat sellers/);
   assert.doesNotMatch(sellerBlock, /100 listings/);
 
   // Elite must show 250/month + 10+ bullets, and never claim unlimited.

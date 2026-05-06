@@ -675,6 +675,82 @@ body[data-page="marketing-v3"] .section-head .eyebrow {
   .bento-cell.lg, .bento-cell.md, .bento-cell.md-2, .bento-cell.sm { grid-column: span 1; }
 }
 
+/* --------- Why ListBoost comparison --------- */
+
+.comparison-v3 {
+  display: grid;
+  grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+  gap: 18px;
+  align-items: stretch;
+}
+
+.comparison-card {
+  display: grid;
+  gap: 18px;
+  padding: 28px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.comparison-card h3 {
+  margin: 0;
+  color: var(--text);
+  font-size: clamp(22px, 2.4vw, 32px);
+  line-height: 1.12;
+  letter-spacing: -0.018em;
+}
+
+.comparison-card ul {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.comparison-card li {
+  position: relative;
+  padding-left: 24px;
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.comparison-card li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.68em;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--text-subtle);
+}
+
+.comparison-muted {
+  opacity: 0.86;
+  background: color-mix(in srgb, var(--surface) 84%, var(--bg-deep));
+}
+
+.comparison-featured {
+  background:
+    radial-gradient(85% 70% at 30% 0%, rgba(45, 212, 196, 0.18), transparent 70%),
+    var(--surface-2);
+  border-color: color-mix(in srgb, var(--primary) 44%, var(--border));
+  box-shadow: 0 28px 64px -34px rgba(45, 212, 196, 0.5);
+}
+
+.comparison-featured li::before {
+  background: var(--primary);
+  box-shadow: 0 0 0 4px rgba(45, 212, 196, 0.14);
+}
+
+@media (max-width: 768px) {
+  .comparison-v3 { grid-template-columns: 1fr; }
+  .comparison-card { padding: 22px; border-radius: 18px; }
+}
+
 /* --------- Trust strip dark --------- */
 
 .trust-v3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
