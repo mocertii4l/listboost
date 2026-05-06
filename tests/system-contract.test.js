@@ -28,6 +28,14 @@ test("canonical domain and checkout routes are present", () => {
   assert.match(serverJs, /checkoutMatch/);
 });
 
+test("static product photos are served with browser image mime types", () => {
+  assert.match(serverJs, /\.jpg": "image\/jpeg"/);
+  assert.match(serverJs, /\.jpeg": "image\/jpeg"/);
+  assert.match(serverJs, /\.png": "image\/png"/);
+  assert.match(serverJs, /\.webp": "image\/webp"/);
+  assert.match(serverJs, /\.gif": "image\/gif"/);
+});
+
 test("new app surfaces include required modules", () => {
   for (const path of ["/app/notes", "/app/photo", "/app/score", "/app/replies", "/app/history", "/app/billing", "/app/account"]) {
     assert.match(serverJs, new RegExp(path.replace(/\//g, "\\/")));
@@ -176,6 +184,13 @@ test("photo upload supports mobile camera and premium output", () => {
   assert.match(siteJs, /Choose photos/);
   assert.match(siteJs, /Take photo/);
   assert.match(siteJs, /cameraPhoto/);
+  assert.match(siteJs, /photoCategories = \[/);
+  assert.match(siteJs, /Women’s clothing/);
+  assert.match(siteJs, /Home & decor/);
+  assert.match(siteJs, /Electronics/);
+  assert.match(siteJs, /Bundles/);
+  assert.match(siteJs, /class="photo-empty-mock-photo"/);
+  assert.match(siteJs, /\/images\/listing-gallery\/zara-dress\.jpg/);
   assert.match(siteJs, /Photo Listing/);
   assert.match(siteJs, /Choose photos from your phone or take a fresh picture/);
   assert.match(serverJs, /\/api\/generate-from-photos/);
@@ -230,6 +245,10 @@ test("public CTAs have valid hrefs and pricing has subscribe buttons", () => {
 test("homepage shows product-gallery example cards (Zara, Nike, Kids bundle)", () => {
   assert.match(indexHtml, /class="gallery-v3"/);
   assert.match(indexHtml, /class="gallery-card/);
+  assert.match(indexHtml, /class="gallery-card-photo"/);
+  assert.match(indexHtml, /\/images\/listing-gallery\/zara-dress\.jpg/);
+  assert.match(indexHtml, /\/images\/listing-gallery\/white-trainers\.jpg/);
+  assert.match(indexHtml, /\/images\/listing-gallery\/newborn-bundle\.jpg/);
   assert.match(indexHtml, /Zara Navy Satin Midi Dress/);
   assert.match(indexHtml, /Nike Air Force 1/);
   assert.match(indexHtml, /Kids Winter Bundle/);

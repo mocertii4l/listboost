@@ -3419,21 +3419,16 @@ input[readonly] {
   position: relative;
   aspect-ratio: 4 / 3;
   border-radius: var(--radius-md);
-  background:
-    radial-gradient(120% 80% at 30% 30%, color-mix(in srgb, var(--primary) 25%, transparent), transparent 60%),
-    repeating-linear-gradient(135deg, transparent 0 14px, color-mix(in srgb, var(--text-subtle) 10%, transparent) 14px 15px),
-    color-mix(in srgb, var(--bg-subtle) 90%, var(--card));
+  background: color-mix(in srgb, var(--bg-subtle) 90%, var(--card));
   border: 1px solid var(--border);
-  display: grid;
-  place-items: center;
+  overflow: hidden;
 }
 
-.photo-empty-mock-shape {
-  width: 55%;
-  aspect-ratio: 1 / 1.5;
-  background: linear-gradient(160deg, #1c2a4a, #34406b 60%, #0f1733);
-  clip-path: polygon(35% 0, 65% 0, 75% 22%, 88% 100%, 12% 100%, 25% 22%);
-  box-shadow: 0 12px 24px -10px rgba(16, 32, 30, 0.35);
+.photo-empty-mock-photo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .photo-empty-mock-card {

@@ -383,7 +383,7 @@ function photoStepsTemplate() {
       </div>
       <div class="photo-empty-mock" aria-hidden="true">
         <div class="photo-empty-mock-img">
-          <span class="photo-empty-mock-shape"></span>
+          <img class="photo-empty-mock-photo" src="/images/listing-gallery/zara-dress.jpg" width="900" height="600" alt="" loading="lazy" decoding="async" />
         </div>
         <div class="photo-empty-mock-card">
           <span class="badge badge-brand">${iconSvg("sparkles")} Sell-ready</span>
@@ -885,6 +885,35 @@ function notesRouteTemplate() {
   `;
 }
 
+const photoCategories = [
+  "Women’s clothing",
+  "Dresses",
+  "Coats & jackets",
+  "Tops & blouses",
+  "Jeans & trousers",
+  "Men’s clothing",
+  "Kids clothing",
+  "Baby clothing",
+  "Shoes",
+  "Bags",
+  "Accessories",
+  "Jewellery",
+  "Beauty",
+  "Home & decor",
+  "Toys & games",
+  "Books",
+  "Electronics",
+  "Sportswear",
+  "Bundles",
+  "Other"
+];
+
+function photoCategoryOptionsTemplate() {
+  return photoCategories
+    .map((category) => `<option value="${escapeHtml(category)}">${escapeHtml(category)}</option>`)
+    .join("");
+}
+
 function photoRouteTemplate() {
   return `
     <section class="tool-layout photo-route" data-route="photo">
@@ -905,7 +934,7 @@ function photoRouteTemplate() {
           <input id="cameraInput" class="visually-hidden" name="cameraPhoto" type="file" accept="image/*" capture="environment" aria-label="Take a photo" />
         </div>
         <div class="form-grid two">
-          <label>Category<select name="category"><option>Clothing</option><option>Shoes</option><option>Bags</option><option>Accessories</option></select></label>
+          <label>Category<select name="category">${photoCategoryOptionsTemplate()}</select></label>
           <label>Size<input name="size" placeholder="UK 10, M, EU 39" /></label>
         </div>
         <label>Condition<input name="condition" placeholder="Good condition, worn once" /></label>
