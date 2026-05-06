@@ -174,9 +174,9 @@ test("auth routes get correct labels and required signup name field", () => {
   assert.match(authHtml, /<label class="signup-name-field hidden">Full name<input name="name" type="text" autocomplete="name" maxlength="80"/);
   assert.match(authHtml, /<button class="btn btn-primary" type="submit">Sign in<\/button>/);
   assert.match(authHtml, /Continue with Google/);
-  assert.match(authHtml, /Continue with Microsoft/);
   assert.match(authHtml, /data-oauth-provider="google"/);
-  assert.match(authHtml, /data-oauth-provider="microsoft"/);
+  assert.doesNotMatch(authHtml, /Continue with Microsoft|data-oauth-provider="microsoft"/);
+  assert.match(authHtml, /Google sign-in uses secure redirect/);
   assert.doesNotMatch(authHtml, /mini-badge|Soon/);
   assert.match(authHtml, /Secure seller workspace/);
   assert.match(authHtml, /No card needed to start/);
@@ -189,6 +189,7 @@ test("auth routes get correct labels and required signup name field", () => {
   assert.match(siteJs, /heading\) heading\.textContent = isSignup \? "Create account" : "Sign in"/);
   assert.match(siteJs, /data-oauth-provider/);
   assert.match(siteJs, /auth_error/);
+  assert.match(siteJs, /sign-in is not active in this preview yet/);
   assert.doesNotMatch(siteJs, /data-social-auth|sign-in is coming soon/);
   assert.match(serverJs, /handleOAuthStart/);
   assert.match(serverJs, /handleOAuthCallback/);
@@ -197,6 +198,8 @@ test("auth routes get correct labels and required signup name field", () => {
   assert.match(siteJs, /validateFullName/);
   assert.match(serverJs, /validateName/);
   assert.match(serverJs, /INSERT INTO users \(id, email, name, password_hash/);
+  assert.match(stylesV3Css, /\.auth-split-form \.auth-card \{\s*[\s\S]*?max-width: min\(360px, calc\(100vw - 28px\)\)/);
+  assert.match(stylesV3Css, /\.auth-security-note,\s*[\s\S]*?\.auth-legal\s*\{\s*[\s\S]*?overflow-wrap: anywhere/);
 });
 
 test("verification and account settings are first-class app flows", () => {
@@ -220,13 +223,18 @@ test("verification and account settings are first-class app flows", () => {
 
 test("photo upload supports mobile camera and premium output", () => {
   assert.match(siteJs, /capture="environment"/);
-  assert.match(siteJs, /accept="image\/\*,\.heic,\.heif"/);
+  assert.match(siteJs, /accept="image\/jpeg,image\/png,image\/webp,image\/gif,image\/heic,image\/heif,\.heic,\.heif"/);
+  assert.match(siteJs, /data-upload-source="library"/);
+  assert.match(siteJs, /data-upload-source="camera"/);
   assert.match(siteJs, /Photo library \/ files/);
   assert.match(siteJs, /without forcing the camera/);
+  assert.match(siteJs, /optimise large phone photos before upload/);
   assert.match(siteJs, /Choose photos from camera roll or files/);
   assert.match(siteJs, /Take photo/);
   assert.match(siteJs, /cameraPhoto/);
   assert.match(siteJs, /photoPreviewGrid/);
+  assert.match(siteJs, /canvas\.toDataURL\("image\/jpeg", 0\.86\)/);
+  assert.match(siteJs, /That phone photo could not be read here/);
   assert.match(siteJs, /photoCategories = \[/);
   assert.match(siteJs, /Women's clothing/);
   assert.match(siteJs, /Trainers/);
@@ -437,6 +445,9 @@ test("pricing card layout keeps bullets compact and buttons pinned to the bottom
   assert.match(stylesCss, /\.pricing-card \.pricing-compare\s*\{[^}]*align-content:\s*start/);
   // Grid must fix row heights to content so 3-bullet cards don't grow gaps to match a 10-bullet card.
   assert.match(stylesCss, /\.pricing-compare\s*\{[^}]*grid-auto-rows:\s*max-content/);
+  // Mobile keeps long GBP prices readable instead of clipping.
+  assert.match(stylesV3Css, /@media \(max-width: 640px\)[\s\S]*?\.pricing-price\s*\{[\s\S]*?display:\s*grid/);
+  assert.match(stylesV3Css, /@media \(max-width: 640px\)[\s\S]*?\.pricing-price strong\s*\{[\s\S]*?clamp\(34px, 12vw, 42px\)/);
   // The buy button uses margin-top: auto to pin to the bottom edge.
   assert.match(stylesCss, /\.pricing-buy\s*\{[^}]*margin-top:\s*auto/);
 });
@@ -519,6 +530,10 @@ test("homepage trust section gives honest trust signals without fake testimonial
   // V3 uses a trust-v3 grid of trust-tile cards (no fabricated quotes).
   assert.match(indexHtml, /class="trust-v3"/);
   assert.match(indexHtml, /class="trust-tile"/);
+  assert.match(indexHtml, /class="section standards-v3"/);
+  assert.match(indexHtml, /Built like a SaaS, focused like a seller tool/);
+  assert.match(indexHtml, /Phone images are optimised before upload/);
+  assert.match(indexHtml, /"@type": "SoftwareApplication"/);
   assert.match(indexHtml, /No Vinted login/);
   assert.match(indexHtml, /Secure Stripe checkout/);
   assert.match(indexHtml, /Email verification required/);
@@ -777,6 +792,8 @@ test("public pages include social metadata and legal pages use shared shell", ()
   }
   assert.match(privacyHtml, /id="main"/);
   assert.match(termsHtml, /id="main"/);
+  assert.match(supportHtml, /data-page="marketing-v3"/);
+  assert.match(supportHtml, /\/styles-v3\.css/);
   assert.match(privacyHtml, /support@listboost\.uk/);
   assert.match(termsHtml, /support@listboost\.uk/);
   assert.match(privacyHtml, /class="legal-links"/);

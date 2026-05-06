@@ -63,6 +63,8 @@ test("homepage renders premium marketing structure", () => {
   assert.match(indexHtml, /class="hero-proof-v3"/);
   assert.match(indexHtml, /class="section product-demo-v4"/);
   assert.match(indexHtml, /Upload from camera roll/);
+  assert.match(indexHtml, /class="section standards-v3"/);
+  assert.match(indexHtml, /Verified accounts/);
   assert.match(indexHtml, /class="section moat-v3"/);
   assert.match(indexHtml, /A Vinted workflow, not a blank writing box/);
   // Premium marketing shell is applied.

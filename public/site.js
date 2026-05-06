@@ -700,7 +700,7 @@ function installAuthMode() {
     const error = params.get("auth_error");
     const provider = params.get("provider") || "Provider";
     const messages = {
-      "not-configured": `${provider} sign-in needs OAuth keys configured for this environment. Use email and password for now, or add the provider keys and restart ListBoost.`,
+      "not-configured": `${provider} sign-in is not active in this preview yet. Use email and password for now, then add the OAuth keys before launch.`,
       "state-mismatch": "That sign-in session expired. Please try again.",
       expired: "That sign-in session expired. Please try again.",
       cancelled: `${provider} sign-in was cancelled.`,
@@ -997,15 +997,15 @@ function photoRouteTemplate() {
         <div class="photo-dropzone" role="group" aria-labelledby="photoUploadTitle">
           <span class="feature-icon">${iconSvg("image-up")}</span>
           <strong id="photoUploadTitle">Add item photos</strong>
-          <span class="muted">Choose Photo Library / camera roll or Browse files without forcing the camera. Use Take photo only when you want a fresh picture. Up to 4 images.</span>
+          <span class="muted">Choose Photo Library / camera roll or Browse files without forcing the camera. We optimise large phone photos before upload. Use Take photo only when you want a fresh picture. Up to 4 images.</span>
           <div class="photo-upload-actions">
             <label class="btn btn-primary file-picker-btn" for="photoInput">${iconSvg("image-up")}<span>Photo library / files</span></label>
             <label class="btn btn-secondary file-picker-btn" for="cameraInput">${iconSvg("camera")}<span>Take photo</span></label>
           </div>
           <span class="photo-file-hint" id="photoFileHint">No photos selected yet.</span>
           <div class="photo-preview-grid" id="photoPreviewGrid" aria-live="polite"></div>
-          <input id="photoInput" class="visually-hidden" name="photos" type="file" accept="image/*,.heic,.heif" multiple aria-label="Choose photos from camera roll or files" />
-          <input id="cameraInput" class="visually-hidden" name="cameraPhoto" type="file" accept="image/*" capture="environment" aria-label="Take a photo" />
+          <input id="photoInput" class="visually-hidden" name="photos" type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif,.heic,.heif" multiple aria-label="Choose photos from camera roll or files" data-upload-source="library" />
+          <input id="cameraInput" class="visually-hidden" name="cameraPhoto" type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif" capture="environment" aria-label="Take a photo" data-upload-source="camera" />
         </div>
         <div class="form-grid two">
           <label>Category<select name="category">${photoCategoryOptionsTemplate()}</select></label>
@@ -1878,13 +1878,52 @@ function setGeneratorBusy(form, busy, label) {
   }
 }
 
-function fileToDataUrl(file) {
+function readFileAsDataUrl(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(reader.result);
     reader.onerror = reject;
     reader.readAsDataURL(file);
   });
+}
+
+function loadImageFromDataUrl(dataUrl) {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = reject;
+    image.src = dataUrl;
+  });
+}
+
+async function fileToDataUrl(file) {
+  if (!file || !String(file.type || "").startsWith("image/")) {
+    throw new Error("Choose an image file from your camera roll or files.");
+  }
+
+  const rawDataUrl = await readFileAsDataUrl(file);
+  const isGif = file.type === "image/gif";
+  if (isGif && file.size <= 1_500_000) return rawDataUrl;
+
+  try {
+    const image = await loadImageFromDataUrl(rawDataUrl);
+    const maxEdge = 1600;
+    const scale = Math.min(1, maxEdge / Math.max(image.naturalWidth || image.width, image.naturalHeight || image.height));
+    const width = Math.max(1, Math.round((image.naturalWidth || image.width) * scale));
+    const height = Math.max(1, Math.round((image.naturalHeight || image.height) * scale));
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const context = canvas.getContext("2d", { alpha: false });
+    if (!context) throw new Error("Image optimisation is not available in this browser.");
+    context.drawImage(image, 0, 0, width, height);
+    return canvas.toDataURL("image/jpeg", 0.86);
+  } catch (error) {
+    if (/hei[cf]/i.test(file.type || file.name || "")) {
+      throw new Error("That phone photo could not be read here. Please choose a JPEG/PNG version or take a fresh photo.");
+    }
+    return rawDataUrl;
+  }
 }
 
 function installCopyFeedback() {
