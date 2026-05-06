@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 
 const indexHtml = readFileSync(new URL("../public/index.html", import.meta.url), "utf8");
 const pricingHtml = readFileSync(new URL("../public/pricing.html", import.meta.url), "utf8");
+const authHtml = readFileSync(new URL("../public/auth.html", import.meta.url), "utf8");
 const siteJs = readFileSync(new URL("../public/site.js", import.meta.url), "utf8");
 const stylesCss = readFileSync(new URL("../public/styles.css", import.meta.url), "utf8");
 const serverJs = readFileSync(new URL("../server.js", import.meta.url), "utf8");
@@ -51,27 +52,27 @@ test("account bootstrap exposes subscription plans and environment metadata", ()
 });
 
 test("homepage renders premium marketing structure", () => {
-  // Copy.ai-inspired light SaaS hero copy.
-  assert.match(indexHtml, /Create better[\s\S]*?Vinted[\s\S]*?listings[\s\S]*?in seconds/);
-  assert.match(indexHtml, /ListBoost uses AI to turn your item photos and details/);
+  // Premium homepage uses the tighter conversion-first hero.
+  assert.match(indexHtml, /Turn messy item notes into Vinted listings that sell/);
+  assert.match(indexHtml, /Paste rough notes and get a title, description, keywords, pricing guidance, photo checklist, and buyer reply in seconds/);
   // Primary CTA copy.
-  assert.match(indexHtml, /Start free/);
+  assert.match(indexHtml, /Start free &mdash; 3 listings/);
   assert.match(indexHtml, /See example/);
-  // V3 hero uses workspace-mock instead of an item-card mockup.
+  assert.match(indexHtml, /No Vinted login &middot; No card needed &middot; Cancel anytime/);
+  // Hero uses a workspace mockup with restrained AI motion states.
   assert.match(indexHtml, /class="workspace-mock/);
-  assert.match(indexHtml, /class="hero-v3"/);
-  assert.match(indexHtml, /class="hero-proof-v3"/);
-  assert.match(indexHtml, /class="section product-demo-v4"/);
-  assert.match(indexHtml, /Upload from camera roll/);
-  assert.match(indexHtml, /class="section standards-v3"/);
-  assert.match(indexHtml, /Verified accounts/);
-  assert.match(indexHtml, /class="section moat-v3"/);
-  assert.match(indexHtml, /A Vinted workflow, not a blank writing box/);
+  assert.match(indexHtml, /class="hero-v3 premium-hero"/);
+  assert.match(indexHtml, /class="ai-processing"/);
+  assert.match(indexHtml, /Optimising title/);
+  assert.match(indexHtml, /class="section product-preview-v5"/);
+  assert.match(indexHtml, /Manual vs ListBoost/);
+  assert.doesNotMatch(indexHtml, /class="section standards-v3"/);
+  assert.doesNotMatch(indexHtml, /class="section moat-v3"/);
+  assert.doesNotMatch(indexHtml, /class="bento-v3"/);
   // Premium marketing shell is applied.
   assert.match(indexHtml, /<body data-page="marketing-v3"/);
   // Section anchors are still present.
   assert.match(indexHtml, /id="how-it-works"/);
-  assert.match(indexHtml, /id="features"/);
   assert.match(indexHtml, /id="pricing"/);
   assert.match(indexHtml, /id="faq"/);
   assert.match(siteJs, /public-footer/);
@@ -87,6 +88,14 @@ test("homepage consumes shared template helpers", () => {
   assert.match(siteJs, /function emptyStateTemplate/);
   assert.match(siteJs, /hydrateListingCardPlaceholders/);
   assert.match(siteJs, /hydrateIconPlaceholders/);
+});
+
+test("public auth keeps Google sign-in visible and removes Microsoft sign-in", () => {
+  assert.match(authHtml, /Continue with Google/);
+  assert.match(authHtml, /href="\/auth\/google"/);
+  for (const html of [authHtml, indexHtml]) {
+    assert.doesNotMatch(html, /Continue with Microsoft|Microsoft sign-in|\/auth\/microsoft/i);
+  }
 });
 
 test("styles use a single root token block", () => {

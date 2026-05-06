@@ -3,11 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ListBoost - Sell-ready Vinted listings in seconds</title>
-    <meta name="description" content="Turn rough item notes into sell-ready Vinted titles, descriptions, keywords, price guidance, photo checklists and buyer replies." />
+    <title>ListBoost - Vinted listings that sell</title>
+    <meta name="description" content="Turn rough item notes into copy-ready Vinted titles, descriptions, keywords, pricing guidance, photo checklists and buyer replies." />
     <link rel="canonical" href="https://www.listboost.uk/" />
-    <meta property="og:title" content="ListBoost - Sell-ready Vinted listings in seconds" />
-    <meta property="og:description" content="Turn messy item notes into polished Vinted listings, price guidance, photo checklists and buyer replies." />
+    <meta property="og:title" content="ListBoost - Vinted listings that sell" />
+    <meta property="og:description" content="Paste rough notes and get a structured Vinted listing package in seconds." />
     <meta property="og:image" content="https://www.listboost.uk/og-image.svg" />
     <meta property="og:url" content="https://www.listboost.uk/" />
     <meta name="twitter:card" content="summary_large_image" />
@@ -22,7 +22,7 @@
         "name": "ListBoost",
         "applicationCategory": "BusinessApplication",
         "operatingSystem": "Web",
-        "description": "AI listing assistant for UK Vinted sellers that creates copy-ready titles, descriptions, keywords, price guidance, photo checklists and buyer replies.",
+        "description": "Listing assistant for UK Vinted sellers that creates copy-ready titles, descriptions, keywords, pricing guidance, photo checklists and buyer replies.",
         "url": "https://www.listboost.uk/",
         "offers": {
           "@type": "Offer",
@@ -38,539 +38,217 @@
     <div class="toast-region" id="toastRegion" aria-live="polite"></div>
     <header class="lb-header"></header>
 
-    <main class="page-wrap marketing-home" id="main">
-
-      <!-- =================== HERO =================== -->
-      <section class="hero-v3" aria-labelledby="hero-title">
+    <main class="page-wrap marketing-home premium-home" id="main">
+      <section class="hero-v3 premium-hero" aria-labelledby="hero-title">
         <div class="hero-v3-copy">
-          <p class="eyebrow">AI listing workflow for UK Vinted sellers</p>
-          <h1 class="hero-v3-title" id="hero-title">Create better <span class="accent">Vinted</span> listings in seconds</h1>
-          <p class="hero-v3-lede">ListBoost uses AI to turn your item photos and details into high-converting titles, descriptions, hashtags, and pricing suggestions.</p>
+          <p class="eyebrow">Made for UK Vinted sellers</p>
+          <h1 class="hero-v3-title" id="hero-title">Turn messy item notes into Vinted listings that sell</h1>
+          <p class="hero-v3-lede">Paste rough notes and get a title, description, keywords, pricing guidance, photo checklist, and buyer reply in seconds.</p>
           <div class="hero-v3-actions" aria-label="Homepage actions">
-            <a class="btn btn-primary" href="/signup">Start free</a>
+            <a class="btn btn-primary" href="/signup">Start free &mdash; 3 listings</a>
             <a class="btn btn-secondary" href="/example">See example</a>
           </div>
-          <ul class="hero-v3-trust" aria-label="Quick trust signals">
-            <li>No Vinted login</li>
-            <li>Copy and paste manually</li>
-            <li>Secure Stripe checkout</li>
-            <li>Cancel any time</li>
+          <p class="hero-trust-line">No Vinted login &middot; No card needed &middot; Cancel anytime</p>
+          <ul class="hero-v3-trust" aria-label="Trust signals">
+            <li>Secure Google sign in</li>
+            <li>No Vinted password required</li>
+            <li>Manual posting only</li>
+            <li>Stripe-secured billing</li>
+            <li>Built for UK sellers</li>
           </ul>
-          <div class="hero-proof-v3" aria-label="What ListBoost creates">
-            <span><strong>6</strong> copy-ready sections</span>
-            <span><strong>3</strong> price bands</span>
-            <span><strong>1</strong> focused Vinted workflow</span>
-          </div>
         </div>
 
-        <aside class="hero-v3-mock" aria-label="Generated Vinted listing preview">
-          <div class="workspace-mock">
+        <aside class="hero-v3-mock" aria-label="ListBoost generation preview">
+          <div class="workspace-mock premium-workspace">
             <div class="workspace-mock-bar" aria-hidden="true">
               <span class="dot r"></span>
               <span class="dot y"></span>
               <span class="dot g"></span>
-              <span class="url">listboost.uk &middot; Generator</span>
+              <span class="url">listboost.uk/generator</span>
             </div>
             <div class="workspace-mock-body">
-              <div class="workspace-step">
-                <span class="workspace-step-label">Step 1 &middot; Your notes</span>
-                <p class="workspace-note">zara navy satin midi dress, uk 10, worn twice for evenings, no marks, zip back</p>
+              <div class="workspace-step input-step">
+                <span class="workspace-step-label">Item notes</span>
+                <p class="workspace-note">zara navy satin midi dress, uk 10, worn twice, no marks, zip back, flattering bias cut</p>
               </div>
-              <div class="workspace-arrow" aria-hidden="true"></div>
-              <div class="workspace-step">
-                <span class="workspace-step-label">Step 2 &middot; Vinted-ready listing</span>
-                <article class="workspace-listing">
-                  <div class="workspace-listing-meta">
-                    <span class="badge">Generated</span>
-                    <span class="price">&pound;14&ndash;&pound;18</span>
-                  </div>
-                  <h3 class="workspace-listing-title">Zara Navy Satin Midi Dress &mdash; UK 10</h3>
-                  <p class="workspace-listing-desc">Lovely navy satin midi dress, worn twice for evenings. No marks, zip back, flattering bias cut. Ready to post.</p>
-                  <ul class="workspace-tags">
-                    <li>navy midi</li>
-                    <li>uk 10</li>
-                    <li>evening</li>
-                    <li>satin</li>
-                    <li>zara</li>
-                  </ul>
-                  <div class="workspace-actions">
-                    <span class="ws-btn">Edit before copying</span>
-                    <span class="ws-btn ws-btn-primary">Copied</span>
-                  </div>
-                </article>
+              <div class="ai-processing" aria-hidden="true">
+                <span class="ai-dot"></span>
+                <span class="ai-typing">Optimising title</span>
+                <span class="ai-step">Generating keywords</span>
+                <span class="ai-step">Pricing item</span>
               </div>
+              <article class="workspace-listing generated-card">
+                <div class="workspace-listing-meta">
+                  <span class="badge">Sell-ready</span>
+                  <span class="price">&pound;14&ndash;&pound;18</span>
+                </div>
+                <h3 class="workspace-listing-title">Zara Navy Satin Midi Dress - UK 10</h3>
+                <p class="workspace-listing-desc">Elegant navy satin midi dress from Zara in a UK 10. Worn twice and in lovely condition, with a flattering bias cut and zip back. Great for dinners, events or smart weekend plans.</p>
+                <ul class="workspace-tags">
+                  <li>zara dress</li>
+                  <li>navy midi</li>
+                  <li>uk 10</li>
+                  <li>occasionwear</li>
+                </ul>
+                <div class="workspace-actions">
+                  <span class="ws-btn">Edit</span>
+                  <span class="ws-btn ws-btn-primary">Copy listing</span>
+                </div>
+              </article>
             </div>
           </div>
         </aside>
       </section>
 
-      <!-- =================== PRODUCT DEMO =================== -->
-      <section class="section product-demo-v4" id="example" aria-labelledby="demo-title">
+      <section class="section product-preview-v5" id="example" aria-labelledby="preview-title">
         <header class="section-head">
-          <p class="eyebrow">Product demo</p>
-          <h2 id="demo-title">One item photo becomes a full listing package.</h2>
-          <p class="section-sub">Designed for the real Vinted workflow: photo or notes in, structured sections out, copy buttons ready.</p>
+          <p class="eyebrow">Product preview</p>
+          <h2 id="preview-title">Specific output for real Vinted items.</h2>
+          <p class="section-sub">ListBoost keeps the output structured for the way sellers actually post: searchable title, buyer-friendly description, relevant keywords and a sensible price range.</p>
         </header>
-        <div class="demo-panel-v4">
-          <article class="demo-phone-v4" aria-label="Phone upload preview">
-            <div class="phone-bar-v4"><span></span><strong>Photo listing</strong><span></span></div>
-            <img src="/images/listing-gallery/zara-dress.jpg" width="900" height="600" alt="Navy satin midi dress ready to list" loading="lazy" decoding="async" />
-            <div class="phone-copy-v4">
-              <strong>Upload from camera roll</strong>
-              <p>Brand: Zara · Size: UK 10 · Condition: Worn twice</p>
-            </div>
-          </article>
-          <article class="demo-output-v4">
-            <span class="badge badge-brand">Generated output</span>
-            <h3>Zara Navy Satin Midi Dress - UK 10</h3>
-            <p>Elegant navy satin midi dress from Zara in a UK 10. Worn twice and in lovely condition, perfect for evenings, dinners or smart weekend plans.</p>
-            <div class="demo-output-grid-v4">
-              <span>Hashtags</span><strong>#zaradress #vinteduk #mididress</strong>
-              <span>Price guide</span><strong>Fast £14 · Fair £18 · Max £22</strong>
-              <span>Buyer reply</span><strong>Yes, it is still available and ready to post.</strong>
-            </div>
-            <a class="btn btn-primary" href="/example">Try the example</a>
-          </article>
-        </div>
-      </section>
-
-      <!-- =================== OPERATING STANDARDS =================== -->
-      <section class="section standards-v3" aria-labelledby="standards-title">
-        <div class="standards-copy-v3">
-          <p class="eyebrow">Built like a SaaS, focused like a seller tool</p>
-          <h2 id="standards-title">The details that make ListBoost feel safe to use.</h2>
-          <p>Good listing software is not only a nice text box. It needs clear account rules, safe billing, honest AI output, support links and a workflow that respects how sellers actually post on Vinted.</p>
-        </div>
-        <div class="standards-grid-v3">
-          <article>
-            <span>01</span>
-            <h3>Verified accounts</h3>
-            <p>Email verification, password reset links and OAuth-ready sign-in keep accounts cleaner without asking for a Vinted password.</p>
-          </article>
-          <article>
-            <span>02</span>
-            <h3>Manual publishing</h3>
-            <p>Nothing is posted for you. Every generated section is editable, copyable and checked by the seller before it goes live.</p>
-          </article>
-          <article>
-            <span>03</span>
-            <h3>Photo-aware workflow</h3>
-            <p>Phone images are optimised before upload, and the app asks for the details photos cannot prove: size, flaws and condition.</p>
-          </article>
-          <article>
-            <span>04</span>
-            <h3>Clear billing</h3>
-            <p>Monthly usage, plan status and Stripe checkout stay visible so sellers know what they are paying for.</p>
-          </article>
-        </div>
-      </section>
-
-      <!-- =================== PRODUCT GALLERY =================== -->
-      <section class="section" id="for-sellers" aria-labelledby="gallery-title">
-        <header class="section-head">
-          <p class="eyebrow">Listing examples</p>
-          <h2 id="gallery-title">Built for the items you actually sell.</h2>
-          <p class="section-sub">Dresses, trainers, bundles, coats, bags and baby clothes. ListBoost keeps the same polished structure every time.</p>
-        </header>
-
-        <div class="gallery-v3">
+        <div class="gallery-v3 premium-gallery">
           <article class="gallery-card">
             <div class="gallery-card-art">
               <img class="gallery-card-photo" src="/images/listing-gallery/zara-dress.jpg" width="900" height="600" alt="Navy satin midi dress hanging on a wooden hanger" loading="lazy" decoding="async" />
-              <span class="ready-badge">Generated</span>
+              <span class="ready-badge">Dress</span>
             </div>
             <div class="gallery-card-body">
-              <span class="gallery-card-eyebrow">Womens dress</span>
-              <h3 class="gallery-card-title">Zara Navy Satin Midi Dress &mdash; UK 10</h3>
-              <p class="gallery-card-note">"navy dress size 10 worn twice"</p>
-              <ul class="gallery-card-tags"><li>zara</li><li>uk 10</li><li>navy midi</li></ul>
-              <div class="gallery-card-meta"><span>Fair price</span><strong>&pound;15</strong></div>
-            </div>
-          </article>
-
-          <article class="gallery-card">
-            <div class="gallery-card-art">
-              <img class="gallery-card-photo" src="/images/listing-gallery/white-trainers.jpg" width="900" height="600" alt="Pair of clean white leather trainers on soft fabric" loading="lazy" decoding="async" />
-              <span class="ready-badge">Generated</span>
-            </div>
-            <div class="gallery-card-body">
-              <span class="gallery-card-eyebrow">Trainers</span>
-              <h3 class="gallery-card-title">Clean White Leather Trainers &mdash; UK 5</h3>
-              <p class="gallery-card-note">"white trainers uk 5 light creasing soles cleaned"</p>
-              <ul class="gallery-card-tags"><li>white trainers</li><li>uk 5</li><li>leather</li></ul>
+              <span class="gallery-card-eyebrow">From: navy dress size 10 worn twice</span>
+              <h3 class="gallery-card-title">Zara Navy Satin Midi Dress - UK 10</h3>
+              <ul class="gallery-card-tags"><li>zara dress</li><li>navy midi</li><li>occasionwear</li></ul>
               <div class="gallery-card-meta"><span>Fair price</span><strong>&pound;18</strong></div>
             </div>
           </article>
-
+          <article class="gallery-card">
+            <div class="gallery-card-art">
+              <img class="gallery-card-photo" src="/images/listing-gallery/white-trainers.jpg" width="900" height="600" alt="Pair of clean white leather trainers on soft fabric" loading="lazy" decoding="async" />
+              <span class="ready-badge">Trainers</span>
+            </div>
+            <div class="gallery-card-body">
+              <span class="gallery-card-eyebrow">From: white trainers uk 5 light creasing</span>
+              <h3 class="gallery-card-title">Clean White Leather Trainers - UK 5</h3>
+              <ul class="gallery-card-tags"><li>white trainers</li><li>uk 5</li><li>casual shoes</li></ul>
+              <div class="gallery-card-meta"><span>Fair price</span><strong>&pound;25</strong></div>
+            </div>
+          </article>
           <article class="gallery-card">
             <div class="gallery-card-art">
               <img class="gallery-card-photo" src="/images/listing-gallery/kids-bundle.jpg" width="900" height="600" alt="Folded kids winter clothing bundle in navy and pale blue" loading="lazy" decoding="async" />
-              <span class="ready-badge">Generated</span>
+              <span class="ready-badge">Bundle</span>
             </div>
             <div class="gallery-card-body">
-              <span class="gallery-card-eyebrow">Kids bundle</span>
-              <h3 class="gallery-card-title">H&amp;M Kids Winter Bundle Age 4-5</h3>
-              <p class="gallery-card-note">"kids winter age 4-5 hm jumpers leggings good used"</p>
-              <ul class="gallery-card-tags"><li>kids</li><li>age 4-5</li><li>winter</li></ul>
+              <span class="gallery-card-eyebrow">From: kids winter age 4-5 bundle</span>
+              <h3 class="gallery-card-title">H&amp;M Kids Winter Bundle - Age 4-5</h3>
+              <ul class="gallery-card-tags"><li>kids bundle</li><li>age 4-5</li><li>winter clothes</li></ul>
               <div class="gallery-card-meta"><span>Fair price</span><strong>&pound;14</strong></div>
             </div>
           </article>
-
-          <article class="gallery-card">
-            <div class="gallery-card-art">
-              <img class="gallery-card-photo" src="/images/listing-gallery/camel-coat.jpg" width="900" height="600" alt="Camel wool trench coat hanging on a wooden hanger" loading="lazy" decoding="async" />
-              <span class="ready-badge">Generated</span>
-            </div>
-            <div class="gallery-card-body">
-              <span class="gallery-card-eyebrow">Womens coat</span>
-              <h3 class="gallery-card-title">Wool-Blend Camel Trench Coat &mdash; UK 12</h3>
-              <p class="gallery-card-note">"camel trench coat size 12 wool blend small mark on cuff"</p>
-              <ul class="gallery-card-tags"><li>trench</li><li>uk 12</li><li>camel</li></ul>
-              <div class="gallery-card-meta"><span>Fair price</span><strong>&pound;28</strong></div>
-            </div>
-          </article>
-
-          <article class="gallery-card">
-            <div class="gallery-card-art">
-              <img class="gallery-card-photo" src="/images/listing-gallery/tan-crossbody-bag.jpg" width="900" height="600" alt="Tan leather crossbody bag on soft neutral fabric" loading="lazy" decoding="async" />
-              <span class="ready-badge">Generated</span>
-            </div>
-            <div class="gallery-card-body">
-              <span class="gallery-card-eyebrow">Handbag</span>
-              <h3 class="gallery-card-title">Leather Crossbody Bag &mdash; Tan</h3>
-              <p class="gallery-card-note">"tan leather crossbody small mark inside used twice"</p>
-              <ul class="gallery-card-tags"><li>handbag</li><li>tan</li><li>crossbody</li></ul>
-              <div class="gallery-card-meta"><span>Fair price</span><strong>&pound;22</strong></div>
-            </div>
-          </article>
-
-          <article class="gallery-card">
-            <div class="gallery-card-art">
-              <img class="gallery-card-photo" src="/images/listing-gallery/newborn-bundle.jpg" width="900" height="600" alt="Folded newborn sleepsuits in soft neutral colours" loading="lazy" decoding="async" />
-              <span class="ready-badge">Generated</span>
-            </div>
-            <div class="gallery-card-body">
-              <span class="gallery-card-eyebrow">Baby bundle</span>
-              <h3 class="gallery-card-title">Newborn Sleepsuit Bundle &mdash; 0-3m</h3>
-              <p class="gallery-card-note">"newborn sleepsuits 0-3 months mixed colours good used"</p>
-              <ul class="gallery-card-tags"><li>newborn</li><li>0-3m</li><li>bundle</li></ul>
-              <div class="gallery-card-meta"><span>Fair price</span><strong>&pound;12</strong></div>
-            </div>
-          </article>
-        </div>
-
-        <div class="category-cloud-v3" aria-label="Supported Vinted categories">
-          <div>
-            <span class="badge badge-brand">Category coverage</span>
-            <h3>Not just dresses.</h3>
-            <p>Give ListBoost a category hint and it adapts the output, checklist and pricing language for the item you are selling.</p>
-          </div>
-          <ul>
-            <li>Dresses</li>
-            <li>Coats</li>
-            <li>Trainers</li>
-            <li>Bags</li>
-            <li>Kids bundles</li>
-            <li>Baby clothes</li>
-            <li>Menswear</li>
-            <li>Accessories</li>
-            <li>Beauty</li>
-            <li>Homeware</li>
-            <li>Toys</li>
-            <li>Vintage</li>
-          </ul>
         </div>
       </section>
 
-      <!-- =================== HOW IT WORKS =================== -->
       <section class="section" id="how-it-works" aria-labelledby="flow-title">
-        <header class="section-head">
+        <header class="section-head compact-head">
           <p class="eyebrow">How it works</p>
-          <h2 id="flow-title">From item photo to ready listing.</h2>
-          <p class="section-sub">Nothing posts automatically. You stay in full control before anything goes on Vinted.</p>
+          <h2 id="flow-title">Paste notes. Generate. Copy to Vinted.</h2>
+          <p class="section-sub">Fast enough for a wardrobe clear-out, structured enough for regular sellers.</p>
         </header>
-
-        <div class="flow-v3">
+        <div class="flow-v3 premium-flow">
           <article class="flow-step">
             <span class="flow-step-num">1</span>
-            <h3>Upload item photo</h3>
-            <p>Choose from your phone camera roll or take a fresh picture.</p>
+            <h3>Paste rough notes</h3>
+            <p>Add brand, size, condition, flaws and anything a buyer should know.</p>
           </article>
           <article class="flow-step">
             <span class="flow-step-num">2</span>
-            <h3>Add basic details</h3>
-            <p>Add brand, size, condition, flaws and anything the camera cannot see.</p>
+            <h3>Generate sections</h3>
+            <p>Get title, description, keywords, pricing guidance, checklist and buyer reply.</p>
           </article>
           <article class="flow-step">
             <span class="flow-step-num">3</span>
-            <h3>Generate listing</h3>
-            <p>Get title, description, hashtags, price guidance and buyer reply.</p>
+            <h3>Edit before copying</h3>
+            <p>Review each card, adjust anything, then copy the sections you want.</p>
           </article>
           <article class="flow-step">
             <span class="flow-step-num">4</span>
-            <h3>Copy and post to Vinted</h3>
-            <p>Edit anything, copy each section, and paste manually into Vinted.</p>
+            <h3>Post manually</h3>
+            <p>Paste into Vinted yourself. ListBoost never posts or logs in for you.</p>
           </article>
         </div>
       </section>
 
-      <!-- =================== WORKFLOW HELPERS =================== -->
-      <section class="section automation-v3" id="workflow" aria-labelledby="workflow-title">
-        <div class="automation-copy-v3">
-          <p class="eyebrow">Workflow helpers</p>
-          <h2 id="workflow-title">Less repeat work on every listing.</h2>
-          <p>ListBoost is not here to auto-post or take over your Vinted account. It removes the boring repeat steps: structure, pricing notes, photo reminders, buyer replies and saved history.</p>
-          <a class="btn btn-primary" href="/example">See the workflow</a>
-        </div>
-        <div class="automation-board-v3" aria-label="ListBoost workflow automation preview">
-          <article>
-            <span>01</span>
-            <strong>Reads notes or photos</strong>
-            <p>Pulls out item type, colour, size, condition and missing details.</p>
-          </article>
-          <article>
-            <span>02</span>
-            <strong>Builds the listing package</strong>
-            <p>Title, description, keywords, price guidance, checklist and reply.</p>
-          </article>
-          <article>
-            <span>03</span>
-            <strong>Shows editable cards</strong>
-            <p>Change anything, reset sections, copy one card or copy all.</p>
-          </article>
-          <article>
-            <span>04</span>
-            <strong>Saves repeat work</strong>
-            <p>History keeps your previous listings ready to reopen and reuse.</p>
-          </article>
-        </div>
-      </section>
-
-      <!-- =================== VINTED-SPECIFIC MOAT =================== -->
-      <section class="section moat-v3" id="why-focused" aria-labelledby="moat-title">
-        <div class="moat-copy-v3">
-          <p class="eyebrow">Why ListBoost</p>
-          <h2 id="moat-title">A Vinted workflow, not a blank writing box.</h2>
-          <p>ListBoost keeps the full resale workflow in one place: category-aware wording, price guidance, a photo checklist, buyer replies, saved history and copy buttons for every section.</p>
-        </div>
-        <div class="moat-grid-v3">
-          <article>
-            <span>01</span>
-            <h3>Category-aware output</h3>
-            <p>Dresses, trainers, bundles, bags and baby items get different wording, keywords and checklist prompts.</p>
-          </article>
-          <article>
-            <span>02</span>
-            <h3>Ready to copy</h3>
-            <p>Title, description, hashtags, price guidance, photo checklist and buyer reply stay separated for Vinted.</p>
-          </article>
-          <article>
-            <span>03</span>
-            <h3>Seller memory</h3>
-            <p>History helps repeat sellers reopen older listings and reuse the best structure for similar items.</p>
-          </article>
-          <article>
-            <span>04</span>
-            <h3>Manual and safe</h3>
-            <p>No Vinted login, no auto-posting and no account connection. You copy, check and publish yourself.</p>
-          </article>
-        </div>
-      </section>
-
-      <!-- =================== BENTO FEATURES =================== -->
-      <section class="section" id="features" aria-labelledby="bento-title">
+      <section class="section comparison-section-v5" aria-labelledby="comparison-title">
         <header class="section-head">
-          <p class="eyebrow">What you get</p>
-          <h2 id="bento-title">Everything a UK Vinted seller actually needs.</h2>
-          <p class="section-sub">The practical tools that make ListBoost faster than rebuilding the same listing process from scratch.</p>
+          <p class="eyebrow">Manual vs ListBoost</p>
+          <h2 id="comparison-title">Less thinking before every listing.</h2>
+          <p class="section-sub">The value is not just writing. It is having the same Vinted-ready workflow every time you sell.</p>
         </header>
-
-        <div class="bento-v3">
-          <article class="bento-cell lg">
-            <div class="bento-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></div>
-            <h3>Editable output. You stay in control.</h3>
-            <p>Every section &mdash; title, description, keywords, price guidance, photo checklist, buyer reply &mdash; is editable in place. Reset to the AI version with one click. Copy what you finalise.</p>
-            <div class="bento-mock">
-              <span>Title</span>
-              <strong>Zara Navy Satin Midi Dress &mdash; UK 10</strong>
-            </div>
-          </article>
-
-          <article class="bento-cell md">
-            <div class="bento-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/></svg></div>
-            <h3>AI title generator</h3>
-            <p>Short, keyword-rich, brand-first titles for Vinted search.</p>
-          </article>
-
-          <article class="bento-cell md">
-            <div class="bento-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12.6 2H4a2 2 0 0 0-2 2v8.6a2 2 0 0 0 .6 1.4l7.4 7.4a2 2 0 0 0 2.8 0l8.6-8.6a2 2 0 0 0 0-2.8L14 2.6A2 2 0 0 0 12.6 2z"/><circle cx="7.5" cy="7.5" r=".5"/></svg></div>
-            <h3>Hashtag suggestions</h3>
-            <p>Relevant hashtags and buyer search phrases without prompt-writing.</p>
-          </article>
-
-          <article class="bento-cell md-2">
-            <div class="bento-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 18h12"/><path d="M8 12h7"/><path d="M10 18c2-3 2-9 0-12"/><path d="M10 6h5"/></svg></div>
-            <h3>Fast / fair / max price guidance</h3>
-            <p>Three suggested GBP prices per listing, based on the item details you give.</p>
-          </article>
-
-          <article class="bento-cell md-2">
-            <div class="bento-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg></div>
-            <h3>Photo checklist + buyer replies</h3>
-            <p>The shots to take before publishing, plus a polite reply for offers and condition questions.</p>
-          </article>
-
-          <article class="bento-cell sm">
-            <div class="bento-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 3v6h6"/><path d="M12 7v5l4 2"/></svg></div>
-            <h3>Listing history</h3>
-            <p>Every output saved &mdash; reopen, copy or regenerate later.</p>
-          </article>
-
-          <article class="bento-cell sm">
-            <div class="bento-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg></div>
-            <h3>Faster resale workflow</h3>
-            <p>Repeat the same polished listing process every time you sell.</p>
-          </article>
-
-          <article class="bento-cell sm">
-            <div class="bento-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L8 6H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-3z"/><circle cx="12" cy="13" r="3"/></svg></div>
-            <h3>Photo upload</h3>
-            <p>Shoot from your phone. Generate from photos directly.</p>
-          </article>
-        </div>
-      </section>
-
-      <!-- =================== WHY LISTBOOST =================== -->
-      <section class="section" id="why-listboost" aria-labelledby="why-title">
-        <header class="section-head">
-          <p class="eyebrow">Why ListBoost</p>
-          <h2 id="why-title">A focused workflow for Vinted sellers.</h2>
-          <p class="section-sub">ListBoost gives sellers one repeatable place to turn item photos and rough notes into the exact listing sections they need before posting.</p>
-        </header>
-        <div class="comparison-v3">
+        <div class="comparison-v3 premium-comparison">
           <article class="comparison-card comparison-muted">
-            <span class="badge">Manual listing work</span>
-            <h3>More setup before every item</h3>
+            <span class="badge">Manual listing</span>
+            <h3>Start from scratch</h3>
             <ul>
-              <li>Work out the structure from scratch</li>
-              <li>Remember title, keywords, price and replies</li>
-              <li>Format everything before pasting</li>
-              <li>Repeat the same steps for every item</li>
+              <li>Work out the title structure</li>
+              <li>Rewrite the condition details</li>
+              <li>Guess keywords and price range</li>
+              <li>Remember photo and buyer reply wording</li>
             </ul>
           </article>
           <article class="comparison-card comparison-featured">
-            <span class="badge badge-brand">ListBoost</span>
-            <h3>One repeatable listing workflow</h3>
+            <span class="badge badge-brand">ListBoost workflow</span>
+            <h3>Generate a complete package</h3>
             <ul>
-              <li>Paste notes or upload phone photos</li>
-              <li>Get six Vinted-ready sections every time</li>
-              <li>Edit, copy and save from structured cards</li>
-              <li>History, buyer replies, pricing and scoring built in</li>
+              <li>Category-aware title and description</li>
+              <li>Copy-ready keywords and price guidance</li>
+              <li>Photo checklist and buyer reply</li>
+              <li>Saved history for Seller and Elite plans</li>
             </ul>
           </article>
         </div>
       </section>
 
-      <!-- =================== TRUST =================== -->
-      <section class="section" id="trust" aria-labelledby="trust-title">
-        <header class="section-head">
-          <p class="eyebrow">Why sellers trust us</p>
-          <h2 id="trust-title">Built carefully, not cheaply.</h2>
-          <p class="section-sub">No fake testimonials. We&rsquo;re a small UK team building this in public &mdash; honest about what it does and what&rsquo;s coming.</p>
-        </header>
-
-        <div class="trust-v3">
-          <div class="trust-tile">
-            <div class="trust-tile-row">
-              <span class="trust-tile-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>
-              <h3>No Vinted login</h3>
-            </div>
-            <p>We never log into Vinted on your behalf. You copy and paste manually &mdash; zero automation risk.</p>
-          </div>
-          <div class="trust-tile">
-            <div class="trust-tile-row">
-              <span class="trust-tile-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-13"/></svg></span>
-              <h3>You approve every listing</h3>
-            </div>
-            <p>Output is editable. Reset to the AI version, edit before copying, save what works.</p>
-          </div>
-          <div class="trust-tile">
-            <div class="trust-tile-row">
-              <span class="trust-tile-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/></svg></span>
-              <h3>Secure Stripe checkout</h3>
-            </div>
-            <p>Card details never touch our servers. We use Stripe Checkout end-to-end.</p>
-          </div>
-          <div class="trust-tile">
-            <div class="trust-tile-row">
-              <span class="trust-tile-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg></span>
-              <h3>Email verification required</h3>
-            </div>
-            <p>Generation is gated behind a verified email to keep abuse low &mdash; not to slow you down.</p>
-          </div>
-          <div class="trust-tile">
-            <div class="trust-tile-row">
-              <span class="trust-tile-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18"/><path d="M12 3a15.3 15.3 0 0 1 4 9 15.3 15.3 0 0 1-4 9 15.3 15.3 0 0 1-4-9 15.3 15.3 0 0 1 4-9z"/><circle cx="12" cy="12" r="10"/></svg></span>
-              <h3>Made for UK sellers</h3>
-            </div>
-            <p>UK spelling, GBP pricing, UK postage language. Tuned to how Vinted UK actually buys.</p>
-          </div>
-          <div class="trust-tile">
-            <div class="trust-tile-row">
-              <span class="trust-tile-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.5 0 4.7 1 6.4 2.6"/><path d="M22 4 12 14.01l-3-3"/></svg></span>
-              <h3>3 free listings</h3>
-            </div>
-            <p>Try the full output before subscribing. No card needed. Cancel monthly any time.</p>
-          </div>
-        </div>
-      </section>
-
-      <!-- =================== PRICING TEASER =================== -->
       <section class="section pricing-section" id="pricing" aria-labelledby="pricing-title">
         <header class="section-head">
           <p class="eyebrow">Pricing</p>
-          <h2 id="pricing-title">A monthly subscription that fits your listing volume.</h2>
-          <p class="section-sub">Start small, move up when listing becomes part of your weekly routine, and keep one focused Vinted workflow instead of rewriting prompts.</p>
+          <h2 id="pricing-title">Start free, then choose your listing volume.</h2>
+          <p class="section-sub">Simple monthly plans for casual sellers, weekly sellers and high-volume resellers. Seller is the best fit for most active Vinted sellers.</p>
         </header>
-
         <div id="packGrid">
           <div class="pricing-v3" data-pricing-grid="true">
-            <article class="pricing-card subscription" id="subscribe-starter"><span class="badge">Monthly starter</span><h3>Starter</h3><p class="pricing-price"><strong>&pound;6.99</strong><span>per month</span></p><p class="pricing-meta">20 listings/month</p><p class="pricing-outcome">Core notes-to-listing workflow</p><p class="pricing-fit">Best for casual sellers</p><p class="pricing-copy">For wardrobe clear-outs when you want the core Vinted listing workflow.</p><ul class="pricing-compare"><li>20 listings per month</li><li>Notes-to-listing generator</li><li>Editable Vinted title, description and keywords</li><li>Copy buttons for every section</li><li>Best for wardrobe clear-outs</li></ul><button class="btn btn-secondary pricing-buy" type="button" data-subscription-plan="starter">Subscribe Starter</button></article>
+            <article class="pricing-card subscription" id="subscribe-starter"><span class="badge">Monthly starter</span><h3>Starter</h3><p class="pricing-price"><strong>&pound;6.99</strong><span>per month</span></p><p class="pricing-meta">20 listings/month</p><p class="pricing-outcome">Core notes-to-listing workflow</p><p class="pricing-fit">Best for casual sellers</p><p class="pricing-copy">For wardrobe clear-outs when you want the core Vinted listing workflow.</p><ul class="pricing-compare"><li>20 listings per month</li><li>Notes-to-listing generator</li><li>Editable Vinted title, description and keywords</li><li>Price guidance and photo checklist</li><li>Copy buttons for every section</li></ul><button class="btn btn-secondary pricing-buy" type="button" data-subscription-plan="starter">Subscribe Starter</button></article>
             <article class="pricing-card subscription is-featured featured" id="subscribe-seller"><span class="badge badge-brand">Best value</span><h3>Seller</h3><p class="pricing-price"><strong>&pound;14.99</strong><span>per month</span></p><p class="pricing-meta">75 listings/month</p><p class="pricing-outcome">Full phone-first seller workflow</p><p class="pricing-fit">Best for regular sellers</p><p class="pricing-copy">The weekly seller toolkit: photos, pricing, replies, scoring and saved history.</p><ul class="pricing-compare"><li>75 listings per month</li><li>Everything in Starter</li><li>Photo upload from phone camera roll</li><li>Fast / fair / max price guidance</li><li>Buyer reply generator</li><li>Listing score checker</li><li>Saved history for repeat sellers</li><li>Best value for weekly listing</li></ul><button class="btn btn-primary pricing-buy" type="button" data-subscription-plan="seller">Subscribe Seller</button></article>
-            <article class="pricing-card subscription" id="subscribe-reseller"><span class="badge">Elite tools</span><h3>Elite</h3><p class="pricing-price"><strong>&pound;29.99</strong><span>per month</span></p><p class="pricing-meta">250 listings/month</p><p class="pricing-outcome">Reseller workflow with priority help</p><p class="pricing-fit">Best for daily sellers</p><p class="pricing-copy">For serious resellers who list in batches and want the fastest workflow.</p><ul class="pricing-compare"><li>250 listings per month</li><li>Everything in Seller</li><li>Batch-friendly reseller workflow</li><li>Advanced photo checklist</li><li>Detailed pricing confidence notes</li><li>Listing history</li><li>Reusable listing templates (coming soon)</li><li>Priority support</li><li>Early access to reseller tools</li><li>Best for daily sellers</li></ul><button class="btn btn-secondary pricing-buy" type="button" data-subscription-plan="reseller">Subscribe Elite</button></article>
+            <article class="pricing-card subscription" id="subscribe-reseller"><span class="badge">Elite tools</span><h3>Elite</h3><p class="pricing-price"><strong>&pound;29.99</strong><span>per month</span></p><p class="pricing-meta">250 listings/month</p><p class="pricing-outcome">Reseller workflow with priority help</p><p class="pricing-fit">Best for daily sellers</p><p class="pricing-copy">For serious resellers who list in batches and want the fastest workflow.</p><ul class="pricing-compare"><li>250 listings per month</li><li>Everything in Seller</li><li>Batch-friendly reseller workflow</li><li>Advanced photo checklist</li><li>Detailed pricing confidence notes</li><li>Listing history</li><li>Priority support</li><li>Early access to reseller tools</li></ul><button class="btn btn-secondary pricing-buy" type="button" data-subscription-plan="reseller">Subscribe Elite</button></article>
           </div>
         </div>
       </section>
 
-      <!-- =================== FAQ =================== -->
       <section class="section" id="faq" aria-labelledby="faq-title">
         <header class="section-head">
           <p class="eyebrow">FAQ</p>
-          <h2 id="faq-title">Questions UK Vinted sellers ask.</h2>
+          <h2 id="faq-title">Questions before you try it.</h2>
         </header>
         <div class="faq-v3">
           <div class="faq-list">
-            <details><summary>Do I need to connect Vinted?</summary><p>No. ListBoost is independent. You copy and paste everything manually &mdash; we never log in for you.</p></details>
-            <details><summary>What does &ldquo;one listing&rdquo; mean?</summary><p>One listing is one full output package: title, description, keywords, fast/fair/max price, photo checklist and a buyer reply.</p></details>
-            <details><summary>What if I don&rsquo;t like the output?</summary><p>Edit any section in place before copying, or hit Reset to put the AI version back. Your edits never go back to the model.</p></details>
-            <details><summary>Can I switch plans?</summary><p>Yes. Upgrade or downgrade from Billing after signing in. Changes apply right away.</p></details>
-            <details><summary>What happens if I hit my monthly limit?</summary><p>You&rsquo;ll be asked to upgrade your plan to keep generating. Usage resets on the next billing cycle.</p></details>
-            <details><summary>Is ListBoost connected to Vinted?</summary><p>No. ListBoost is independent and is not affiliated with Vinted. Manual copy/paste only.</p></details>
+            <details><summary>Do I need to connect Vinted?</summary><p>No. ListBoost is independent. You copy and paste everything manually.</p></details>
+            <details><summary>What does one listing include?</summary><p>One generated package includes a title, description, keywords, pricing guidance, photo checklist and buyer reply.</p></details>
+            <details><summary>Can I use it without a card?</summary><p>Yes. Create an account and start with 3 free listings before choosing a monthly plan.</p></details>
+            <details><summary>Can I edit the output?</summary><p>Yes. Each output section is editable before you copy it to Vinted.</p></details>
+            <details><summary>Can I switch plans?</summary><p>Yes. You can upgrade or downgrade from Billing after signing in.</p></details>
+            <details><summary>Is ListBoost affiliated with Vinted?</summary><p>No. ListBoost is an independent tool for sellers and is not affiliated with Vinted.</p></details>
           </div>
           <aside class="faq-v3-aside">
-            <h3>Still unsure?</h3>
-            <p>Try the full demo with no signup. You&rsquo;ll see exactly what every section looks like before you create an account.</p>
-            <a class="btn btn-primary" href="/example">Try the live demo</a>
+            <h3>Want to see the output first?</h3>
+            <p>Try the example with no signup and check the exact sections before creating an account.</p>
+            <a class="btn btn-primary" href="/example">Try the example</a>
           </aside>
         </div>
       </section>
 
-      <!-- =================== FINAL CTA =================== -->
-      <section class="section" aria-labelledby="cta-title">
+      <section class="section final-cta-v5" aria-labelledby="cta-title">
         <div class="cta-strip">
           <div>
-            <h2 id="cta-title">3 listings on us. No card needed.</h2>
-            <p>Create a free account, generate your first sell-ready Vinted listing in under a minute, then decide if a monthly plan fits.</p>
+            <p class="eyebrow">Independent. Not affiliated with Vinted. Built for UK resellers.</p>
+            <h2 id="cta-title">Create your first listing in under a minute.</h2>
+            <p>No card needed. Generate 3 listings free, then keep the workflow if it earns its place.</p>
           </div>
           <a class="btn btn-primary" href="/signup">Start free &mdash; 3 listings</a>
         </div>

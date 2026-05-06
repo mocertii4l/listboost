@@ -209,8 +209,8 @@ const PRICING_CATALOGUE = [
       "20 listings per month",
       "Notes-to-listing generator",
       "Editable Vinted title, description and keywords",
-      "Copy buttons for every section",
-      "Best for wardrobe clear-outs"
+      "Price guidance and photo checklist",
+      "Copy buttons for every section"
     ]
   },
   {
@@ -248,7 +248,6 @@ const PRICING_CATALOGUE = [
       "Advanced photo checklist",
       "Detailed pricing confidence notes",
       "Listing history",
-      "Reusable listing templates (coming soon)",
       "Priority support",
       "Early access to reseller tools",
       "Best for daily sellers"
@@ -1980,12 +1979,16 @@ function loadImageFromDataUrl(dataUrl) {
 }
 
 async function fileToDataUrl(file) {
-  if (!file || !String(file.type || "").startsWith("image/")) {
+  const name = String(file?.name || "").toLowerCase();
+  const type = String(file?.type || "").toLowerCase();
+  const isHeic = /\.(heic|heif)$/.test(name) || /hei[cf]/.test(type);
+  const isImage = type.startsWith("image/") || isHeic;
+  if (!file || !isImage) {
     throw new Error("Choose an image file from your camera roll or files.");
   }
 
   const rawDataUrl = await readFileAsDataUrl(file);
-  const isGif = file.type === "image/gif";
+  const isGif = type === "image/gif";
   if (isGif && file.size <= 1_500_000) return rawDataUrl;
 
   try {
@@ -2002,7 +2005,7 @@ async function fileToDataUrl(file) {
     context.drawImage(image, 0, 0, width, height);
     return canvas.toDataURL("image/jpeg", 0.86);
   } catch (error) {
-    if (/hei[cf]/i.test(file.type || file.name || "")) {
+    if (isHeic) {
       throw new Error("That phone photo could not be read here. Please choose a JPEG/PNG version or take a fresh photo.");
     }
     return rawDataUrl;
@@ -2385,8 +2388,8 @@ function planBenefitsFor(planId, usage = {}) {
       "20 listings per month",
       "Notes-to-listing generator",
       "Editable Vinted title, description and keywords",
-      "Copy buttons for every section",
-      "Best for wardrobe clear-outs"
+      "Price guidance and photo checklist",
+      "Copy buttons for every section"
     ],
     seller: [
       "75 listings per month",
@@ -2405,7 +2408,6 @@ function planBenefitsFor(planId, usage = {}) {
       "Advanced photo checklist",
       "Detailed pricing confidence notes",
       "Listing history",
-      "Reusable listing templates (coming soon)",
       "Priority support",
       "Early access to reseller tools",
       "Best for daily sellers"
