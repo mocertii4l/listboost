@@ -12,6 +12,7 @@
     <meta property="og:url" content="https://www.listboost.uk/privacy" />
     <meta name="twitter:card" content="summary_large_image" />
     <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="/styles-v3.css" />
   </head>
   <body>
     <main class="app-shell" id="main">
@@ -19,47 +20,72 @@
         <article class="legal-panel">
           <p class="section-kicker">Privacy</p>
           <h1 id="page-title">Privacy notice</h1>
-          <p class="legal-meta">Last updated: 3 May 2026</p>
+          <p class="legal-meta">Last updated: 6 May 2026</p>
 
-          <h2>Who we are</h2>
-          <p>ListBoost is an independent tool that helps Vinted sellers turn rough notes and photos into polished listings. ListBoost is <strong>not affiliated with, endorsed by, or partnered with Vinted</strong>. You do not need to log into Vinted to use ListBoost. We never ask for your Vinted credentials and we never connect to Vinted on your behalf.</p>
+          <h2>Plain-English summary</h2>
+          <p>ListBoost collects only what it needs to run your account, generate listings, save your history, process subscriptions and keep the service safe. We do not ask for your Vinted login, we do not auto-post to Vinted, and we do not sell your personal data.</p>
 
-          <h2>What we collect</h2>
+          <h2>1. Who we are</h2>
+          <p>ListBoost is an independent listing workflow tool for UK Vinted sellers. ListBoost is <strong>not affiliated with, endorsed by, sponsored by, or partnered with Vinted</strong>. You do not need to connect a Vinted account to use ListBoost.</p>
+
+          <h2>2. Data we collect</h2>
           <ul>
-            <li><strong>Account data:</strong> the email address and password you choose at signup. Passwords are stored as a salted pbkdf2 hash; we never store the plain-text password.</li>
-            <li><strong>Listings you generate:</strong> the rough notes, photos, and resulting listing draft are stored against your account so you can see your history.</li>
-            <li><strong>Payment data:</strong> Stripe processes payments. We receive a confirmation that a payment succeeded and the Stripe checkout-session ID. We do not see or store card numbers, CVC, or full billing details.</li>
-            <li><strong>Operational data:</strong> server logs (timestamps, IP addresses, error traces) used to keep the service running and to spot abuse.</li>
+            <li><strong>Account data:</strong> your name, email address, password hash, email verification status and session records.</li>
+            <li><strong>Listing data:</strong> item notes, selected category, generated titles, descriptions, keywords, price guidance, photo checklist, buyer replies and saved history.</li>
+            <li><strong>Photo data:</strong> photos you choose to upload for photo-based listing generation.</li>
+            <li><strong>Billing data:</strong> Stripe customer, subscription, checkout and invoice identifiers, plan status, billing cycle dates and usage limits.</li>
+            <li><strong>Support data:</strong> messages you send to support, including your email address and any details needed to solve the issue.</li>
+            <li><strong>Operational data:</strong> timestamps, IP addresses, user-agent strings, server logs, error logs and rate-limit events used to keep the service reliable and secure.</li>
           </ul>
 
-          <h2>How your content is processed</h2>
-          <p>To generate a listing we send your notes and any uploaded photos to <strong>OpenAI</strong> (and, as a fallback, Anthropic) for inference. The model returns a JSON listing. Your content is sent over TLS and is subject to OpenAI's enterprise data policy: by default, prompts and completions submitted via the OpenAI API are not used to train OpenAI's models. Photos are sent at request time and are not retained on our servers beyond the listing record we keep for your history.</p>
+          <h2>3. Password and account security</h2>
+          <p>Passwords are stored as salted pbkdf2 hashes. We never store your plain-text password. Sessions use first-party cookies. Email verification is required before logged-in app access, and password reset tokens are single-use and time-limited.</p>
 
-          <h2>How we use the data</h2>
+          <h2>4. How listing generation works</h2>
+          <p>To generate a listing, ListBoost sends the notes and/or photos you provide to AI model providers for inference. The model returns structured listing sections such as title, description, keywords, price guidance, photo checklist and buyer reply. We process this content only to provide the service, improve reliability, protect against abuse and save your history when your account uses that feature.</p>
+
+          <h2>5. AI providers and processors</h2>
+          <p>We use processors needed to run the service, including hosting infrastructure, email delivery, <strong>OpenAI</strong> for generation, Anthropic as a fallback provider where configured, and <strong>Stripe</strong> for subscriptions and payment processing. Stripe processes card details directly. ListBoost does not see or store full card numbers, CVC codes or payment credentials.</p>
+
+          <h2>6. How we use your data</h2>
           <ul>
-            <li>To run your account and show your listing history.</li>
-            <li>To bill you for monthly subscriptions via Stripe.</li>
-            <li>To detect and prevent abuse (rate limits, fraud, billing disputes).</li>
-            <li>To send service emails (verification, security notices). We do not send marketing email without your consent.</li>
+            <li>To create and secure your account.</li>
+            <li>To verify your email and send password reset or important service messages.</li>
+            <li>To generate and save copy-ready Vinted listing sections.</li>
+            <li>To show your dashboard, listing history, plan, billing status and usage allowance.</li>
+            <li>To process subscriptions, invoices, cancellations and plan changes through Stripe.</li>
+            <li>To investigate errors, prevent abuse, enforce rate limits and protect the service.</li>
           </ul>
 
-          <h2>Sharing</h2>
-          <p>We share data only with the processors needed to run the service: <strong>OpenAI</strong> (and Anthropic as fallback) for listing generation, <strong>Stripe</strong> for payments, and our hosting provider. We do not sell your data.</p>
+          <h2>7. What we do not do</h2>
+          <ul>
+            <li>We do not sell your personal data.</li>
+            <li>We do not ask for or store your Vinted password.</li>
+            <li>We do not auto-post listings to Vinted.</li>
+            <li>We do not run third-party advertising cookies.</li>
+            <li>We do not send marketing email unless you have consented.</li>
+          </ul>
 
-          <h2>Retention</h2>
-          <p>Account data and listing history are kept while your account is active. You can ask us to delete your account at any time and we will remove account, listing history, and audit records, except where we must keep records for tax or fraud-prevention reasons.</p>
+          <h2>8. Legal bases</h2>
+          <p>We process account, listing and billing data to perform our contract with you. We process security logs, rate limits and abuse signals for our legitimate interests in keeping ListBoost reliable and safe. We process legally required billing and tax records where required by law. Where consent is needed, you can withdraw it by contacting support.</p>
 
-          <h2>Your rights (UK GDPR)</h2>
-          <p>You can request access, correction, deletion, or export of your data, and you can withdraw consent for processing. Email <a href="mailto:support@listboost.uk">support@listboost.uk</a> with your request.</p>
+          <h2>9. Retention</h2>
+          <p>Account data and listing history are kept while your account is active. Billing and invoice records may be retained where required for tax, accounting, fraud prevention or dispute handling. Support messages are retained only as long as needed to respond and maintain a useful support record. You can request account deletion at any time.</p>
 
-          <h2>Cookies</h2>
-          <p>We use a single first-party HTTP-only session cookie to keep you signed in. We do not run third-party advertising or analytics cookies.</p>
+          <h2>10. Your rights under UK GDPR</h2>
+          <p>You can request access, correction, deletion, restriction, objection or export of your personal data. You can also complain to the UK Information Commissioner's Office if you are unhappy with how your data is handled. To make a request, email <a href="mailto:support@listboost.uk">support@listboost.uk</a> from the email address on your ListBoost account.</p>
 
-          <h2>Changes</h2>
-          <p>If we materially change this notice we will post the new version here and bump the date at the top.</p>
+          <h2>11. Cookies</h2>
+          <p>ListBoost uses first-party cookies needed for authentication and app security. These cookies keep you signed in and help protect your session. We do not use advertising cookies.</p>
 
-          <h2>Contact</h2>
-          <p>For privacy questions, account deletion, billing records, or support, email <a href="mailto:support@listboost.uk">support@listboost.uk</a>.</p>
+          <h2>12. International processing</h2>
+          <p>Some processors may process data outside the UK. Where that happens, we rely on appropriate safeguards such as contractual protections and provider data-processing terms.</p>
+
+          <h2>13. Changes</h2>
+          <p>If we materially change this notice, we will update this page and change the date above. If a change materially affects your account or rights, we will take reasonable steps to notify you.</p>
+
+          <h2>14. Contact</h2>
+          <p>For privacy questions, account deletion, billing records, security concerns or support, email <a href="mailto:support@listboost.uk">support@listboost.uk</a>.</p>
 
           <div class="legal-foot">
             <p><strong>Independent - not affiliated with Vinted.</strong></p>

@@ -20,6 +20,11 @@ const TRIMMED_ENV_KEYS = [
   "ADMIN_EMAIL",
   "ADMIN_PASSWORD",
   "DATA_DIR",
+  "GOOGLE_CLIENT_ID",
+  "GOOGLE_CLIENT_SECRET",
+  "MICROSOFT_CLIENT_ID",
+  "MICROSOFT_CLIENT_SECRET",
+  "MICROSOFT_TENANT_ID",
   "ANTHROPIC_API_KEY",
   "OPENAI_MODEL",
   "OPENAI_VISION_MODEL",
@@ -105,6 +110,29 @@ const adminPassword = String(process.env.ADMIN_PASSWORD || "");
 const resendApiKey = String(process.env.RESEND_API_KEY || "");
 const emailFrom = String(process.env.EMAIL_FROM || "ListBoost <onboarding@resend.dev>");
 const supportEmail = String(process.env.SUPPORT_EMAIL || "hello@listboost.app");
+const microsoftTenantId = String(process.env.MICROSOFT_TENANT_ID || "common").trim() || "common";
+const oauthProviders = {
+  google: {
+    id: "google",
+    label: "Google",
+    clientId: String(process.env.GOOGLE_CLIENT_ID || ""),
+    clientSecret: String(process.env.GOOGLE_CLIENT_SECRET || ""),
+    authorizationUrl: "https://accounts.google.com/o/oauth2/v2/auth",
+    tokenUrl: "https://oauth2.googleapis.com/token",
+    userInfoUrl: "https://openidconnect.googleapis.com/v1/userinfo",
+    scope: "openid email profile"
+  },
+  microsoft: {
+    id: "microsoft",
+    label: "Microsoft",
+    clientId: String(process.env.MICROSOFT_CLIENT_ID || ""),
+    clientSecret: String(process.env.MICROSOFT_CLIENT_SECRET || ""),
+    authorizationUrl: `https://login.microsoftonline.com/${encodeURIComponent(microsoftTenantId)}/oauth2/v2.0/authorize`,
+    tokenUrl: `https://login.microsoftonline.com/${encodeURIComponent(microsoftTenantId)}/oauth2/v2.0/token`,
+    userInfoUrl: "https://graph.microsoft.com/oidc/userinfo",
+    scope: "openid email profile"
+  }
+};
 if (isProduction && !dataDirDiagnostics.explicit) {
   console.warn("[launch-check] DATA_DIR is unset in production. Using local ./data; configure persistent storage to avoid losing SQLite data.");
 }
@@ -499,6 +527,14 @@ db.exec(`
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
   );
 
+  CREATE TABLE IF NOT EXISTS oauth_states (
+    state TEXT PRIMARY KEY,
+    provider TEXT NOT NULL,
+    next_path TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    expires_at TEXT NOT NULL
+  );
+
   CREATE TABLE IF NOT EXISTS credit_audit (
     id TEXT PRIMARY KEY,
     user_id TEXT NOT NULL,
@@ -739,6 +775,10 @@ function clearAuthHeaders() {
   return { "set-cookie": createCookie("lb_session", "", { clear: true, maxAge: 0 }) };
 }
 
+function clearOAuthStateHeaders() {
+  return { "set-cookie": createCookie("lb_oauth_state", "", { clear: true, maxAge: 0 }) };
+}
+
 // Spread-friendly merge for headers that may both contain set-cookie. Node's
 // http supports an array value for set-cookie, so when both sides set a cookie
 // we surface both rather than letting Object.assign drop one.
@@ -765,6 +805,215 @@ function deleteExpiredSessionsForUser(userId) {
   // Clear stale sessions periodically as a safety net (does not affect the active session).
   db.prepare("DELETE FROM sessions WHERE user_id = ? AND expires_at <= ?")
     .run(userId, new Date().toISOString());
+}
+
+function oauthProviderConfig(providerId) {
+  return oauthProviders[String(providerId || "").toLowerCase()] || null;
+}
+
+function oauthRedirectUri(providerId) {
+  return `${appUrl}/auth/${providerId}/callback`;
+}
+
+function oauthProviderReady(providerId) {
+  const provider = oauthProviderConfig(providerId);
+  return Boolean(provider?.clientId && provider?.clientSecret);
+}
+
+function safeNextPath(value, fallback = "/app") {
+  const raw = String(value || "").trim();
+  if (!raw || !raw.startsWith("/") || raw.startsWith("//") || raw.includes("://")) return fallback;
+  return raw.slice(0, 400);
+}
+
+function redirect(res, location, headers = {}) {
+  res.writeHead(302, { ...headers, location });
+  res.end();
+}
+
+function oauthErrorLocation(providerId, code = "failed") {
+  const provider = oauthProviderConfig(providerId);
+  const params = new URLSearchParams({
+    auth_error: code,
+    provider: provider?.label || "Provider"
+  });
+  return `/login?${params.toString()}`;
+}
+
+function createOAuthState({ providerId, nextPath }) {
+  const state = randomUUID() + randomUUID();
+  const now = new Date();
+  const expires = new Date(now.getTime() + 10 * 60_000);
+  db.prepare("DELETE FROM oauth_states WHERE expires_at <= ?").run(now.toISOString());
+  db.prepare("INSERT INTO oauth_states (state, provider, next_path, created_at, expires_at) VALUES (?, ?, ?, ?, ?)")
+    .run(state, providerId, nextPath, now.toISOString(), expires.toISOString());
+  return state;
+}
+
+function consumeOAuthState({ state, providerId }) {
+  const row = db.prepare(
+    "SELECT * FROM oauth_states WHERE state = ? AND provider = ? AND expires_at > ?"
+  ).get(state, providerId, new Date().toISOString());
+  db.prepare("DELETE FROM oauth_states WHERE state = ?").run(state);
+  return row || null;
+}
+
+async function fetchJsonOrThrow(url, options = {}, label = "OAuth request") {
+  const response = await fetch(url, {
+    headers: {
+      accept: "application/json",
+      ...(options.headers || {})
+    },
+    ...options
+  });
+  const text = await response.text();
+  let body = {};
+  try { body = text ? JSON.parse(text) : {}; } catch { body = { error: text }; }
+  if (!response.ok) {
+    const message = String(body.error_description || body.error || text || "").slice(0, 240);
+    throw new Error(`${label} failed: ${response.status}${message ? ` ${message}` : ""}`);
+  }
+  return body;
+}
+
+async function exchangeOAuthCode(provider, code) {
+  return fetchJsonOrThrow(provider.tokenUrl, {
+    method: "POST",
+    headers: { "content-type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      client_id: provider.clientId,
+      client_secret: provider.clientSecret,
+      code,
+      grant_type: "authorization_code",
+      redirect_uri: oauthRedirectUri(provider.id)
+    }).toString()
+  }, `${provider.label} token exchange`);
+}
+
+async function fetchOAuthProfile(provider, accessToken) {
+  return fetchJsonOrThrow(provider.userInfoUrl, {
+    headers: {
+      authorization: `Bearer ${accessToken}`
+    }
+  }, `${provider.label} profile lookup`);
+}
+
+function nameFromOAuthProfile(profile, email) {
+  const candidate = profile.name || profile.displayName || profile.given_name || String(email || "").split("@")[0];
+  const cleaned = String(candidate || "ListBoost Seller")
+    .replace(/[._-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 80);
+  const result = validateName(cleaned);
+  return result.name || "ListBoost Seller";
+}
+
+function findOrCreateOAuthUser({ providerId, profile }) {
+  const email = normalizeEmail(profile.email || profile.mail || profile.userPrincipalName || profile.upn || "");
+  if (!isValidEmail(email)) {
+    throw new Error("OAuth profile did not include a verified email address.");
+  }
+  if (providerId === "google" && profile.email_verified === false) {
+    throw new Error("Google did not mark this email address as verified.");
+  }
+
+  const name = nameFromOAuthProfile(profile, email);
+  const now = new Date().toISOString();
+  const existing = db.prepare("SELECT * FROM users WHERE email = ?").get(email);
+  if (existing) {
+    db.prepare(`
+      UPDATE users
+      SET name = CASE WHEN name = '' THEN ? ELSE name END,
+          email_verified = 1,
+          updated_at = ?
+      WHERE id = ?
+    `).run(name, now, existing.id);
+    recordAudit(existing.id, `oauth:${providerId}`, 0, "Signed in with OAuth provider");
+    return db.prepare("SELECT * FROM users WHERE id = ?").get(existing.id);
+  }
+
+  const userId = randomUUID();
+  const randomPassword = `${providerId}:${randomUUID()}:${randomBytes(16).toString("hex")}`;
+  db.prepare(`
+    INSERT INTO users (id, email, name, password_hash, email_verified, usage_this_month, usage_limit, created_at, updated_at)
+    VALUES (?, ?, ?, ?, 1, 0, ?, ?, ?)
+  `).run(userId, email, name, hashPassword(randomPassword), FREE_PLAN.monthlyLimit, now, now);
+  recordAudit(userId, `oauth:${providerId}`, 0, "Account created with OAuth provider");
+  return db.prepare("SELECT * FROM users WHERE id = ?").get(userId);
+}
+
+async function handleOAuthStart(req, res, providerId) {
+  const visitor = getVisitor(req);
+  const provider = oauthProviderConfig(providerId);
+  if (!provider) {
+    redirect(res, "/login?auth_error=unknown-provider", visitor.headers);
+    return;
+  }
+  if (!oauthProviderReady(providerId)) {
+    redirect(res, oauthErrorLocation(providerId, "not-configured"), visitor.headers);
+    return;
+  }
+
+  const url = new URL(req.url, `http://${req.headers.host}`);
+  const nextPath = safeNextPath(url.searchParams.get("next"), "/app");
+  const state = createOAuthState({ providerId, nextPath });
+  const authUrl = new URL(provider.authorizationUrl);
+  authUrl.searchParams.set("client_id", provider.clientId);
+  authUrl.searchParams.set("redirect_uri", oauthRedirectUri(provider.id));
+  authUrl.searchParams.set("response_type", "code");
+  authUrl.searchParams.set("scope", provider.scope);
+  authUrl.searchParams.set("state", state);
+  if (provider.id === "microsoft") authUrl.searchParams.set("response_mode", "query");
+
+  redirect(res, authUrl.toString(), mergeHeaders(
+    visitor.headers,
+    { "set-cookie": createCookie("lb_oauth_state", `${providerId}:${state}`, { maxAge: 10 * 60 }) }
+  ));
+}
+
+async function handleOAuthCallback(req, res, providerId) {
+  const visitor = getVisitor(req);
+  const provider = oauthProviderConfig(providerId);
+  const headers = mergeHeaders(visitor.headers, clearOAuthStateHeaders());
+  if (!provider) {
+    redirect(res, "/login?auth_error=unknown-provider", headers);
+    return;
+  }
+
+  const url = new URL(req.url, `http://${req.headers.host}`);
+  const providerError = url.searchParams.get("error");
+  if (providerError) {
+    redirect(res, oauthErrorLocation(providerId, "cancelled"), headers);
+    return;
+  }
+
+  const code = String(url.searchParams.get("code") || "");
+  const state = String(url.searchParams.get("state") || "");
+  const cookieState = parseCookies(req).lb_oauth_state || "";
+  if (!code || !state || cookieState !== `${providerId}:${state}`) {
+    redirect(res, oauthErrorLocation(providerId, "state-mismatch"), headers);
+    return;
+  }
+
+  const stateRow = consumeOAuthState({ state, providerId });
+  if (!stateRow) {
+    redirect(res, oauthErrorLocation(providerId, "expired"), headers);
+    return;
+  }
+
+  try {
+    const token = await exchangeOAuthCode(provider, code);
+    if (!token.access_token) throw new Error(`${provider.label} did not return an access token.`);
+    const profile = await fetchOAuthProfile(provider, token.access_token);
+    const user = findOrCreateOAuthUser({ providerId, profile });
+    deleteExpiredSessionsForUser(user.id);
+    const sessionToken = createSession(user.id);
+    redirect(res, safeNextPath(stateRow.next_path, "/app"), mergeHeaders(headers, authHeaders(sessionToken)));
+  } catch (error) {
+    console.error(`[oauth] ${providerId} sign-in failed:`, error);
+    redirect(res, oauthErrorLocation(providerId, "failed"), headers);
+  }
 }
 
 async function loadUsage() {
@@ -3254,6 +3503,19 @@ const server = createServer((req, res) => {
   if (req.method === "GET" && req.url === "/health") {
     handleHealth(req, res);
     return;
+  }
+
+  {
+    const oauthStartMatch = req.url.match(/^\/auth\/(google|microsoft)(?:\?.*)?$/i);
+    if (oauthStartMatch && req.method === "GET") {
+      handleOAuthStart(req, res, oauthStartMatch[1].toLowerCase());
+      return;
+    }
+    const oauthCallbackMatch = req.url.match(/^\/auth\/(google|microsoft)\/callback(?:\?.*)?$/i);
+    if (oauthCallbackMatch && req.method === "GET") {
+      handleOAuthCallback(req, res, oauthCallbackMatch[1].toLowerCase());
+      return;
+    }
   }
 
   if (req.method === "POST" && req.url === "/api/stripe-webhook") {

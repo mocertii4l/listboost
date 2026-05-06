@@ -173,8 +173,27 @@ test("auth routes get correct labels and required signup name field", () => {
   assert.match(authHtml, /<h1 id="authHeading">Sign in<\/h1>/);
   assert.match(authHtml, /<label class="signup-name-field hidden">Full name<input name="name" type="text" autocomplete="name" maxlength="80"/);
   assert.match(authHtml, /<button class="btn btn-primary" type="submit">Sign in<\/button>/);
+  assert.match(authHtml, /Continue with Google/);
+  assert.match(authHtml, /Continue with Microsoft/);
+  assert.match(authHtml, /data-oauth-provider="google"/);
+  assert.match(authHtml, /data-oauth-provider="microsoft"/);
+  assert.doesNotMatch(authHtml, /mini-badge|Soon/);
+  assert.match(authHtml, /Secure seller workspace/);
+  assert.match(authHtml, /No card needed to start/);
+  assert.match(authHtml, /Cancel or switch plans any time/);
+  assert.match(authHtml, /Independent from Vinted/);
+  assert.match(authHtml, /Privacy-first account handling/);
+  assert.match(authHtml, /Terms of service/);
+  assert.match(authHtml, /Privacy notice/);
   assert.match(siteJs, /location\.pathname === "\/signup"/);
   assert.match(siteJs, /heading\) heading\.textContent = isSignup \? "Create account" : "Sign in"/);
+  assert.match(siteJs, /data-oauth-provider/);
+  assert.match(siteJs, /auth_error/);
+  assert.doesNotMatch(siteJs, /data-social-auth|sign-in is coming soon/);
+  assert.match(serverJs, /handleOAuthStart/);
+  assert.match(serverJs, /handleOAuthCallback/);
+  assert.match(serverJs, /GOOGLE_CLIENT_ID/);
+  assert.match(serverJs, /MICROSOFT_CLIENT_ID/);
   assert.match(siteJs, /validateFullName/);
   assert.match(serverJs, /validateName/);
   assert.match(serverJs, /INSERT INTO users \(id, email, name, password_hash/);
@@ -202,7 +221,9 @@ test("verification and account settings are first-class app flows", () => {
 test("photo upload supports mobile camera and premium output", () => {
   assert.match(siteJs, /capture="environment"/);
   assert.match(siteJs, /accept="image\/\*,\.heic,\.heif"/);
-  assert.match(siteJs, /Choose from camera roll/);
+  assert.match(siteJs, /Photo library \/ files/);
+  assert.match(siteJs, /without forcing the camera/);
+  assert.match(siteJs, /Choose photos from camera roll or files/);
   assert.match(siteJs, /Take photo/);
   assert.match(siteJs, /cameraPhoto/);
   assert.match(siteJs, /photoPreviewGrid/);
@@ -216,7 +237,7 @@ test("photo upload supports mobile camera and premium output", () => {
   assert.match(siteJs, /class="photo-empty-mock-photo"/);
   assert.match(siteJs, /\/images\/listing-gallery\/zara-dress\.jpg/);
   assert.match(siteJs, /Photo Listing/);
-  assert.match(siteJs, /Choose from Photo Library \/ camera roll/);
+  assert.match(siteJs, /Choose Photo Library \/ camera roll or Browse files/);
   assert.match(serverJs, /\/api\/generate-from-photos/);
 });
 
@@ -266,7 +287,7 @@ test("public CTAs have valid hrefs and pricing has subscribe buttons", () => {
   }
 });
 
-test("homepage shows product-gallery example cards (Zara, Nike, Kids bundle)", () => {
+test("homepage shows honest product-gallery example cards (Zara, white trainers, Kids bundle)", () => {
   assert.match(indexHtml, /class="gallery-v3"/);
   assert.match(indexHtml, /class="gallery-card/);
   assert.match(indexHtml, /class="gallery-card-photo"/);
@@ -274,9 +295,12 @@ test("homepage shows product-gallery example cards (Zara, Nike, Kids bundle)", (
   assert.match(indexHtml, /\/images\/listing-gallery\/white-trainers\.jpg/);
   assert.match(indexHtml, /\/images\/listing-gallery\/newborn-bundle\.jpg/);
   assert.match(indexHtml, /Zara Navy Satin Midi Dress/);
-  assert.match(indexHtml, /Nike Air Force 1/);
+  assert.match(indexHtml, /Clean White Leather Trainers/);
+  assert.doesNotMatch(indexHtml, /Nike Air Force 1|af1/i);
   assert.match(indexHtml, /Kids Winter Bundle/);
   assert.match(indexHtml, /class="gallery-card-tags/);
+  assert.match(indexHtml, /class="category-cloud-v3"/);
+  assert.match(indexHtml, /Category coverage/);
   // At least 6 gallery cards for the new product-gallery style.
   const cards = (indexHtml.match(/class="gallery-card"/g) || []).length;
   assert.equal(cards >= 6, true, `expected 6+ gallery cards, found ${cards}`);
@@ -542,7 +566,14 @@ test("public marketing explains ListBoost's focused Vinted workflow without nami
   assert.match(indexHtml, /A focused workflow for Vinted sellers/);
   assert.match(indexHtml, /one repeatable place to turn item photos and rough notes/);
   assert.match(indexHtml, /Get six Vinted-ready sections every time/);
+  assert.match(indexHtml, /Small automations that save repeat work|Less repeat work on every listing/);
+  assert.match(indexHtml, /A Vinted workflow, not a blank writing box/);
+  assert.match(indexHtml, /category-aware wording, price guidance, a photo checklist, buyer replies, saved history and copy buttons/);
+  assert.match(siteJs, /Category-aware wording/);
+  assert.match(siteJs, /Fast \/ fair \/ max prices/);
+  assert.match(siteJs, /Copy-ready sections/);
   assert.doesNotMatch(indexHtml, /ChatGPT|Claude/);
+  assert.doesNotMatch(pricingHtml, /ChatGPT|Claude/);
   assert.match(pricingHtml, /not just text generation/);
   assert.match(pricingHtml, /You are paying for the workflow/);
   for (const html of [indexHtml, pricingHtml]) {
@@ -750,6 +781,14 @@ test("public pages include social metadata and legal pages use shared shell", ()
   assert.match(termsHtml, /support@listboost\.uk/);
   assert.match(privacyHtml, /class="legal-links"/);
   assert.match(termsHtml, /class="legal-links"/);
+  assert.match(privacyHtml, /Plain-English summary/);
+  assert.match(privacyHtml, /Passwords are stored as salted pbkdf2 hashes/);
+  assert.match(privacyHtml, /Your rights under UK GDPR/);
+  assert.match(privacyHtml, /We do not sell your personal data/);
+  assert.match(termsHtml, /Plain-English summary/);
+  assert.match(termsHtml, /Plans, usage and billing/);
+  assert.match(termsHtml, /AI-generated output/);
+  assert.match(termsHtml, /Governing law/);
   assert.match(supportHtml, /Support FAQ/);
   assert.match(supportHtml, /support@listboost\.uk/);
   assert.match(serverJs, /"\/support": "\/support\.html"/);

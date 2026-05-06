@@ -61,12 +61,6 @@ function installTheme() {
       toast("Appearance updated.", "success");
       return;
     }
-    const socialAuth = event.target.closest("[data-social-auth]");
-    if (socialAuth) {
-      const provider = socialAuth.dataset.socialAuth === "microsoft" ? "Microsoft" : "Google";
-      toast(`${provider} sign-in is not connected yet. Use email and password for now.`, "info");
-      return;
-    }
     if (!event.target.closest(".theme-toggle")) return;
     const current = document.documentElement.dataset.theme;
     applyTheme(current === "dark" ? "light" : "dark");
@@ -629,7 +623,7 @@ function renderSubscriptionPlansGrid() {
   if (!grid) return;
   grid.innerHTML = `
     <div class="pricing-mode-section recommended" data-pricing-panel="subscriptions">
-      <div class="section-head compact"><p class="eyebrow">Subscribe monthly</p><h2>Pick the plan that fits your listing volume</h2></div>
+      <div class="section-head compact"><p class="eyebrow">Subscribe monthly</p><h2>Choose your plan</h2></div>
       <div class="pricing-grid" data-pricing-grid="true">${pricingGridHtml({})}</div>
     </div>
   `;
@@ -674,22 +668,47 @@ function installAuthMode() {
   const authForm = $("#authForm");
   if (!authForm) return;
   const isSignup = location.pathname === "/signup";
+  const params = new URLSearchParams(location.search);
+  const nextPath = params.get("next") || "/app";
   const heading = $("#authHeading");
   const intro = $("#authIntro");
   const button = authForm.querySelector("button[type=submit]");
   const links = $("#authLinks");
   const nameField = $(".signup-name-field", authForm);
   const nameInput = authForm.elements.name;
+  const providerStatus = $("#authProviderStatus");
   authForm.dataset.mode = isSignup ? "signup" : "login";
   if (heading) heading.textContent = isSignup ? "Create account" : "Sign in";
-  if (intro) intro.textContent = isSignup ? "Try 3 free listings on us - no card needed." : "Your subscription, history and listings stay with this account.";
+  if (intro) intro.textContent = isSignup
+    ? "Start with 3 free listings. No card needed, no Vinted login, cancel any time."
+    : "Your subscription, history and listings stay protected in this account.";
   if (button) button.textContent = isSignup ? "Create account" : "Sign in";
   if (nameField) nameField.classList.toggle("hidden", !isSignup);
   if (nameInput) nameInput.required = isSignup;
   if (links) {
     links.innerHTML = isSignup
       ? '<a href="/login">Already have an account? Log in</a>'
-      : '<a href="/signup">Create account</a> | <a href="/forgot-password">Forgot password?</a>';
+      : '<a href="/signup">Create account</a> &middot; <a href="/forgot-password">Forgot password?</a>';
+  }
+  $$("[data-oauth-provider]").forEach((link) => {
+    const provider = link.dataset.oauthProvider;
+    const url = new URL(`/auth/${provider}`, location.origin);
+    url.searchParams.set("next", nextPath);
+    link.href = `${url.pathname}${url.search}`;
+  });
+  if (providerStatus) {
+    const error = params.get("auth_error");
+    const provider = params.get("provider") || "Provider";
+    const messages = {
+      "not-configured": `${provider} sign-in needs OAuth keys configured for this environment. Use email and password for now, or add the provider keys and restart ListBoost.`,
+      "state-mismatch": "That sign-in session expired. Please try again.",
+      expired: "That sign-in session expired. Please try again.",
+      cancelled: `${provider} sign-in was cancelled.`,
+      failed: `${provider} sign-in could not be completed. Please try again or use email and password.`,
+      "unknown-provider": "That sign-in provider is not available."
+    };
+    providerStatus.textContent = error ? (messages[error] || messages.failed) : "";
+    providerStatus.classList.toggle("hidden", !error);
   }
 }
 
@@ -801,14 +820,14 @@ function dashboardRouteTemplate() {
   return `
     <section class="dashboard-route" data-route="dashboard">
       <header class="route-head dashboard-head">
-        <h1>Your ListBoost workspace</h1>
-        <p class="muted">Generate Vinted listings, buyer replies and pricing guidance from one clean place.</p>
+        <h1>Your Vinted listing workspace</h1>
+        <p class="muted">A focused workflow for photos, notes, price guidance, buyer replies and saved listing history.</p>
       </header>
       <section class="card card-elevated welcome-card js-first-run">
         <div>
           <span class="badge badge-brand">${iconSvg("sparkles")} Welcome to ListBoost</span>
           <h2>Generate your first listing in 30 seconds</h2>
-          <p class="muted">Start with notes or upload a photo from your phone. You will get title, description, keywords, pricing and copy buttons.</p>
+          <p class="muted">Start with notes or upload a photo from your phone. You will get category-aware wording, price bands, a photo checklist and copy-ready sections.</p>
         </div>
         ${buttonTemplate({ variant: "primary", label: "Generate a listing", icon: "arrow-right", href: "/app/notes" })}
       </section>
@@ -843,6 +862,26 @@ function dashboardRouteTemplate() {
           </a>
         `).join("")}
       </div>
+      <section class="workflow-helper-row" aria-labelledby="workflowHelperTitle">
+        <div class="section-head compact">
+          <p class="eyebrow">Workflow helpers</p>
+          <h2 id="workflowHelperTitle">Small automations that save repeat work</h2>
+        </div>
+        <div class="workflow-helper-grid">
+          ${[
+            ["check-circle", "Missing-detail checks", "Prompts you for size, condition and flaws before you copy."],
+            ["badge-pound", "Fast / fair / max prices", "Price bands stay beside each listing so you can choose how quickly to sell."],
+            ["copy", "Copy-ready package", "Copy one section or the full Vinted listing package when it is ready."],
+            ["history", "Reusable history", "Reopen earlier listings and reuse the best structure for similar items."]
+          ].map(([icon, title, copy]) => `
+            <article class="card workflow-helper-card">
+              <span class="feature-icon">${iconSvg(icon)}</span>
+              <h3>${escapeHtml(title)}</h3>
+              <p>${escapeHtml(copy)}</p>
+            </article>
+          `).join("")}
+        </div>
+      </section>
       <section class="card dashboard-activity">
         <div class="section-head compact"><p class="eyebrow">Recent activity</p><h2>Latest listing packages</h2></div>
         <div class="history-list" id="dashboardHistory">
@@ -864,8 +903,13 @@ function notesRouteTemplate() {
           <div class="generator-step">
             <span class="badge badge-brand">${iconSvg("sparkles")} Generator</span>
             <h1>Generate sell-ready listing</h1>
-            <p class="muted">Paste messy item notes. ListBoost turns them into a structured Vinted listing you can copy section by section.</p>
+            <p class="muted">Paste messy item notes. ListBoost turns them into a category-aware Vinted package with title, description, keywords, prices, checklist and buyer reply.</p>
           </div>
+          <ul class="workflow-includes" aria-label="Generator workflow includes">
+            <li>${iconSvg("check-circle")} Category-aware wording</li>
+            <li>${iconSvg("badge-pound")} Fast / fair / max prices</li>
+            <li>${iconSvg("copy")} Copy-ready sections</li>
+          </ul>
           <input type="hidden" name="category" value="Clothing" />
           <input type="hidden" name="tone" value="clean" />
           <input type="hidden" name="sellerMode" value="clearout" />
@@ -876,7 +920,7 @@ function notesRouteTemplate() {
           </label>
           <div class="example-chips" aria-label="Example item notes">
             <button class="btn btn-secondary example-chip" type="button" data-example-text="Zara navy satin midi dress, UK 10, worn twice, no marks, zip fastening, flattering bias cut">Zara dress</button>
-            <button class="btn btn-secondary example-chip" type="button" data-example-text="Nike Air Force 1 trainers, UK 5, white leather, light creasing, cleaned soles, still lots of wear left">Nike trainers</button>
+            <button class="btn btn-secondary example-chip" type="button" data-example-text="Clean white leather trainers, UK 5, light creasing, cleaned soles, still lots of wear left">White trainers</button>
             <button class="btn btn-secondary example-chip" type="button" data-example-text="Kids winter bundle, age 4-5, H&M jumpers and leggings, good used condition, a couple of tiny marks shown in photos">Kids bundle</button>
           </div>
           <div class="generator-meta">
@@ -953,14 +997,14 @@ function photoRouteTemplate() {
         <div class="photo-dropzone" role="group" aria-labelledby="photoUploadTitle">
           <span class="feature-icon">${iconSvg("image-up")}</span>
           <strong id="photoUploadTitle">Add item photos</strong>
-          <span class="muted">Choose from Photo Library / camera roll, or take a fresh picture. Up to 4 images.</span>
+          <span class="muted">Choose Photo Library / camera roll or Browse files without forcing the camera. Use Take photo only when you want a fresh picture. Up to 4 images.</span>
           <div class="photo-upload-actions">
-            <label class="btn btn-primary file-picker-btn" for="photoInput">${iconSvg("image-up")}<span>Choose from camera roll</span></label>
+            <label class="btn btn-primary file-picker-btn" for="photoInput">${iconSvg("image-up")}<span>Photo library / files</span></label>
             <label class="btn btn-secondary file-picker-btn" for="cameraInput">${iconSvg("camera")}<span>Take photo</span></label>
           </div>
           <span class="photo-file-hint" id="photoFileHint">No photos selected yet.</span>
           <div class="photo-preview-grid" id="photoPreviewGrid" aria-live="polite"></div>
-          <input id="photoInput" class="visually-hidden" name="photos" type="file" accept="image/*,.heic,.heif" multiple aria-label="Choose photos from camera roll" />
+          <input id="photoInput" class="visually-hidden" name="photos" type="file" accept="image/*,.heic,.heif" multiple aria-label="Choose photos from camera roll or files" />
           <input id="cameraInput" class="visually-hidden" name="cameraPhoto" type="file" accept="image/*" capture="environment" aria-label="Take a photo" />
         </div>
         <div class="form-grid two">

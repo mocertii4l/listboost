@@ -52,7 +52,7 @@ test("account bootstrap exposes subscription plans and environment metadata", ()
 
 test("homepage renders premium marketing structure", () => {
   // Copy.ai-inspired light SaaS hero copy.
-  assert.match(indexHtml, /Create better[\s\S]*?Vinted listings[\s\S]*?in seconds/);
+  assert.match(indexHtml, /Create better[\s\S]*?Vinted[\s\S]*?listings[\s\S]*?in seconds/);
   assert.match(indexHtml, /ListBoost uses AI to turn your item photos and details/);
   // Primary CTA copy.
   assert.match(indexHtml, /Start free/);
@@ -60,8 +60,11 @@ test("homepage renders premium marketing structure", () => {
   // V3 hero uses workspace-mock instead of an item-card mockup.
   assert.match(indexHtml, /class="workspace-mock/);
   assert.match(indexHtml, /class="hero-v3"/);
+  assert.match(indexHtml, /class="hero-proof-v3"/);
   assert.match(indexHtml, /class="section product-demo-v4"/);
   assert.match(indexHtml, /Upload from camera roll/);
+  assert.match(indexHtml, /class="section moat-v3"/);
+  assert.match(indexHtml, /A Vinted workflow, not a blank writing box/);
   // Premium marketing shell is applied.
   assert.match(indexHtml, /<body data-page="marketing-v3"/);
   // Section anchors are still present.

@@ -17,13 +17,19 @@ process.env.RESEND_MOCK_EMAIL = "false";
 process.env.STRIPE_MOCK_CHECKOUT = "true";
 process.env.STRIPE_SECRET_KEY = "sk_test_auth";
 process.env.STRIPE_WEBHOOK_SECRET = "whsec_auth";
+process.env.GOOGLE_CLIENT_ID = "google-client-id";
+process.env.GOOGLE_CLIENT_SECRET = "google-client-secret";
+process.env.MICROSOFT_CLIENT_ID = "microsoft-client-id";
+process.env.MICROSOFT_CLIENT_SECRET = "microsoft-client-secret";
+process.env.MICROSOFT_TENANT_ID = "common";
 
 const realFetch = globalThis.fetch.bind(globalThis);
-globalThis.fetch = async () => ({
+const mockEmailFetch = async () => ({
   ok: true,
   status: 200,
   text: async () => "{}"
 });
+globalThis.fetch = mockEmailFetch;
 const { server } = await import("../server.js");
 
 function listen() {
@@ -47,6 +53,33 @@ function cookieJarFromResponse(response) {
     .map((entry) => String(entry || "").split(";")[0].trim())
     .filter(Boolean)
     .join("; ");
+}
+
+function mockOAuthFetch({ provider, email, name }) {
+  return async (url, options = {}) => {
+    const href = String(url);
+    if (href.includes("oauth2") || href.includes("googleapis.com/token")) {
+      assert.equal(options.method, "POST");
+      return {
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify({ access_token: `${provider}-access-token`, token_type: "Bearer" })
+      };
+    }
+    if (href.includes("openidconnect.googleapis.com") || href.includes("graph.microsoft.com/oidc/userinfo")) {
+      return {
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify({
+          sub: `${provider}-subject`,
+          email,
+          email_verified: true,
+          name
+        })
+      };
+    }
+    return mockEmailFetch(url, options);
+  };
 }
 
 async function request(port, path, options = {}) {
@@ -75,6 +108,71 @@ async function request(port, path, options = {}) {
 
 test.after(async () => {
   if (server.listening) await close();
+});
+
+test("Google OAuth redirects to Google and creates a verified ListBoost session", async () => {
+  const port = await listen();
+  globalThis.fetch = mockOAuthFetch({ provider: "google", email: "google-seller@example.com", name: "Google Seller" });
+  try {
+    const start = await request(port, "/auth/google?next=/app/notes");
+    assert.equal(start.response.status, 302);
+    const providerUrl = new URL(start.response.headers.get("location"));
+    assert.equal(providerUrl.hostname, "accounts.google.com");
+    assert.equal(providerUrl.searchParams.get("client_id"), "google-client-id");
+    assert.equal(providerUrl.searchParams.get("redirect_uri"), "http://localhost:3000/auth/google/callback");
+    assert.equal(providerUrl.searchParams.get("scope"), "openid email profile");
+    const state = providerUrl.searchParams.get("state");
+    assert.match(start.cookie, new RegExp(`lb_oauth_state=google%3A${state}|lb_oauth_state=google:${state}`));
+
+    const callback = await request(port, `/auth/google/callback?code=google-code&state=${encodeURIComponent(state)}`, {
+      headers: { cookie: start.cookie }
+    });
+    assert.equal(callback.response.status, 302);
+    assert.equal(callback.response.headers.get("location"), "/app/notes");
+    assert.match(callback.cookie, /lb_session=/);
+
+    const me = await request(port, "/api/me", { headers: { cookie: callback.cookie } });
+    assert.equal(me.response.status, 200);
+    assert.equal(me.body.user.email, "google-seller@example.com");
+    assert.equal(me.body.user.name, "Google Seller");
+    assert.equal(me.body.user.emailVerified, true);
+  } finally {
+    globalThis.fetch = mockEmailFetch;
+    await close();
+  }
+});
+
+test("Microsoft OAuth redirects to Microsoft and creates a verified ListBoost session", async () => {
+  const port = await listen();
+  globalThis.fetch = mockOAuthFetch({ provider: "microsoft", email: "microsoft-seller@example.com", name: "Microsoft Seller" });
+  try {
+    const start = await request(port, "/auth/microsoft?next=/app/billing");
+    assert.equal(start.response.status, 302);
+    const providerUrl = new URL(start.response.headers.get("location"));
+    assert.equal(providerUrl.hostname, "login.microsoftonline.com");
+    assert.match(providerUrl.pathname, /\/common\/oauth2\/v2\.0\/authorize$/);
+    assert.equal(providerUrl.searchParams.get("client_id"), "microsoft-client-id");
+    assert.equal(providerUrl.searchParams.get("redirect_uri"), "http://localhost:3000/auth/microsoft/callback");
+    assert.equal(providerUrl.searchParams.get("scope"), "openid email profile");
+    const state = providerUrl.searchParams.get("state");
+    assert.match(start.cookie, new RegExp(`lb_oauth_state=microsoft%3A${state}|lb_oauth_state=microsoft:${state}`));
+
+    const callback = await request(port, `/auth/microsoft/callback?code=microsoft-code&state=${encodeURIComponent(state)}`, {
+      headers: { cookie: start.cookie }
+    });
+    assert.equal(callback.response.status, 302);
+    assert.equal(callback.response.headers.get("location"), "/app/billing");
+    assert.match(callback.cookie, /lb_session=/);
+
+    const me = await request(port, "/api/me", { headers: { cookie: callback.cookie } });
+    assert.equal(me.response.status, 200);
+    assert.equal(me.body.user.email, "microsoft-seller@example.com");
+    assert.equal(me.body.user.name, "Microsoft Seller");
+    assert.equal(me.body.user.emailVerified, true);
+  } finally {
+    globalThis.fetch = mockEmailFetch;
+    await close();
+  }
 });
 
 test("unverified users are held on verify-email and resend is limited to 60 seconds", async () => {

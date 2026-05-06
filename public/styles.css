@@ -3008,6 +3008,34 @@ input[readonly] {
   }
 }
 
+/* Compact upgrade modal for small phones: keeps every plan reachable. */
+@media (max-width: 520px) {
+  .paywall-modal {
+    gap: var(--space-3);
+    max-height: calc(92dvh - env(safe-area-inset-bottom));
+  }
+
+  .paywall-modal .badge,
+  .paywall-modal .paywall-proof,
+  .paywall-modal > .muted {
+    font-size: 13px;
+  }
+
+  .paywall-pricing-grid .pricing-card {
+    padding: var(--space-3);
+    gap: var(--space-2);
+  }
+
+  .paywall-pricing-grid .pricing-price strong {
+    font-size: 26px;
+  }
+
+  .paywall-pricing-grid .pricing-copy,
+  .paywall-pricing-grid .pricing-compare li:nth-child(n+6) {
+    display: none;
+  }
+}
+
 /* =================================================================
    Auth, legal and legacy page support
    ================================================================= */

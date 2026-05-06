@@ -1877,11 +1877,227 @@ body[data-page="app-v3"] .history-card {
   border-radius: 18px;
 }
 
+/* =====================================================================
+   9/10 app polish: workflow helper cards and tighter phone surfaces.
+   ===================================================================== */
+
+body[data-page="app-v3"] .workflow-helper-row {
+  display: grid;
+  gap: 14px;
+}
+
+body[data-page="app-v3"] .workflow-helper-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+body[data-page="app-v3"] .workflow-helper-card {
+  display: grid;
+  gap: 10px;
+  min-height: 178px;
+  padding: 18px;
+  background:
+    radial-gradient(240px 140px at 100% 0%, rgba(0, 179, 164, 0.11), transparent 72%),
+    var(--surface-app);
+  border: 1px solid var(--border-soft);
+  box-shadow: var(--shadow-card);
+}
+
+body[data-page="app-v3"] .workflow-helper-card .feature-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 13px;
+  background: var(--primary-soft);
+  color: var(--primary-hover);
+  border: 1px solid rgba(0, 179, 164, 0.24);
+}
+
+body[data-page="app-v3"] .workflow-helper-card h3 {
+  margin: 0;
+  color: var(--text-app);
+  font-size: 16px;
+  line-height: 1.25;
+  letter-spacing: -0.005em;
+}
+
+body[data-page="app-v3"] .workflow-helper-card p {
+  margin: 0;
+  color: var(--text-app-muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+body[data-page="app-v3"] .result-summary {
+  align-items: center;
+}
+
+body[data-page="app-v3"] .result-summary-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+body[data-page="app-v3"] .result-summary-actions .btn {
+  min-height: 44px;
+  box-shadow: var(--shadow-sm);
+}
+
+body[data-page="app-v3"] .photo-dropzone {
+  text-align: left;
+}
+
+body[data-page="app-v3"] .photo-dropzone .feature-icon,
+body[data-page="app-v3"] .photo-file-hint {
+  justify-self: start;
+}
+
+body[data-page="app-v3"] .photo-upload-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+body[data-page="app-v3"] .workflow-includes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+body[data-page="app-v3"] .workflow-includes li {
+  display: grid;
+  gap: 6px;
+  min-height: 78px;
+  padding: 12px;
+  border-radius: 16px;
+  background: rgba(0, 179, 164, 0.07);
+  border: 1px solid rgba(0, 179, 164, 0.18);
+  color: var(--text-app);
+  font-size: 12.5px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+body[data-page="app-v3"] .workflow-includes svg {
+  width: 18px;
+  height: 18px;
+  color: var(--primary-hover);
+}
+
+body[data-page="app-v3"] .dashboard-top-row .card,
+body[data-page="app-v3"] .generator-panel,
+body[data-page="app-v3"] .results-panel,
+body[data-page="app-v3"] .dashboard-activity,
+body[data-page="app-v3"] .workflow-helper-row {
+  background:
+    radial-gradient(420px 180px at 100% 0%, rgba(0, 179, 164, 0.07), transparent 72%),
+    var(--card-app);
+}
+
+body[data-page="app-v3"] .dashboard-top-row .card {
+  min-height: 210px;
+}
+
+body[data-page="app-v3"] .dashboard-top-row .card .btn,
+body[data-page="app-v3"] .quick-action-card .btn {
+  align-self: end;
+}
+
+body[data-page="app-v3"] .generator-panel > .generator-step {
+  padding-bottom: 2px;
+}
+
+body[data-page="app-v3"] .photo-dropzone .muted {
+  max-width: 58ch;
+}
+
+@media (max-width: 1024px) {
+  body[data-page="app-v3"] .workflow-helper-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  body[data-page="app-v3"] .workflow-helper-grid {
+    grid-template-columns: 1fr;
+  }
+
+  body[data-page="app-v3"] .workflow-helper-card {
+    min-height: auto;
+  }
+
+  body[data-page="app-v3"] .result-summary {
+    gap: 14px;
+  }
+
+  body[data-page="app-v3"] .result-summary-actions,
+  body[data-page="app-v3"] .result-summary-actions .btn {
+    width: 100%;
+  }
+
+  body[data-page="app-v3"] .result-summary-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  body[data-page="app-v3"] .photo-upload-actions {
+    grid-template-columns: 1fr;
+  }
+
+  body[data-page="app-v3"] .workflow-includes {
+    grid-template-columns: 1fr;
+  }
+
+  body[data-page="app-v3"] .workflow-includes li {
+    min-height: auto;
+  }
+
+  body[data-page="app-v3"] .status-pill.js-usage {
+    max-width: 158px;
+  }
+}
+
 @media (max-width: 640px) {
   body[data-page="app-v3"] {
+    overflow-x: hidden;
     background:
       radial-gradient(360px 240px at 0% 0%, rgba(0, 179, 164, 0.09), transparent 70%),
       var(--bg-app);
+  }
+
+  body[data-page="app-v3"] .app-route-shell {
+    width: min(100% - 24px, 1240px);
+    max-width: calc(100vw - 24px);
+  }
+
+  body[data-page="app-v3"] .welcome-card {
+    overflow: hidden;
+  }
+
+  body[data-page="app-v3"] .welcome-card > div,
+  body[data-page="app-v3"] .route-head,
+  body[data-page="app-v3"] .generator-panel,
+  body[data-page="app-v3"] .result-set,
+  body[data-page="app-v3"] .dashboard-route {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  body[data-page="app-v3"] .welcome-card h2 {
+    max-width: 16ch;
+    font-size: 22px;
+    line-height: 1.12;
+    overflow-wrap: normal;
+  }
+
+  body[data-page="app-v3"] .welcome-card .muted,
+  body[data-page="app-v3"] .route-head .muted,
+  body[data-page="app-v3"] .generator-panel > .muted {
+    max-width: 34ch;
   }
 
   body[data-page="app-v3"] .status-pill.js-usage {

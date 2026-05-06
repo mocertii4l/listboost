@@ -34,10 +34,20 @@
           <span class="badge">Account</span>
           <h1 id="authHeading">Sign in</h1>
           <p id="authIntro" class="muted">Your subscription, history and listings stay with this account.</p>
-          <div class="auth-social-row" aria-label="Social sign in options">
-            <button class="btn btn-secondary social-auth-btn" type="button" data-social-auth="google">Continue with Google</button>
-            <button class="btn btn-secondary social-auth-btn" type="button" data-social-auth="microsoft">Continue with Microsoft</button>
+          <div class="auth-trust-panel" aria-label="Account reassurance">
+            <strong>Secure seller workspace</strong>
+            <ul class="auth-reassurance">
+              <li>No card needed to start</li>
+              <li>Cancel or switch plans any time</li>
+              <li>Independent from Vinted</li>
+              <li>Privacy-first account handling</li>
+            </ul>
           </div>
+          <div class="auth-social-row" aria-label="Social sign in options">
+            <a class="btn btn-secondary social-auth-btn" href="/auth/google" data-oauth-provider="google"><span class="social-mark" aria-hidden="true">G</span><span>Continue with Google</span></a>
+            <a class="btn btn-secondary social-auth-btn" href="/auth/microsoft" data-oauth-provider="microsoft"><span class="social-mark microsoft-mark" aria-hidden="true"></span><span>Continue with Microsoft</span></a>
+          </div>
+          <p id="authProviderStatus" class="auth-provider-status hidden" role="status" aria-live="polite"></p>
           <div class="auth-divider"><span>or continue with email</span></div>
           <form id="authForm" data-mode="login">
             <label class="signup-name-field hidden">Full name<input name="name" type="text" autocomplete="name" maxlength="80" /><p class="field-error" aria-live="polite"></p></label>
@@ -46,8 +56,8 @@
             <button class="btn btn-primary" type="submit">Sign in</button>
           </form>
           <p id="authLinks" class="muted small"><a href="/signup">Create account</a> &middot; <a href="/forgot-password">Forgot password?</a></p>
+          <p class="auth-legal small">By continuing, you agree to the <a href="/terms">Terms of service</a> and <a href="/privacy">Privacy notice</a>. ListBoost is independent from Vinted and never asks for your Vinted password.</p>
         </article>
-        <p class="muted small" style="margin-top:18px; text-align:center;">By continuing you agree to the <a href="/terms" style="color: var(--primary-hover);">Terms</a> and <a href="/privacy" style="color: var(--primary-hover);">Privacy</a>.</p>
       </section>
     </main>
     <script type="module" src="/site.js"></script>
