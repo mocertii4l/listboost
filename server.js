@@ -1184,11 +1184,12 @@ function buildPrompt({ tone, itemDetails, category, size, condition, buyerQuesti
   return [
     "You are Vinted Listing Booster, a conversion-focused resale listing assistant for Vinted sellers.",
     "Rewrite rough seller notes into a listing that is accurate, searchable, buyer-friendly, safe, and easy to trust.",
-    "TITLE: write a short Vinted-style title under 70 characters. Make it keyword-rich with brand, colour, item type, size, and condition only when provided.",
-    "The description must be copy-paste ready: one short opening line, then concise bullet-style lines for size, condition, colour/material, flaws, postage, and fit only when the seller gave those facts.",
-    "DESCRIPTION: use clean bullet-style lines, no fluff, no emojis, no markdown tables. Make each line easy to paste into Vinted.",
-    "PRICE: use realistic UK resale pricing in GBP for Vinted. Include a short reason in priceGuidance.",
-    "KEYWORDS: include strong plain search terms buyers would actually type. No hashtags.",
+    "The seller is paying to save thinking time, so DO NOT merely repeat the input with commas. Transform terse notes into a polished, useful listing package while staying honest about what is known.",
+    "TITLE: write a natural Vinted-style title under 65 characters. It should feel human, not like a keyword dump. Use brand, colour, item type, material, size, and condition only when provided.",
+    "DESCRIPTION: write 5-7 short, copy-paste-ready lines. Lead with a buyer-friendly sentence, then structure facts into useful lines for size, condition, colour/material, wear/flaws, styling/use case, and postage/questions. No markdown tables and no emojis.",
+    "DESCRIPTION QUALITY: add value by explaining condition and buyer use clearly, but never invent brand, authenticity, measurements, fit, or postage speed. If the notes say 'light creasing' or 'cleaned soles', make that sound honest and reassuring rather than repetitive.",
+    "PRICE: use realistic UK resale pricing in GBP for Vinted. Include a short reason in priceGuidance that mentions condition, demand, and negotiation room.",
+    "KEYWORDS: include 8-10 Vinted search phrases buyers would actually type. Avoid generic filler such as 'vinted', 'for sale', 'wardrobe clearout', and avoid repeating the exact title. Include useful variants: item type, material, colour, size, style, condition, and buyer synonyms.",
     "BUYER REPLY: write in a natural UK seller tone. Friendly, honest, concise, and useful.",
     "Use UK spelling and practical postage wording only when provided by the seller.",
     "If rough notes are short or contain obvious typos, infer cautiously from the words provided. For example, 'back' before a fashion item may mean 'black', but do not invent unrelated brands, sizes, conditions, or examples.",
@@ -1256,6 +1257,69 @@ function looksLikeListing(result) {
   return true;
 }
 
+function cleanSearchPhrase(value = "") {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/#/g, "")
+    .replace(/[^\p{L}\p{N}\s./-]/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function resultList(value) {
+  if (Array.isArray(value)) return value;
+  if (typeof value === "string") return value.split(/[,;\n]/);
+  return [];
+}
+
+function modelSearchTerms(result = {}) {
+  return [...resultList(result.searchTerms), ...resultList(result.tags), ...resultList(result.keywords)];
+}
+
+function usefulSearchTerms(result = {}, facts = {}) {
+  const filler = new Set(["vinted", "vinted uk", "for sale", "preloved", "second hand", "uk seller", "wardrobe clearout"]);
+  const fromModel = modelSearchTerms(result)
+    .map(cleanSearchPhrase)
+    .filter((term) => term.length >= 3 && !filler.has(term));
+  const fallback = keywordPhrasesFor(facts).map(cleanSearchPhrase);
+  return uniqueSampleItems([...fromModel, ...fallback])
+    .filter(Boolean)
+    .slice(0, 10);
+}
+
+function descriptionNeedsFallback(description = "", itemDetails = "") {
+  const cleanDescription = String(description || "").trim();
+  const cleanInput = String(itemDetails || "").trim();
+  if (cleanDescription.split(/\n+/).filter(Boolean).length >= 4) return false;
+  if (cleanDescription.length < 90) return true;
+  if (cleanInput.length >= 20 && cleanDescription.toLowerCase().includes(cleanInput.toLowerCase().slice(0, 80))) return true;
+  return false;
+}
+
+function polishListingResult(result, input = {}) {
+  if (!looksLikeListing(result)) return result;
+  const facts = detectItemFacts(input.itemDetails || input.notes || "", input.size || "");
+  const fallback = sampleResult({ ...input, itemDetails: input.itemDetails || input.notes || "" });
+  const searchTerms = usefulSearchTerms(result, facts);
+  const polished = {
+    ...fallback,
+    ...result,
+    title: String(result.title || fallback.title).trim(),
+    description: descriptionNeedsFallback(result.description, input.itemDetails || input.notes)
+      ? fallback.description
+      : String(result.description).trim(),
+    tags: searchTerms.length >= 5 ? searchTerms : fallback.tags,
+    searchTerms: searchTerms.length >= 5 ? searchTerms : fallback.searchTerms,
+    priceOptions: result.priceOptions && typeof result.priceOptions === "object" ? result.priceOptions : fallback.priceOptions,
+    priceGuidance: String(result.priceGuidance || "").trim().length >= 50 ? result.priceGuidance : fallback.priceGuidance,
+    photoChecklist: resultList(result.photoChecklist).length >= 3 ? resultList(result.photoChecklist) : fallback.photoChecklist,
+    buyerReplies: resultList(result.buyerReplies).length ? resultList(result.buyerReplies) : fallback.buyerReplies,
+    missingDetails: resultList(result.missingDetails).length ? resultList(result.missingDetails) : fallback.missingDetails,
+    listingScore: result.listingScore && typeof result.listingScore === "object" ? result.listingScore : fallback.listingScore
+  };
+  return polished;
+}
+
 async function callWithJsonRetry(fn) {
   try {
     const result = await fn(false);
@@ -1310,12 +1374,24 @@ function detectItemFacts(itemDetails, explicitSize = "") {
   ];
   const colours = ["black", "navy", "white", "cream", "beige", "brown", "grey", "gray", "blue", "red", "green", "pink", "purple", "orange"];
   const brand = brandPatterns.find(([needle]) => normalised.includes(needle))?.[1] || "";
-  const itemType = itemTypes.find((type) => normalised.includes(type)) || (category ? String(category).toLowerCase() : "item");
+  const itemType = itemTypes.find((type) => normalised.includes(type)) || "item";
   const colourRaw = colours.find((colour) => normalised.includes(colour)) || "";
   const colour = colourRaw === "gray" ? "grey" : colourRaw;
   const sizeMatch = normalised.match(/\b(?:uk\s*)?\d{1,2}(?:\.\d)?\b|\b(?:xs|s|m|l|xl|xxl)\b|\bage\s*\d{1,2}(?:-\d{1,2})?\b/i);
   const detectedSize = explicitSize || (sizeMatch ? sizeMatch[0].replace(/\buk\s*/i, "UK ").toUpperCase() : "");
-  return { brand, itemType, colour, detectedSize };
+  const material = /leather/.test(normalised) ? "leather"
+    : /satin/.test(normalised) ? "satin"
+      : /denim/.test(normalised) ? "denim"
+        : /cotton/.test(normalised) ? "cotton"
+          : "";
+  const wear = uniqueSampleItems([
+    /light creas/.test(normalised) && "light creasing",
+    /cleaned sole/.test(normalised) && "cleaned soles",
+    /worn twice/.test(normalised) && "worn twice",
+    /no marks?/.test(normalised) && "no marks stated",
+    /zip/.test(normalised) && "zip fastening"
+  ]);
+  return { brand, itemType, colour, detectedSize, material, wear };
 }
 
 function uniqueSampleItems(items = []) {
@@ -1340,39 +1416,112 @@ function titleCaseWords(value) {
     .join(" ");
 }
 
+function sizePhrase(size = "") {
+  const cleaned = String(size || "").trim();
+  if (!cleaned) return "";
+  return /^UK\s/i.test(cleaned) ? cleaned.toUpperCase() : cleaned.toUpperCase();
+}
+
+function itemDisplayName(facts = {}) {
+  return [
+    facts.colour && titleCaseWords(facts.colour),
+    facts.material && titleCaseWords(facts.material),
+    titleCaseWords(facts.itemType)
+  ].filter(Boolean).join(" ").trim() || "Preloved Item";
+}
+
+function conditionLine(facts = {}, condition = "") {
+  const wear = facts.wear || [];
+  if (condition && wear.length) return `${condition}; ${wear.join(", ")}.`;
+  if (condition) return condition;
+  if (wear.length) return `Preloved with ${wear.join(", ")}.`;
+  return "Preloved condition - please check photos before buying.";
+}
+
+function styleUseLine(facts = {}) {
+  if (/trainers|shoes|boots/i.test(facts.itemType)) {
+    return "Easy everyday pair for jeans, cargos, leggings or casual dresses.";
+  }
+  if (/dress|skirt|top|jacket|coat|jumper|hoodie|trousers|jeans/i.test(facts.itemType)) {
+    return "Easy to style for casual outfits, workwear or weekend plans.";
+  }
+  if (/belt|bag|jewellery|accessor/i.test(facts.itemType)) {
+    return "Simple accessory for finishing everyday or going-out outfits.";
+  }
+  return "Useful wardrobe piece for everyday styling.";
+}
+
+function keywordPhrasesFor(facts = {}) {
+  const item = facts.itemType || "item";
+  const size = facts.detectedSize ? sizePhrase(facts.detectedSize).toLowerCase() : "";
+  const colour = facts.colour || "";
+  const material = facts.material || "";
+  const brand = facts.brand || "";
+  const base = [];
+  if (brand) base.push(`${brand.toLowerCase()} ${item}`);
+  if (colour && material) base.push(`${colour} ${material} ${item}`);
+  if (size) base.push(`${item} ${size}`);
+  if (/trainers|shoes|boots/i.test(item)) {
+    base.push(
+      `${colour || "preloved"} ${item}`.trim(),
+      material ? `${material} ${item}` : "",
+      size ? `${size} ${item}` : `everyday ${item}`,
+      "casual everyday trainers",
+      colour === "white" ? "preloved white shoes" : `preloved ${item}`,
+      (facts.wear || []).includes("cleaned soles") ? "clean sole trainers" : ""
+    );
+  } else if (/dress/i.test(item)) {
+    base.push(
+      `${colour || "preloved"} dress`.trim(),
+      size ? `dress ${size}` : "",
+      material ? `${material} midi dress` : "midi dress",
+      "occasion dress",
+      "evening dress",
+      "smart casual dress"
+    );
+  } else if (/belt/i.test(item)) {
+    base.push(
+      `${colour || "preloved"} belt`.trim(),
+      brand ? `${brand.toLowerCase()} belt as stated` : "statement belt",
+      "waist belt",
+      "designer style belt",
+      "preloved accessory",
+      "smart casual belt"
+    );
+  } else {
+    base.push(`${colour} ${item}`.trim(), size ? `${item} ${size}` : "", "preloved style", "everyday outfit");
+  }
+  return uniqueSampleItems(base).filter(Boolean).slice(0, 10);
+}
+
 function sampleResult({ tone, itemDetails, category, size, condition, buyerQuestion }) {
   const facts = detectItemFacts(itemDetails, size);
-  const titleParts = [facts.brand, titleCaseWords(facts.colour), titleCaseWords(facts.itemType), facts.detectedSize]
+  const itemName = itemDisplayName(facts);
+  const titleParts = [facts.brand, itemName, facts.detectedSize]
     .filter(Boolean)
     .join(" ")
     .replace(/\s+/g, " ")
     .trim();
-  const titleCore = titleParts || "Preloved Vinted Item";
+  const titleCore = titleParts || itemName || "Preloved Vinted Item";
   const price = samplePriceFor(facts.itemType);
   const brandLine = facts.brand ? `Brand: ${facts.brand}${/^(LV|Louis Vuitton|Gucci|Prada)$/i.test(facts.brand) ? " (as stated by seller - add proof photos if relevant)" : ""}` : "Brand: please confirm before posting";
-  const colourLine = facts.colour ? `Colour: ${facts.colour}` : "Colour: please confirm before posting";
-  const keywordBase = uniqueSampleItems([
-    facts.brand && `${facts.brand.toLowerCase()} ${facts.itemType}`,
-    facts.colour && `${facts.colour} ${facts.itemType}`,
-    facts.itemType,
-    facts.detectedSize,
-    "vinted uk",
-    "preloved"
-  ]).filter(Boolean);
+  const colourMaterial = [facts.colour && titleCaseWords(facts.colour), facts.material && titleCaseWords(facts.material)].filter(Boolean).join(" ");
+  const keywordBase = keywordPhrasesFor(facts);
 
   return {
     title: titleCore,
     description: [
-      `Lovely ${titleCore.toLowerCase()} in a clean, easy-to-style look.`,
+      `${titleCore} in a wearable, buyer-friendly condition.`,
       brandLine,
       `Size: ${facts.detectedSize || "please confirm before posting"}`,
-      `Condition: ${condition || "good preloved condition"}`,
-      colourLine,
-      "Great for everyday outfits, resale styling or completing a simple wardrobe look.",
-      "Happy to answer questions or send extra photos before you buy."
+      `Condition: ${conditionLine(facts, condition)}`,
+      `Colour/material: ${colourMaterial || "please confirm before posting"}`,
+      `Wear/flaws: ${facts.wear?.length ? facts.wear.join(", ") : "add close-up photos of any marks before posting"}`,
+      `Style/use: ${styleUseLine(facts)}`,
+      "Happy to answer questions or send close-ups before purchase."
     ].join("\n"),
     tags: keywordBase,
-    searchTerms: uniqueSampleItems([...keywordBase, `${facts.itemType} for sale`, "wardrobe clearout"]).slice(0, 6),
+    searchTerms: keywordBase,
     listingScore: {
       score: 82,
       summary: "Clear enough to list, but it will be stronger after confirming the missing details.",
@@ -1383,7 +1532,7 @@ function sampleResult({ tone, itemDetails, category, size, condition, buyerQuest
       autoCounterOffer: price.lowestOffer,
       bundleDiscount: "10%"
     },
-    priceGuidance: `Start around ${price.startPrice} and expect serious buyers near ${price.fairPrice}. Price lower if you want a same-week sale.`,
+    priceGuidance: `List at ${price.startPrice} to leave room for offers. Expect serious buyers around ${price.fairPrice}; use ${price.fastSale} if you want a quicker sale. The suggested range assumes the wear shown is clear in photos.`,
     photoChecklist: [
       "Full front photo in natural light",
       `Close-up of the ${facts.itemType} details and any hardware or texture`,
@@ -1453,7 +1602,8 @@ function buildVisionPrompt({ tone, notes, category, size, condition, sellerMode,
     "- Anything you are not sure about MUST go into missingDetails as a short instruction to the seller (e.g., 'Confirm size by photographing the size tag').",
     "If the seller provided extra notes, you may use them, but never override what photos clearly show, and never use them to claim brand or authenticity.",
     "Write in authentic UK Vinted style. Use UK spelling, GBP pricing, and practical postage wording.",
-    "Include Vinted-friendly search terms as plain keywords, not hashtags.",
+    "Do not simply caption the photo. Turn visible facts into a useful Vinted listing with buyer-friendly condition wording, styling/use context, and clear missing-detail prompts.",
+    "Include 8-10 Vinted-friendly search phrases as plain keywords, not hashtags. Avoid generic filler such as 'vinted', 'for sale', and 'wardrobe clearout'.",
     "Give a listing score out of 100 and explain what would improve it before posting.",
     "Give three price options: fastSale, fairPrice, maxPrice. Also include lowestOffer, startPrice, autoCounterOffer, and bundleDiscount.",
     "Return ONLY a single JSON object that conforms to the JSON shape below. No prose, no markdown fences, no commentary.",
@@ -1678,6 +1828,7 @@ async function handleGenerateFromPhotos(req, res) {
       json(res, 502, { error: "The model returned an unexpected response. No listing was counted. Try again." }, visitor.headers);
       return;
     }
+    result = polishListingResult(result, { itemDetails: [input.notes, input.category, input.size, input.condition].filter(Boolean).join(" "), ...input });
 
     const updatedUser = recordGeneration(user, result, { source: "photos", ...input });
     console.log(`[generation] completed route=/api/generate-from-photos user=${user.id.slice(0, 8)} durationMs=${Date.now() - startedAt} plan=${user.subscription_plan || "free"} provider=${provider} photos=${photos.length}`);
@@ -1754,6 +1905,7 @@ async function handleGenerate(req, res) {
       json(res, 502, { error: "The model returned an unexpected response. No listing was counted. Try again." }, visitor.headers);
       return;
     }
+    result = polishListingResult(result, input);
 
     const updatedUser = recordGeneration(user, result, { source: "notes", ...input });
     console.log(`[generation] completed route=/api/generate user=${user.id.slice(0, 8)} durationMs=${Date.now() - startedAt} plan=${user.subscription_plan || "free"} provider=${provider}`);
@@ -1803,6 +1955,7 @@ async function handleDemoGenerate(req, res) {
       json(res, 502, { error: "The demo returned an unexpected response. Try again." }, visitor.headers);
       return;
     }
+    result = polishListingResult(result, input);
 
     json(res, 200, { ...result, provider, demo: true, input }, visitor.headers);
   } catch (error) {
@@ -2095,6 +2248,7 @@ async function handleRegenerate(req, res, id) {
       json(res, 502, { error: "The model returned an unexpected response. No listing was counted. Try again." }, visitor.headers);
       return;
     }
+    result = polishListingResult(result, input);
 
     const updatedUser = recordGeneration(user, result, { source: "notes", regenerated_from: row.id, ...input });
     console.log(`[generation] completed route=/api/regenerate user=${user.id.slice(0, 8)} durationMs=${Date.now() - startedAt} plan=${user.subscription_plan || "free"} provider=${provider}`);

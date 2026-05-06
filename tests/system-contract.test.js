@@ -82,17 +82,26 @@ test("app generator flow is guided, copyable and usage aware", () => {
   assert.match(siteJs, /formatUsageText/);
   assert.match(siteJs, /Upgrade your plan to continue generating listings/);
   assert.match(siteJs, /showPaywallModal/);
-  assert.match(siteJs, /No Vinted login required/);
-  assert.match(siteJs, /Copy and paste manually/);
-  assert.match(siteJs, /Your data is private/);
+  assert.match(siteJs, /Review before copying/);
+  assert.match(siteJs, /Price guidance included/);
+  assert.match(siteJs, /Photo checklist included/);
+  assert.doesNotMatch(siteJs, /No Vinted login required|Your data is private/);
 });
 
 test("generated output shows value signals and before-after transformation", () => {
-  assert.match(serverJs, /TITLE: write a short Vinted-style title/);
-  assert.match(serverJs, /DESCRIPTION: use clean bullet-style lines/);
+  assert.match(serverJs, /DO NOT merely repeat the input with commas/);
+  assert.match(serverJs, /TITLE: write a natural Vinted-style title under 65 characters/);
+  assert.match(serverJs, /DESCRIPTION: write 5-7 short, copy-paste-ready lines/);
   assert.match(serverJs, /PRICE: use realistic UK resale pricing/);
-  assert.match(serverJs, /KEYWORDS: include strong plain search terms/);
+  assert.match(serverJs, /KEYWORDS: include 8-10 Vinted search phrases/);
+  assert.match(serverJs, /Avoid generic filler such as 'vinted', 'for sale', 'wardrobe clearout'/);
   assert.match(serverJs, /BUYER REPLY: write in a natural UK seller tone/);
+  assert.match(serverJs, /keywordPhrasesFor/);
+  assert.match(serverJs, /casual everyday trainers/);
+  assert.match(serverJs, /clean sole trainers/);
+  assert.match(serverJs, /List at \$\{price\.startPrice\} to leave room for offers/);
+  assert.match(serverJs, /Do not simply caption the photo/);
+  assert.doesNotMatch(serverJs, /Lovely \$\{titleCore\.toLowerCase\(\)\}/);
   assert.match(siteJs, /Your input vs generated listing/);
   assert.match(siteJs, /Optimised for Vinted search/);
   assert.match(siteJs, /High-conversion description/);
@@ -176,7 +185,7 @@ test("auth routes get correct labels and required signup name field", () => {
   assert.match(authHtml, /Continue with Google/);
   assert.match(authHtml, /data-oauth-provider="google"/);
   assert.doesNotMatch(authHtml, /Continue with Microsoft|data-oauth-provider="microsoft"/);
-  assert.match(authHtml, /Google sign-in uses secure redirect/);
+  assert.doesNotMatch(authHtml, /Google sign-in uses secure redirect|never sees your Google password/);
   assert.doesNotMatch(authHtml, /mini-badge|Soon/);
   assert.match(authHtml, /Secure seller workspace/);
   assert.match(authHtml, /No card needed to start/);

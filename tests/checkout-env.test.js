@@ -384,6 +384,17 @@ test("demo generation works without signup and returns the submitted input", asy
     assert.equal(beltDemo.body.input.condition, "");
     assert.match(beltDemo.body.title, /belt/i);
     assert.doesNotMatch(`${beltDemo.body.title} ${(beltDemo.body.tags || []).join(" ")} ${(beltDemo.body.searchTerms || []).join(" ")}`, /zara|midi dress/i);
+
+    const trainerDemo = await request(port, "/api/demo-generate", {
+      method: "POST",
+      body: JSON.stringify({ itemDetails: "Clean white leather trainers, UK 5, light creasing, cleaned soles, still lots of wear left" })
+    });
+    assert.equal(trainerDemo.response.status, 200);
+    const trainerKeywords = `${(trainerDemo.body.tags || []).join(" ")} ${(trainerDemo.body.searchTerms || []).join(" ")}`;
+    assert.match(trainerKeywords, /white leather trainers|clean sole trainers|trainers uk 5/i);
+    assert.doesNotMatch(trainerKeywords, /vinted uk|for sale|wardrobe clearout/i);
+    assert.match(trainerDemo.body.description, /light creasing|cleaned soles/i);
+    assert.match(trainerDemo.body.priceGuidance, /room for offers|serious buyers/i);
   } finally {
     process.env.OPENAI_API_KEY = oldOpenAi;
     if (oldAnthropic) process.env.ANTHROPIC_API_KEY = oldAnthropic;

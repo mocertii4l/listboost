@@ -809,9 +809,9 @@ function routeHeader(kicker, title, copy) {
 function appTrustStrip() {
   return `
     <ul class="trust-strip" aria-label="ListBoost trust points">
-      <li>No Vinted login required</li>
-      <li>Copy and paste manually</li>
-      <li>Your data is private</li>
+      <li>Review before copying</li>
+      <li>Price guidance included</li>
+      <li>Photo checklist included</li>
     </ul>
   `;
 }
