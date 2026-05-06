@@ -100,11 +100,13 @@
 }
 
 html {
+  overflow-x: clip;
   scroll-behavior: smooth;
   text-size-adjust: 100%;
 }
 
 body {
+  overflow-x: clip;
   margin: 0;
   min-width: 0;
   min-height: 100vh;
@@ -129,6 +131,20 @@ select,
 textarea {
   font: inherit;
   color: inherit;
+}
+
+input.visually-hidden,
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  white-space: nowrap;
+  border: 0;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
 }
 
 button {
@@ -1215,7 +1231,22 @@ select[aria-invalid="true"] {
 
 .pricing-grid {
   align-items: stretch;
+  min-width: 0;
   padding-top: var(--space-4);
+}
+
+.pricing-card,
+.pricing-price,
+.section-head {
+  min-width: 0;
+}
+
+.pricing-price {
+  flex-wrap: wrap;
+}
+
+.pricing-price strong {
+  overflow-wrap: anywhere;
 }
 
 /* =================================================================
@@ -2227,7 +2258,6 @@ input[readonly] {
   border-radius: var(--radius-lg);
   background: var(--bg-subtle);
   text-align: center;
-  cursor: pointer;
 }
 
 .photo-dropzone:hover {
@@ -2235,8 +2265,24 @@ input[readonly] {
   background: var(--primary-soft);
 }
 
-.photo-dropzone input {
+.photo-upload-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-2);
   width: 100%;
+  margin-top: var(--space-3);
+}
+
+.file-picker-btn {
+  cursor: pointer;
+}
+
+.photo-file-hint {
+  min-height: calc(var(--space-4) + var(--space-2));
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1.5;
 }
 
 .balance-card h2,
@@ -4153,9 +4199,10 @@ body.confetti::after {
   }
 
   .toast-region {
+    left: var(--space-3);
     right: var(--space-3);
     bottom: calc(var(--space-3) + env(safe-area-inset-bottom));
-    width: calc(100vw - var(--space-6));
+    width: auto;
   }
 
   .mobile-sticky-cta {
@@ -4165,6 +4212,8 @@ body.confetti::after {
     bottom: 0;
     z-index: 130;
     display: block;
+    width: 100%;
+    max-width: 100vw;
     padding: var(--space-3) var(--space-4) calc(var(--space-3) + env(safe-area-inset-bottom));
     border-top: 1px solid var(--border);
     background: color-mix(in srgb, var(--card) 94%, transparent);

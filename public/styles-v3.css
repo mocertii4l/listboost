@@ -697,6 +697,7 @@ body[data-page="marketing-v3"] .pricing-card {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  min-width: 0;
   padding: 28px;
   border-radius: 20px;
   position: relative;
@@ -748,11 +749,18 @@ body[data-page="marketing-v3"] .pricing-card h3 {
   letter-spacing: -0.01em;
 }
 
-body[data-page="marketing-v3"] .pricing-price { display: flex; align-items: baseline; gap: 8px; }
+body[data-page="marketing-v3"] .pricing-price {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
 
 body[data-page="marketing-v3"] .pricing-price strong {
   font-size: 44px; font-weight: 800;
   line-height: 1; letter-spacing: -0.025em;
+  overflow-wrap: anywhere;
   background: linear-gradient(135deg, var(--text), color-mix(in srgb, var(--text) 60%, var(--primary)));
   -webkit-background-clip: text;
   background-clip: text;

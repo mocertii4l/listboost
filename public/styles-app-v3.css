@@ -205,7 +205,11 @@ body[data-page="app-v3"] .nav-actions [data-logout].btn-ghost:hover {
 }
 
 @media (max-width: 1024px) {
-  body[data-page="app-v3"] .lb-header { gap: 12px; padding: 12px 16px; }
+  body[data-page="app-v3"] .lb-header {
+    gap: 12px;
+    padding: 12px 16px;
+    backdrop-filter: none;
+  }
   body[data-page="app-v3"] .app-nav { display: none; }
   body[data-page="app-v3"] .avatar-copy { display: none; }
 }
@@ -1541,7 +1545,7 @@ body[data-page="app-v3"] .history-toolbar input:focus {
     left: 12px;
     right: 12px;
     bottom: 12px;
-    z-index: 60;
+    z-index: 140;
     padding: 8px;
     gap: 4px;
     border: 1px solid var(--border-soft);

@@ -172,9 +172,12 @@ test("verification and account settings are first-class app flows", () => {
 
 test("photo upload supports mobile camera and premium output", () => {
   assert.match(siteJs, /capture="environment"/);
-  assert.match(siteJs, /accept="image\/\*"/);
+  assert.match(siteJs, /accept="image\/jpeg,image\/png,image\/webp,image\/gif"/);
+  assert.match(siteJs, /Choose photos/);
+  assert.match(siteJs, /Take photo/);
+  assert.match(siteJs, /cameraPhoto/);
   assert.match(siteJs, /Photo Listing/);
-  assert.match(siteJs, /Mobile cameras are supported/);
+  assert.match(siteJs, /Choose photos from your phone or take a fresh picture/);
   assert.match(serverJs, /\/api\/generate-from-photos/);
 });
 

@@ -892,12 +892,18 @@ function photoRouteTemplate() {
         <span class="badge badge-brand">${iconSvg("camera")} Photo Listing</span>
         <h1>List from item photos</h1>
         <p class="muted">Upload photos or take a fresh picture on your phone. Add the details the camera cannot see, then generate the same premium listing package.</p>
-        <label class="photo-dropzone" for="photoInput">
+        <div class="photo-dropzone" role="group" aria-labelledby="photoUploadTitle">
           <span class="feature-icon">${iconSvg("image-up")}</span>
-          <strong>Upload or take photos</strong>
-          <span class="muted">Up to 4 images. Mobile cameras are supported.</span>
-          <input id="photoInput" name="photos" type="file" accept="image/*" capture="environment" multiple required />
-        </label>
+          <strong id="photoUploadTitle">Add item photos</strong>
+          <span class="muted">Choose photos from your phone or take a fresh picture. Up to 4 images.</span>
+          <div class="photo-upload-actions">
+            <label class="btn btn-primary file-picker-btn" for="photoInput">${iconSvg("image-up")}<span>Choose photos</span></label>
+            <label class="btn btn-secondary file-picker-btn" for="cameraInput">${iconSvg("camera")}<span>Take photo</span></label>
+          </div>
+          <span class="photo-file-hint" id="photoFileHint">No photos selected yet.</span>
+          <input id="photoInput" class="visually-hidden" name="photos" type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple />
+          <input id="cameraInput" class="visually-hidden" name="cameraPhoto" type="file" accept="image/*" capture="environment" aria-label="Take a photo" />
+        </div>
         <div class="form-grid two">
           <label>Category<select name="category"><option>Clothing</option><option>Shoes</option><option>Bags</option><option>Accessories</option></select></label>
           <label>Size<input name="size" placeholder="UK 10, M, EU 39" /></label>
@@ -1918,6 +1924,17 @@ function installAppTools() {
 
   const photoRouteForm = $("#photoRouteForm");
   if (photoRouteForm) {
+    const photoInputs = Array.from(photoRouteForm.querySelectorAll('input[type="file"]'));
+    const photoFileHint = $("#photoFileHint");
+    const updatePhotoFileHint = () => {
+      const count = photoInputs.reduce((total, input) => total + (input.files?.length || 0), 0);
+      if (photoFileHint) {
+        photoFileHint.textContent = count
+          ? `${Math.min(count, 4)} photo${count === 1 ? "" : "s"} selected`
+          : "No photos selected yet.";
+      }
+    };
+    photoInputs.forEach((input) => input.addEventListener("change", updatePhotoFileHint));
     photoRouteForm.addEventListener("submit", async (event) => {
       event.preventDefault();
       const out = $("#photoRouteOutput");
@@ -1925,7 +1942,9 @@ function installAppTools() {
       setGeneratorBusy(photoRouteForm, true, "Generating");
       try {
         const formData = new FormData(photoRouteForm);
-        const files = Array.from(photoRouteForm.elements.photos.files || []).slice(0, 4);
+        const galleryFiles = Array.from(photoRouteForm.elements.photos?.files || []);
+        const cameraFiles = Array.from(photoRouteForm.elements.cameraPhoto?.files || []);
+        const files = [...galleryFiles, ...cameraFiles].slice(0, 4);
         if (!files.length) throw new Error("Add at least one photo first.");
         const photos = await Promise.all(files.map(fileToDataUrl));
         const data = await api("/api/generate-from-photos", {
