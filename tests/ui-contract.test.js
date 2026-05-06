@@ -51,15 +51,18 @@ test("account bootstrap exposes subscription plans and environment metadata", ()
 });
 
 test("homepage renders premium marketing structure", () => {
-  // V3 hero copy.
-  assert.match(indexHtml, /Sell-ready[\s\S]*?Vinted listings[\s\S]*?from rough notes/);
+  // Copy.ai-inspired light SaaS hero copy.
+  assert.match(indexHtml, /Create better[\s\S]*?Vinted listings[\s\S]*?in seconds/);
+  assert.match(indexHtml, /ListBoost uses AI to turn your item photos and details/);
   // Primary CTA copy.
-  assert.match(indexHtml, /Start free &mdash; 3 listings/);
-  assert.match(indexHtml, /Try the live demo/);
+  assert.match(indexHtml, /Start free/);
+  assert.match(indexHtml, /See example/);
   // V3 hero uses workspace-mock instead of an item-card mockup.
   assert.match(indexHtml, /class="workspace-mock/);
   assert.match(indexHtml, /class="hero-v3"/);
-  // Premium dark mode is applied.
+  assert.match(indexHtml, /class="section product-demo-v4"/);
+  assert.match(indexHtml, /Upload from camera roll/);
+  // Premium marketing shell is applied.
   assert.match(indexHtml, /<body data-page="marketing-v3"/);
   // Section anchors are still present.
   assert.match(indexHtml, /id="how-it-works"/);

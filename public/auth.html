@@ -17,15 +17,16 @@
     <a class="skip-link" href="#main">Skip to content</a>
     <div class="toast-region" id="toastRegion" aria-live="polite"></div>
     <main class="auth-split" id="main">
-      <aside class="auth-split-aside" aria-hidden="false">
+      <aside class="auth-split-aside auth-aside-v4" aria-hidden="false">
         <a class="lb-brand" href="/"><img src="/logo.svg" alt="" />ListBoost</a>
-        <h2>Get 3 free listings the moment you create your account.</h2>
-        <p>Title, description, keywords, fast/fair/max price guidance, photo checklist and a polite buyer reply &mdash; six copy-ready sections per listing. Edit anything before pasting to Vinted.</p>
+        <span class="badge badge-brand">AI for Vinted sellers</span>
+        <h2>Turn item photos into listings buyers understand.</h2>
+        <p>Create titles, descriptions, hashtags, pricing suggestions and buyer replies from one polished workflow. No Vinted login. No auto-posting. You stay in control.</p>
         <ul aria-label="Trust points">
-          <li>No Vinted login &mdash; you stay in full control</li>
-          <li>Email verification keeps abuse low</li>
-          <li>Stripe Checkout when you upgrade. We never see your card</li>
-          <li>Cancel monthly any time</li>
+          <li>3 free listings before you upgrade</li>
+          <li>Camera roll photo upload on mobile</li>
+          <li>Stripe Checkout when you subscribe</li>
+          <li>Cancel or switch plans any time</li>
         </ul>
       </aside>
       <section class="auth-split-form">
@@ -33,6 +34,11 @@
           <span class="badge">Account</span>
           <h1 id="authHeading">Sign in</h1>
           <p id="authIntro" class="muted">Your subscription, history and listings stay with this account.</p>
+          <div class="auth-social-row" aria-label="Social sign in options">
+            <button class="btn btn-secondary social-auth-btn" type="button" data-social-auth="google">Continue with Google</button>
+            <button class="btn btn-secondary social-auth-btn" type="button" data-social-auth="microsoft">Continue with Microsoft</button>
+          </div>
+          <div class="auth-divider"><span>or continue with email</span></div>
           <form id="authForm" data-mode="login">
             <label class="signup-name-field hidden">Full name<input name="name" type="text" autocomplete="name" maxlength="80" /><p class="field-error" aria-live="polite"></p></label>
             <label>Email<input name="email" type="email" autocomplete="email" required /><p class="field-error" aria-live="polite"></p></label>

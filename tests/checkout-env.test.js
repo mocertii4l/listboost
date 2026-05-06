@@ -343,6 +343,13 @@ test("demo generation works without signup and returns the submitted input", asy
     assert.equal(demo.body.demo, true);
     assert.equal(demo.body.input.itemDetails, "Black Zara dress size 10 worn twice good condition");
     assert.match(demo.body.title, /Zara|Dress|Black/i);
+    const beltDemo = await request(port, "/api/demo-generate", {
+      method: "POST",
+      body: JSON.stringify({ itemDetails: "back lv belt" })
+    });
+    assert.equal(beltDemo.response.status, 200);
+    assert.match(beltDemo.body.title, /belt/i);
+    assert.doesNotMatch(`${beltDemo.body.title} ${(beltDemo.body.tags || []).join(" ")} ${(beltDemo.body.searchTerms || []).join(" ")}`, /zara|midi dress/i);
   } finally {
     process.env.OPENAI_API_KEY = oldOpenAi;
     if (oldAnthropic) process.env.ANTHROPIC_API_KEY = oldAnthropic;

@@ -2371,9 +2371,9 @@ input[readonly] {
 }
 
 .result-toolbar {
-  position: sticky;
-  top: calc(var(--space-16) + var(--space-4));
-  z-index: 10;
+  position: static;
+  top: auto;
+  z-index: auto;
 }
 
 .result-card-title {

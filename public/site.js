@@ -61,6 +61,12 @@ function installTheme() {
       toast("Appearance updated.", "success");
       return;
     }
+    const socialAuth = event.target.closest("[data-social-auth]");
+    if (socialAuth) {
+      const provider = socialAuth.dataset.socialAuth === "microsoft" ? "Microsoft" : "Google";
+      toast(`${provider} sign-in is not connected yet. Use email and password for now.`, "info");
+      return;
+    }
     if (!event.target.closest(".theme-toggle")) return;
     const current = document.documentElement.dataset.theme;
     applyTheme(current === "dark" ? "light" : "dark");
@@ -203,12 +209,14 @@ const PRICING_CATALOGUE = [
     pricePence: 699,
     label: "Monthly starter",
     fit: "Best for casual sellers",
-    copy: "For wardrobe clear-outs when you want clean listings without writing prompts.",
+    copy: "For wardrobe clear-outs when you want the core Vinted listing workflow.",
+    outcome: "Core notes-to-listing workflow",
     features: [
       "20 listings per month",
       "Notes-to-listing generator",
-      "Vinted-style titles, descriptions and keywords",
-      "Editable sections with copy buttons"
+      "Editable Vinted title, description and keywords",
+      "Copy buttons for every section",
+      "Best for wardrobe clear-outs"
     ]
   },
   {
@@ -219,14 +227,16 @@ const PRICING_CATALOGUE = [
     featured: true,
     fit: "Best for regular sellers",
     copy: "The weekly seller toolkit: photos, pricing, replies, scoring and saved history.",
+    outcome: "Full phone-first seller workflow",
     features: [
       "75 listings per month",
       "Everything in Starter",
-      "Photo upload from phone",
+      "Photo upload from phone camera roll",
       "Fast / fair / max price guidance",
       "Buyer reply generator",
       "Listing score checker",
-      "Saved history for repeat sellers"
+      "Saved history for repeat sellers",
+      "Best value for weekly listing"
     ]
   },
   {
@@ -236,16 +246,17 @@ const PRICING_CATALOGUE = [
     label: "Elite tools",
     fit: "Best for daily sellers",
     copy: "For serious resellers who list in batches and want the fastest workflow.",
+    outcome: "Reseller workflow with priority help",
     features: [
       "250 listings per month",
       "Everything in Seller",
       "Batch-friendly reseller workflow",
       "Advanced photo checklist",
-      "More detailed price guidance",
+      "Detailed pricing confidence notes",
       "Listing history",
       "Reusable listing templates (coming soon)",
       "Priority support",
-      "Early access to new selling tools",
+      "Early access to reseller tools",
       "Best for daily sellers"
     ]
   }
@@ -271,6 +282,7 @@ function pricingCardTemplate(opts = {}) {
   const label = opts.label || plan.label || "Monthly";
   const description = opts.description || plan.copy || "Monthly subscription with included Vinted listing tools.";
   const fit = plan.fit || "";
+  const outcome = opts.outcome || plan.outcome || "";
   const features = pricingFeaturesFor(id);
   const current = Boolean(opts.current);
   const ctaLabel = opts.ctaLabel || (current ? "Current plan" : `Subscribe ${displayName}`);
@@ -283,6 +295,7 @@ function pricingCardTemplate(opts = {}) {
       <h3>${escapeHtml(displayName)}</h3>
       <p class="pricing-price"><strong>${escapeHtml(price)}</strong><span>per month</span></p>
       <p class="pricing-meta">${escapeHtml(limitDisplay)} listings/month</p>
+      ${outcome ? `<p class="pricing-outcome">${escapeHtml(outcome)}</p>` : ""}
       ${fit ? `<p class="pricing-fit">${escapeHtml(fit)}</p>` : ""}
       <p class="pricing-copy">${escapeHtml(description)}</p>
       <ul class="pricing-compare">${features.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
@@ -442,7 +455,7 @@ function publicHeaderTemplate() {
     </nav>
     <div class="nav-actions">
       <a class="btn btn-ghost nav-login js-public-login" href="/login">Log in</a>
-      <a class="btn btn-primary nav-start js-public-start" href="/signup" aria-label="Start free with 3 listings">Start free - 3 listings</a>
+      <a class="btn btn-primary nav-start js-public-start" href="/signup" aria-label="Start free with 3 listings">Start free</a>
       <a class="btn btn-primary js-public-app hidden" href="/app">${iconSvg("user")}<span>Open app</span></a>
       <button class="btn btn-ghost js-public-logout hidden" type="button" data-logout>${iconSvg("log-out")}<span>Sign out</span></button>
     </div>
@@ -888,25 +901,39 @@ function notesRouteTemplate() {
 }
 
 const photoCategories = [
-  "Women’s clothing",
+  "Women's clothing",
   "Dresses",
+  "Skirts",
   "Coats & jackets",
   "Tops & blouses",
+  "Knitwear",
   "Jeans & trousers",
-  "Men’s clothing",
+  "Activewear",
+  "Lingerie & nightwear",
+  "Maternity",
+  "Men's clothing",
+  "Men's shirts & tops",
+  "Men's coats & jackets",
+  "Men's jeans & trousers",
   "Kids clothing",
   "Baby clothing",
   "Shoes",
+  "Trainers",
+  "Boots",
   "Bags",
   "Accessories",
   "Jewellery",
   "Beauty",
+  "Homeware",
   "Home & decor",
   "Toys & games",
   "Books",
   "Electronics",
   "Sportswear",
+  "Designer",
+  "Vintage",
   "Bundles",
+  "Seasonal",
   "Other"
 ];
 
@@ -926,13 +953,14 @@ function photoRouteTemplate() {
         <div class="photo-dropzone" role="group" aria-labelledby="photoUploadTitle">
           <span class="feature-icon">${iconSvg("image-up")}</span>
           <strong id="photoUploadTitle">Add item photos</strong>
-          <span class="muted">Choose photos from your phone or take a fresh picture. Up to 4 images.</span>
+          <span class="muted">Choose from Photo Library / camera roll, or take a fresh picture. Up to 4 images.</span>
           <div class="photo-upload-actions">
-            <label class="btn btn-primary file-picker-btn" for="photoInput">${iconSvg("image-up")}<span>Choose photos</span></label>
+            <label class="btn btn-primary file-picker-btn" for="photoInput">${iconSvg("image-up")}<span>Choose from camera roll</span></label>
             <label class="btn btn-secondary file-picker-btn" for="cameraInput">${iconSvg("camera")}<span>Take photo</span></label>
           </div>
           <span class="photo-file-hint" id="photoFileHint">No photos selected yet.</span>
-          <input id="photoInput" class="visually-hidden" name="photos" type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple />
+          <div class="photo-preview-grid" id="photoPreviewGrid" aria-live="polite"></div>
+          <input id="photoInput" class="visually-hidden" name="photos" type="file" accept="image/*,.heic,.heif" multiple aria-label="Choose photos from camera roll" />
           <input id="cameraInput" class="visually-hidden" name="cameraPhoto" type="file" accept="image/*" capture="environment" aria-label="Take a photo" />
         </div>
         <div class="form-grid two">
@@ -1957,12 +1985,27 @@ function installAppTools() {
   if (photoRouteForm) {
     const photoInputs = Array.from(photoRouteForm.querySelectorAll('input[type="file"]'));
     const photoFileHint = $("#photoFileHint");
+    const photoPreviewGrid = $("#photoPreviewGrid");
+    let photoPreviewUrls = [];
     const updatePhotoFileHint = () => {
-      const count = photoInputs.reduce((total, input) => total + (input.files?.length || 0), 0);
+      const files = photoInputs.flatMap((input) => Array.from(input.files || []));
+      const shownFiles = files.slice(0, 4);
+      const count = files.length;
+      photoPreviewUrls.forEach((url) => URL.revokeObjectURL(url));
+      photoPreviewUrls = [];
       if (photoFileHint) {
-        photoFileHint.textContent = count
-          ? `${Math.min(count, 4)} photo${count === 1 ? "" : "s"} selected`
+        photoFileHint.textContent = count > 4
+          ? "4 photos selected. Extra photos will be ignored."
+          : count
+          ? `${count} photo${count === 1 ? "" : "s"} selected`
           : "No photos selected yet.";
+      }
+      if (photoPreviewGrid) {
+        photoPreviewGrid.innerHTML = shownFiles.map((file, index) => {
+          const url = URL.createObjectURL(file);
+          photoPreviewUrls.push(url);
+          return `<figure class="photo-preview"><img src="${escapeHtml(url)}" alt="Selected item photo ${index + 1}" /><figcaption>${escapeHtml(file.name || `Photo ${index + 1}`)}</figcaption></figure>`;
+        }).join("");
       }
     };
     photoInputs.forEach((input) => input.addEventListener("change", updatePhotoFileHint));
@@ -2156,28 +2199,30 @@ function planBenefitsFor(planId) {
     starter: [
       "20 listings per month",
       "Notes-to-listing generator",
-      "Vinted-style titles, descriptions and keywords",
-      "Editable sections with copy buttons"
+      "Editable Vinted title, description and keywords",
+      "Copy buttons for every section",
+      "Best for wardrobe clear-outs"
     ],
     seller: [
       "75 listings per month",
       "Everything in Starter",
-      "Photo upload from phone",
+      "Photo upload from phone camera roll",
       "Fast / fair / max price guidance",
       "Buyer reply generator",
       "Listing score checker",
-      "Saved history for repeat sellers"
+      "Saved history for repeat sellers",
+      "Best value for weekly listing"
     ],
     reseller: [
       "250 listings per month",
       "Everything in Seller",
       "Batch-friendly reseller workflow",
       "Advanced photo checklist",
-      "More detailed price guidance",
+      "Detailed pricing confidence notes",
       "Listing history",
       "Reusable listing templates (coming soon)",
       "Priority support",
-      "Early access to new selling tools",
+      "Early access to reseller tools",
       "Best for daily sellers"
     ]
   };
@@ -2187,9 +2232,9 @@ function planBenefitsFor(planId) {
 function planStrapline(planId) {
   return ({
     free: "Try 3 listings on us, then choose a monthly plan.",
-    starter: "Light, monthly plan for casual sellers.",
+    starter: "Core listing workflow for casual sellers.",
     seller: "Photos, pricing, replies, scoring and history for regular sellers.",
-    reseller: "250 listings a month, batch-friendly workflow and priority support."
+    reseller: "250 listings a month, reseller workflow and priority support."
   })[planId] || "";
 }
 

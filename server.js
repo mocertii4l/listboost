@@ -981,44 +981,123 @@ async function callWithJsonRetry(fn) {
   }
 }
 
+function detectItemFacts(itemDetails, explicitSize = "") {
+  const raw = String(itemDetails || "");
+  const normalised = raw
+    .toLowerCase()
+    .replace(/\bback(?=\s+(?:lv|louis vuitton|belt|bag|dress|coat|jacket|trainers|shoes))\b/g, "black");
+  const brandPatterns = [
+    ["louis vuitton", "Louis Vuitton"],
+    ["lv", "LV"],
+    ["zara", "Zara"],
+    ["nike", "Nike"],
+    ["adidas", "Adidas"],
+    ["gucci", "Gucci"],
+    ["prada", "Prada"],
+    ["h&m", "H&M"],
+    ["hm", "H&M"],
+    ["mango", "Mango"],
+    ["asos", "ASOS"],
+    ["river island", "River Island"],
+    ["primark", "Primark"]
+  ];
+  const itemTypes = [
+    "belt",
+    "dress",
+    "trainers",
+    "shoes",
+    "boots",
+    "bag",
+    "coat",
+    "jacket",
+    "jeans",
+    "trousers",
+    "jumper",
+    "hoodie",
+    "top",
+    "skirt",
+    "bundle"
+  ];
+  const colours = ["black", "navy", "white", "cream", "beige", "brown", "grey", "gray", "blue", "red", "green", "pink", "purple", "orange"];
+  const brand = brandPatterns.find(([needle]) => normalised.includes(needle))?.[1] || "";
+  const itemType = itemTypes.find((type) => normalised.includes(type)) || (category ? String(category).toLowerCase() : "item");
+  const colourRaw = colours.find((colour) => normalised.includes(colour)) || "";
+  const colour = colourRaw === "gray" ? "grey" : colourRaw;
+  const sizeMatch = normalised.match(/\b(?:uk\s*)?\d{1,2}(?:\.\d)?\b|\b(?:xs|s|m|l|xl|xxl)\b|\bage\s*\d{1,2}(?:-\d{1,2})?\b/i);
+  const detectedSize = explicitSize || (sizeMatch ? sizeMatch[0].replace(/\buk\s*/i, "UK ").toUpperCase() : "");
+  return { brand, itemType, colour, detectedSize };
+}
+
+function uniqueSampleItems(items = []) {
+  return Array.from(new Set(items.map((item) => String(item || "").trim()).filter(Boolean)));
+}
+
+function samplePriceFor(itemType = "") {
+  if (/belt|bag|jewellery|accessor/i.test(itemType)) {
+    return { fastSale: "GBP 10", fairPrice: "GBP 16", maxPrice: "GBP 22", lowestOffer: "GBP 12", startPrice: "GBP 19" };
+  }
+  if (/trainers|shoes|boots/i.test(itemType)) {
+    return { fastSale: "GBP 18", fairPrice: "GBP 26", maxPrice: "GBP 34", lowestOffer: "GBP 22", startPrice: "GBP 30" };
+  }
+  return { fastSale: "GBP 8", fairPrice: "GBP 12", maxPrice: "GBP 15", lowestOffer: "GBP 9", startPrice: "GBP 14" };
+}
+
+function titleCaseWords(value) {
+  return String(value || "")
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((word) => (word.length <= 2 ? word.toUpperCase() : word.charAt(0).toUpperCase() + word.slice(1)))
+    .join(" ");
+}
+
 function sampleResult({ tone, itemDetails, category, size, condition, buyerQuestion }) {
-  const firstLine = itemDetails.split(/\r?\n/).find(Boolean) || "your item";
-  const concise = firstLine.replace(/[^\w\s.'&-]/g, "").trim().slice(0, 64) || "Quality Item";
-  const titleCore = /zara|dress|size|black/i.test(concise)
-    ? "Black Zara Midi Dress UK 10"
-    : `${concise} UK ${size || ""}`.replace(/\s+/g, " ").trim();
+  const facts = detectItemFacts(itemDetails, size);
+  const titleParts = [facts.brand, titleCaseWords(facts.colour), titleCaseWords(facts.itemType), facts.detectedSize]
+    .filter(Boolean)
+    .join(" ")
+    .replace(/\s+/g, " ")
+    .trim();
+  const titleCore = titleParts || "Preloved Vinted Item";
+  const price = samplePriceFor(facts.itemType);
+  const brandLine = facts.brand ? `Brand: ${facts.brand}${/^(LV|Louis Vuitton|Gucci|Prada)$/i.test(facts.brand) ? " (as stated by seller - add proof photos if relevant)" : ""}` : "Brand: please confirm before posting";
+  const colourLine = facts.colour ? `Colour: ${facts.colour}` : "Colour: please confirm before posting";
+  const keywordBase = uniqueSampleItems([
+    facts.brand && `${facts.brand.toLowerCase()} ${facts.itemType}`,
+    facts.colour && `${facts.colour} ${facts.itemType}`,
+    facts.itemType,
+    facts.detectedSize,
+    "vinted uk",
+    "preloved"
+  ]).filter(Boolean);
 
   return {
     title: titleCore,
     description: [
       `Lovely ${titleCore.toLowerCase()} in a clean, easy-to-style look.`,
-      `Size: ${size || "please confirm before posting"}`,
+      brandLine,
+      `Size: ${facts.detectedSize || "please confirm before posting"}`,
       `Condition: ${condition || "good preloved condition"}`,
-      "Colour: black",
-      "Great for evenings, workwear or a simple capsule wardrobe outfit.",
+      colourLine,
+      "Great for everyday outfits, resale styling or completing a simple wardrobe look.",
       "Happy to answer questions or send extra photos before you buy."
     ].join("\n"),
-    tags: ["zara dress", "black midi dress", "uk 10", "preloved", "minimal style"],
-    searchTerms: ["zara black dress", "black midi dress", "size 10 dress", "vinted uk", "capsule wardrobe"],
+    tags: keywordBase,
+    searchTerms: uniqueSampleItems([...keywordBase, `${facts.itemType} for sale`, "wardrobe clearout"]).slice(0, 6),
     listingScore: {
-      score: 88,
-      summary: "Clear, searchable and ready to paste after a quick final check.",
-      improvements: ["Add a label photo", "Show the full length on a hanger", "Photograph any wear in natural light"]
+      score: 82,
+      summary: "Clear enough to list, but it will be stronger after confirming the missing details.",
+      improvements: ["Add a clear brand or label photo", "Confirm size or dimensions", "Show any wear in natural light"]
     },
     priceOptions: {
-      fastSale: "GBP 8",
-      fairPrice: "GBP 12",
-      maxPrice: "GBP 15",
-      lowestOffer: "GBP 9",
-      startPrice: "GBP 14",
-      autoCounterOffer: "GBP 11",
+      ...price,
+      autoCounterOffer: price.lowestOffer,
       bundleDiscount: "10%"
     },
-    priceGuidance: "Start around GBP 14 and expect serious buyers near GBP 10-12. Price lower if you want a same-week sale.",
+    priceGuidance: `Start around ${price.startPrice} and expect serious buyers near ${price.fairPrice}. Price lower if you want a same-week sale.`,
     photoChecklist: [
       "Full front photo in natural light",
-      "Back view showing the length and shape",
-      "Close-up of Zara label and size tag",
+      `Close-up of the ${facts.itemType} details and any hardware or texture`,
+      "Brand, label, size or proof photo if relevant",
       "Any marks or fabric wear shown clearly"
     ],
     buyerQuestionReply: buyerQuestion
@@ -1029,7 +1108,7 @@ function sampleResult({ tone, itemDetails, category, size, condition, buyerQuest
       "Thanks for the offer. I could meet you at GBP 11 if you are ready to buy today.",
       "It has only light signs of wear from normal use, but please check the photos before buying."
     ],
-    missingDetails: ["Exact size or dimensions", "Brand/model", "Condition details", "Shipping or collection options"],
+    missingDetails: ["Exact size or dimensions", facts.brand ? "Proof or label photo if brand matters" : "Brand/model", "Condition details", "Shipping or collection options"],
     provider: "demo"
   };
 }
