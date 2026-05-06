@@ -319,6 +319,58 @@ function planLimitFor(planId) {
   return plan.monthlyLimit == null ? null : Number(plan.monthlyLimit);
 }
 
+const PLAN_RANK = {
+  free: 0,
+  starter: 1,
+  seller: 2,
+  reseller: 3
+};
+
+const ACTIVE_ENTITLEMENT_STATUSES = new Set(["active", "trialing", "past_due"]);
+
+const FEATURE_ENTITLEMENTS = {
+  notes: { minimumPlan: "free", label: "Notes-to-listing generator" },
+  photos: { minimumPlan: "seller", label: "Photo listings", requiredPlanName: "Seller" },
+  buyerReplies: { minimumPlan: "seller", label: "Buyer reply generator", requiredPlanName: "Seller" },
+  listingScore: { minimumPlan: "seller", label: "Listing score checker", requiredPlanName: "Seller" },
+  history: { minimumPlan: "seller", label: "Saved listing history", requiredPlanName: "Seller" }
+};
+
+function effectiveEntitlementPlan(user) {
+  const planId = String(user?.subscription_plan || "free").toLowerCase();
+  if (planId === "free") return "free";
+  const status = String(user?.subscription_status || "inactive").toLowerCase();
+  return ACTIVE_ENTITLEMENT_STATUSES.has(status) ? planId : "free";
+}
+
+function planAllowsFeature(planId, feature) {
+  const entitlement = FEATURE_ENTITLEMENTS[feature] || FEATURE_ENTITLEMENTS.notes;
+  return (PLAN_RANK[planId] ?? 0) >= (PLAN_RANK[entitlement.minimumPlan] ?? 0);
+}
+
+function userCanUseFeature(user, feature) {
+  return planAllowsFeature(effectiveEntitlementPlan(user), feature);
+}
+
+function featureLockedPayload(user, feature) {
+  const entitlement = FEATURE_ENTITLEMENTS[feature] || FEATURE_ENTITLEMENTS.notes;
+  const usage = user ? getAccountUsage(user) : null;
+  return {
+    error: `${entitlement.label} is included from the ${entitlement.requiredPlanName || titleCaseWords(entitlement.minimumPlan)} plan.`,
+    featureLocked: true,
+    feature,
+    requiredPlan: entitlement.minimumPlan,
+    requiredPlanName: entitlement.requiredPlanName || titleCaseWords(entitlement.minimumPlan),
+    currentPlan: effectiveEntitlementPlan(user),
+    upgradeUrl: "/app/billing",
+    usage
+  };
+}
+
+function sendFeatureLocked(res, visitor, user, feature) {
+  json(res, 402, featureLockedPayload(user, feature), visitor.headers);
+}
+
 function withSubscriptionPriceId(plan) {
   return {
     ...plan,
@@ -1320,6 +1372,15 @@ function polishListingResult(result, input = {}) {
   return polished;
 }
 
+function generationFeatureFromBody(body = {}) {
+  const requested = String(body.feature || "notes").trim().toLowerCase();
+  if (requested === "photos" || requested === "photo") return "photos";
+  if (requested === "score" || requested === "listing-score" || requested === "listingscore") return "listingScore";
+  if (requested === "reply" || requested === "replies" || requested === "buyer-replies" || requested === "buyerreplies") return "buyerReplies";
+  if (String(body.buyerQuestion || "").trim()) return "buyerReplies";
+  return "notes";
+}
+
 async function callWithJsonRetry(fn) {
   try {
     const result = await fn(false);
@@ -1765,6 +1826,11 @@ async function handleGenerateFromPhotos(req, res) {
       return;
     }
 
+    if (!userCanUseFeature(user, "photos")) {
+      sendFeatureLocked(res, visitor, user, "photos");
+      return;
+    }
+
     const ip = getClientIp(req);
     const limit = rateLimit(`gen-photos:${user.id}:${ip}`, { max: 12, windowMs: 60_000 });
     if (!limit.ok) {
@@ -1866,6 +1932,11 @@ async function handleGenerate(req, res) {
 
     const raw = await readBody(req);
     const body = JSON.parse(raw || "{}");
+    const requestedFeature = generationFeatureFromBody(body);
+    if (!userCanUseFeature(user, requestedFeature)) {
+      sendFeatureLocked(res, visitor, user, requestedFeature);
+      return;
+    }
     const tone = tones.has(body.tone) ? body.tone : "clean";
     const itemDetails = String(body.itemDetails || "").trim();
     const category = String(body.category || "").trim().slice(0, 80);
@@ -1886,7 +1957,7 @@ async function handleGenerate(req, res) {
       return;
     }
 
-    const input = { tone, itemDetails, category, size, condition, buyerQuestion, sellerMode, negotiationGoal };
+    const input = { feature: requestedFeature, tone, itemDetails, category, size, condition, buyerQuestion, sellerMode, negotiationGoal };
     let result;
     let provider = "demo";
 
@@ -2038,6 +2109,10 @@ async function handleHistory(req, res) {
     json(res, 401, { error: "Sign in to view listing history." }, visitor.headers);
     return;
   }
+  if (!userCanUseFeature(user, "history")) {
+    sendFeatureLocked(res, visitor, user, "history");
+    return;
+  }
 
   const url = new URL(req.url, `http://${req.headers.host}`);
   const page = Math.max(1, Number.parseInt(url.searchParams.get("page") || "1", 10) || 1);
@@ -2134,6 +2209,10 @@ async function handleHistoryGet(req, res, id) {
     json(res, 401, { error: "Sign in to open saved listings." }, visitor.headers);
     return;
   }
+  if (!userCanUseFeature(user, "history")) {
+    sendFeatureLocked(res, visitor, user, "history");
+    return;
+  }
 
   const row = db.prepare(
     "SELECT id, title, score, result_json, created_at FROM generations WHERE id = ? AND user_id = ?"
@@ -2180,6 +2259,10 @@ async function handleRegenerate(req, res, id) {
     }
     if (!ensureVerified(user)) {
       json(res, 403, { error: "Verify your email before regenerating listings." }, visitor.headers);
+      return;
+    }
+    if (!userCanUseFeature(user, "history")) {
+      sendFeatureLocked(res, visitor, user, "history");
       return;
     }
 
@@ -3616,6 +3699,17 @@ async function serveStatic(req, res) {
     }
     if (!ensureVerified(user)) {
       res.writeHead(302, { ...visitor.headers, location: `/verify-email?next=${encodeURIComponent(`${url.pathname}${url.search}`)}` });
+      res.end();
+      return;
+    }
+    const routeFeature = {
+      "/app/photo": "photos",
+      "/app/score": "listingScore",
+      "/app/replies": "buyerReplies",
+      "/app/history": "history"
+    }[url.pathname];
+    if (routeFeature && !userCanUseFeature(user, routeFeature)) {
+      res.writeHead(302, { ...visitor.headers, location: `/app/billing?locked=${encodeURIComponent(routeFeature)}` });
       res.end();
       return;
     }

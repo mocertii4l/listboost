@@ -258,6 +258,21 @@ test("photo upload supports mobile camera and premium output", () => {
   assert.match(serverJs, /\/api\/generate-from-photos/);
 });
 
+test("paid feature entitlements are enforced server-side and surfaced in the app", () => {
+  assert.match(serverJs, /FEATURE_ENTITLEMENTS/);
+  assert.match(serverJs, /photos:\s*\{\s*minimumPlan:\s*"seller"/);
+  assert.match(serverJs, /buyerReplies:\s*\{\s*minimumPlan:\s*"seller"/);
+  assert.match(serverJs, /listingScore:\s*\{\s*minimumPlan:\s*"seller"/);
+  assert.match(serverJs, /history:\s*\{\s*minimumPlan:\s*"seller"/);
+  assert.match(serverJs, /userCanUseFeature\(user, "photos"\)/);
+  assert.match(serverJs, /sendFeatureLocked\(res, visitor, user, requestedFeature\)/);
+  assert.match(siteJs, /FEATURE_REQUIREMENTS/);
+  assert.match(siteJs, /function canUseFeature/);
+  assert.match(siteJs, /featureLockTemplate/);
+  assert.match(siteJs, /feature:\s*"listingScore"/);
+  assert.match(siteJs, /feature:\s*"buyerReplies"/);
+});
+
 test("button system has no legacy button aliases", () => {
   for (const [name, content] of publicFiles) {
     assert.doesNotMatch(content, /class="button/);

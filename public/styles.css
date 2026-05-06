@@ -2143,6 +2143,27 @@ select[aria-invalid="true"] {
   color: var(--text);
 }
 
+.feature-tile.is-locked {
+  background: color-mix(in srgb, var(--card) 84%, var(--bg-subtle));
+}
+
+.feature-lock {
+  max-width: 760px;
+  margin-inline: auto;
+  padding: var(--space-12);
+}
+
+.feature-lock h1 {
+  margin: var(--space-4) 0 var(--space-3);
+}
+
+.feature-lock-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-6);
+}
+
 .tile-link {
   display: inline-flex;
   align-items: center;

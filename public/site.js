@@ -561,6 +561,44 @@ function getSubscriptionPlans() {
     : fallbackSubscriptionPlans();
 }
 
+const PLAN_RANK = { free: 0, starter: 1, seller: 2, reseller: 3 };
+const ACTIVE_ENTITLEMENT_STATUSES = new Set(["active", "trialing", "past_due"]);
+const FEATURE_REQUIREMENTS = {
+  photos: { minimumPlan: "seller", label: "Photo listings", requiredPlanName: "Seller" },
+  buyerReplies: { minimumPlan: "seller", label: "Buyer reply tools", requiredPlanName: "Seller" },
+  listingScore: { minimumPlan: "seller", label: "Listing score", requiredPlanName: "Seller" },
+  history: { minimumPlan: "seller", label: "Saved history", requiredPlanName: "Seller" }
+};
+
+function effectivePlanId(me = accountState) {
+  const rawPlan = me.usage?.plan || me.subscription?.plan || me.user?.subscriptionPlan || me.user?.plan || "free";
+  const planId = String(rawPlan || "free").toLowerCase();
+  if (planId === "free") return "free";
+  const status = String(me.usage?.subscriptionStatus || me.subscription?.status || me.user?.subscriptionStatus || "inactive").toLowerCase();
+  return ACTIVE_ENTITLEMENT_STATUSES.has(status) ? planId : "free";
+}
+
+function canUseFeature(feature, me = accountState) {
+  const requirement = FEATURE_REQUIREMENTS[feature];
+  if (!requirement) return true;
+  return (PLAN_RANK[effectivePlanId(me)] ?? 0) >= (PLAN_RANK[requirement.minimumPlan] ?? 0);
+}
+
+function featureLockTemplate(feature, options = {}) {
+  const requirement = FEATURE_REQUIREMENTS[feature] || FEATURE_REQUIREMENTS.photos;
+  return `
+    <section class="card card-elevated feature-lock" data-route="${escapeHtml(options.route || feature)}">
+      <span class="badge badge-brand">${iconSvg("lock")} ${escapeHtml(requirement.requiredPlanName)} plan</span>
+      <h1>${escapeHtml(options.heading || `${requirement.label} are not included on your current plan`)}</h1>
+      <p class="muted">${escapeHtml(options.body || `Upgrade to ${requirement.requiredPlanName} to use ${requirement.label.toLowerCase()}. Starter keeps the core notes-to-listing workflow only.`)}</p>
+      <div class="feature-lock-actions">
+        ${buttonTemplate({ variant: "primary", label: `Upgrade to ${requirement.requiredPlanName}`, icon: "arrow-right", href: "/app/billing" })}
+        ${buttonTemplate({ variant: "secondary", label: "Use notes generator", icon: "file-text", href: "/app/notes" })}
+      </div>
+    </section>
+  `;
+}
+
 function formatUsageText(usage) {
   if (!usage) return "Loading usage";
   if (usage.unlimited) return `${Number(usage.usageThisMonth || 0)} listings used (unlimited)`;
@@ -640,6 +678,7 @@ async function bootstrap() {
   try {
     const me = await api("/api/me");
     accountState = me;
+    renderAppRoute();
     renderSubscriptionPlansGrid();
     hydratePricingGrids();
     updateAccountChrome(me);
@@ -778,11 +817,25 @@ function appRouteName() {
 }
 
 const appFeatureTiles = [
-  ["file-text", "Notes to listing", "Turn rough notes into a complete Vinted listing.", "/app/notes", "Open Notes"],
-  ["camera", "Photo Listing", "Upload or take item photos from your phone.", "/app/photo", "Open Photo"],
-  ["check-circle", "Listing Score", "Check a draft listing before it goes live.", "/app/score", "Open Score"],
-  ["message-circle", "Buyer Replies", "Answer offers and questions in your seller tone.", "/app/replies", "Open Replies"]
+  { icon: "file-text", title: "Notes to listing", copy: "Turn rough notes into a complete Vinted listing.", href: "/app/notes", cta: "Open Notes" },
+  { icon: "camera", title: "Photo Listing", copy: "Upload or take item photos from your phone.", href: "/app/photo", cta: "Open Photo", feature: "photos" },
+  { icon: "check-circle", title: "Listing Score", copy: "Check a draft listing before it goes live.", href: "/app/score", cta: "Open Score", feature: "listingScore" },
+  { icon: "message-circle", title: "Buyer Replies", copy: "Answer offers and questions in your seller tone.", href: "/app/replies", cta: "Open Replies", feature: "buyerReplies" }
 ];
+
+function featureTileTemplate(tile) {
+  const locked = tile.feature && !canUseFeature(tile.feature);
+  const requirement = FEATURE_REQUIREMENTS[tile.feature] || null;
+  return `
+    <a class="card card-interactive feature-tile ${locked ? "is-locked" : ""}" href="${locked ? "/app/billing" : tile.href}" ${locked ? `aria-label="${escapeHtml(`${tile.title} requires ${requirement.requiredPlanName}`)}"` : ""}>
+      <div class="feature-icon">${iconSvg(locked ? "lock" : tile.icon)}</div>
+      <h3>${escapeHtml(tile.title)}</h3>
+      <p>${escapeHtml(tile.copy)}</p>
+      ${locked ? `<span class="badge badge-warning">Requires ${escapeHtml(requirement.requiredPlanName)}</span>` : ""}
+      <span class="tile-link">${locked ? `Upgrade to ${escapeHtml(requirement.requiredPlanName)}` : escapeHtml(tile.cta)} ${iconSvg("arrow-right")}</span>
+    </a>
+  `;
+}
 
 function renderAppRoute() {
   const root = $("#appRoute");
@@ -853,14 +906,7 @@ function dashboardRouteTemplate() {
         </article>
       </div>
       <div class="dashboard-grid route-grid feature-tile-grid">
-        ${appFeatureTiles.map(([icon, title, copy, href, cta]) => `
-          <a class="card card-interactive feature-tile" href="${href}">
-            <div class="feature-icon">${iconSvg(icon)}</div>
-            <h3>${title}</h3>
-            <p>${copy}</p>
-            <span class="tile-link">${cta} ${iconSvg("arrow-right")}</span>
-          </a>
-        `).join("")}
+        ${appFeatureTiles.map(featureTileTemplate).join("")}
       </div>
       <section class="workflow-helper-row" aria-labelledby="workflowHelperTitle">
         <div class="section-head compact">
@@ -988,6 +1034,13 @@ function photoCategoryOptionsTemplate() {
 }
 
 function photoRouteTemplate() {
+  if (!canUseFeature("photos")) {
+    return featureLockTemplate("photos", {
+      route: "photo",
+      heading: "Photo listings are a Seller feature",
+      body: "Starter includes the notes-to-listing generator. Upgrade to Seller when you want to upload phone photos and generate listings from images."
+    });
+  }
   return `
     <section class="tool-layout photo-route" data-route="photo">
       <form class="card generator-panel sticky-form" id="photoRouteForm">
@@ -1023,6 +1076,13 @@ function photoRouteTemplate() {
 }
 
 function scoreRouteTemplate() {
+  if (!canUseFeature("listingScore")) {
+    return featureLockTemplate("listingScore", {
+      route: "score",
+      heading: "Listing Score is included from Seller",
+      body: "Starter keeps the core generator simple. Seller unlocks scoring, fixes and missing-detail checks for drafts before you publish."
+    });
+  }
   return `
     <section class="tool-layout" data-route="score">
       <form class="card sticky-form" id="scoreForm">
@@ -1038,6 +1098,13 @@ function scoreRouteTemplate() {
 }
 
 function repliesRouteTemplate() {
+  if (!canUseFeature("buyerReplies")) {
+    return featureLockTemplate("buyerReplies", {
+      route: "replies",
+      heading: "Buyer reply tools are included from Seller",
+      body: "Starter gives you listing copy. Seller adds dedicated replies for offers, postage questions and condition messages."
+    });
+  }
   return `
     <section class="tool-layout" data-route="replies">
       <form class="card sticky-form" id="replyForm">
@@ -1054,6 +1121,13 @@ function repliesRouteTemplate() {
 }
 
 function historyRouteTemplate() {
+  if (!canUseFeature("history")) {
+    return featureLockTemplate("history", {
+      route: "history",
+      heading: "Saved history is included from Seller",
+      body: "Starter is built for quick copy-and-post listing sessions. Seller keeps your listing history available for repeat workflows."
+    });
+  }
   return `
     <section data-route="history">
       ${routeHeader("History", "Saved listing packages", "Search, reopen, copy or regenerate previous outputs.")}
@@ -1187,6 +1261,15 @@ async function loadDashboardHistory(me = accountState) {
       icon: "lock",
       heading: "Sign in to see activity",
       body: "Your generated listings will appear here after you create an account."
+    });
+    return;
+  }
+  if (!canUseFeature("history", me)) {
+    list.innerHTML = emptyStateTemplate({
+      icon: "lock",
+      heading: "Saved history unlocks on Seller",
+      body: "Starter users can still copy each generated listing. Upgrade when you want repeat workflows and saved listing history.",
+      cta: buttonTemplate({ variant: "primary", label: "View plans", icon: "arrow-right", href: "/app/billing" })
     });
     return;
   }
@@ -2147,6 +2230,7 @@ function installAppTools() {
         const data = await api("/api/generate", {
           method: "POST",
           body: JSON.stringify({
+            feature: "listingScore",
             category: "Clothing",
             itemDetails: `${formData.get("title") || ""}\n${formData.get("description") || ""}`,
             tone: "clean",
@@ -2176,6 +2260,7 @@ function installAppTools() {
         const data = await api("/api/generate", {
           method: "POST",
           body: JSON.stringify({
+            feature: "buyerReplies",
             category: "Clothing",
             itemDetails: formData.get("itemDetails"),
             buyerQuestion: formData.get("buyerQuestion"),

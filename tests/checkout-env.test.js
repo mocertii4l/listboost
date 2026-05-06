@@ -278,6 +278,103 @@ test("subscription checkout starts monthly billing and webhook resets usage on r
   await close();
 });
 
+test("plan entitlements block premium tools below Seller", async () => {
+  const port = await listen();
+  const oldOpenAi = process.env.OPENAI_API_KEY;
+  const oldAnthropic = process.env.ANTHROPIC_API_KEY;
+  delete process.env.OPENAI_API_KEY;
+  delete process.env.ANTHROPIC_API_KEY;
+  const photo = "data:image/png;base64,iVBORw0KGgo=";
+
+  async function signupAndActivate(email, planId, monthlyLimit, ip) {
+    const signup = await request(port, "/api/signup", {
+      method: "POST",
+      headers: { "x-forwarded-for": ip },
+      body: JSON.stringify({ name: "Plan Gate", email, password: "password123" })
+    });
+    assert.equal(signup.response.status, 200);
+    const event = await stripeWebhook(port, {
+      id: `evt_${planId}_${email.replace(/[^a-z0-9]/gi, "_")}`,
+      type: "checkout.session.completed",
+      data: {
+        object: {
+          id: `cs_${planId}_${email.replace(/[^a-z0-9]/gi, "_")}`,
+          mode: "subscription",
+          payment_status: "paid",
+          client_reference_id: signup.body.user.id,
+          customer: `cus_${planId}_${email.replace(/[^a-z0-9]/gi, "_")}`,
+          subscription: `sub_${planId}_${email.replace(/[^a-z0-9]/gi, "_")}`,
+          metadata: {
+            userId: signup.body.user.id,
+            planId,
+            monthlyLimit: String(monthlyLimit),
+            billingType: "subscription"
+          }
+        }
+      }
+    });
+    assert.equal(event.response.status, 200);
+    return { cookie: signup.cookie, userId: signup.body.user.id, ip };
+  }
+
+  try {
+    const starter = await signupAndActivate("starter-gate@example.com", "starter", 20, "203.0.113.10");
+    const starterPhoto = await request(port, "/api/generate-from-photos", {
+      method: "POST",
+      headers: { cookie: starter.cookie, "x-forwarded-for": starter.ip },
+      body: JSON.stringify({ photos: [photo], category: "Trainers", notes: "White leather trainers" })
+    });
+    assert.equal(starterPhoto.response.status, 402);
+    assert.equal(starterPhoto.body.featureLocked, true);
+    assert.equal(starterPhoto.body.feature, "photos");
+    assert.equal(starterPhoto.body.requiredPlan, "seller");
+    assert.equal(starterPhoto.body.usage.usageThisMonth, 0);
+
+    const starterReply = await request(port, "/api/generate", {
+      method: "POST",
+      headers: { cookie: starter.cookie, "x-forwarded-for": starter.ip },
+      body: JSON.stringify({ itemDetails: "Black Zara dress size 10", buyerQuestion: "Would you take £8?" })
+    });
+    assert.equal(starterReply.response.status, 402);
+    assert.equal(starterReply.body.feature, "buyerReplies");
+
+    const starterScore = await request(port, "/api/generate", {
+      method: "POST",
+      headers: { cookie: starter.cookie, "x-forwarded-for": starter.ip },
+      body: JSON.stringify({ feature: "listingScore", itemDetails: "Black Zara dress size 10" })
+    });
+    assert.equal(starterScore.response.status, 402);
+    assert.equal(starterScore.body.feature, "listingScore");
+
+    const starterHistory = await request(port, "/api/history", { headers: { cookie: starter.cookie, "x-forwarded-for": starter.ip } });
+    assert.equal(starterHistory.response.status, 402);
+    assert.equal(starterHistory.body.feature, "history");
+
+    const starterNotes = await request(port, "/api/generate", {
+      method: "POST",
+      headers: { cookie: starter.cookie, "x-forwarded-for": starter.ip },
+      body: JSON.stringify({ itemDetails: "Black Zara dress size 10 worn twice good condition" })
+    });
+    assert.equal(starterNotes.response.status, 200);
+    assert.equal(starterNotes.body.usage.usageThisMonth, 1);
+
+    const seller = await signupAndActivate("seller-gate@example.com", "seller", 75, "203.0.113.11");
+    const sellerPhoto = await request(port, "/api/generate-from-photos", {
+      method: "POST",
+      headers: { cookie: seller.cookie, "x-forwarded-for": seller.ip },
+      body: JSON.stringify({ photos: [photo], category: "Trainers", notes: "White leather trainers, UK 5" })
+    });
+    assert.equal(sellerPhoto.response.status, 200);
+    assert.equal(sellerPhoto.body.source, "photos");
+    assert.equal(sellerPhoto.body.usage.usageThisMonth, 1);
+  } finally {
+    process.env.OPENAI_API_KEY = oldOpenAi;
+    if (oldAnthropic) process.env.ANTHROPIC_API_KEY = oldAnthropic;
+    else delete process.env.ANTHROPIC_API_KEY;
+    await close();
+  }
+});
+
 test("generation increments usage and returns a paywall once the monthly limit is hit", async () => {
   const port = await listen();
   const oldOpenAi = process.env.OPENAI_API_KEY;
