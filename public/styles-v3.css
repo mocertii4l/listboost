@@ -686,11 +686,25 @@ body[data-page="marketing-v3"] .section-head .eyebrow {
 
 .comparison-card {
   display: grid;
+  grid-template-columns: 1fr;
+  align-items: start;
   gap: 18px;
   padding: 28px;
   border-radius: 20px;
   border: 1px solid var(--border);
   background: var(--surface);
+  overflow: hidden;
+}
+
+.comparison-card > * {
+  min-width: 0;
+  grid-column: 1;
+}
+
+.comparison-card .badge {
+  justify-self: start;
+  max-width: 100%;
+  white-space: normal;
 }
 
 .comparison-card h3 {
@@ -1688,8 +1702,14 @@ body[data-page="marketing-v3"] .toast {
 
 body[data-page="marketing-v3"] .bento-cell {
   align-content: start;
+  grid-template-columns: 1fr;
   min-height: 168px;
   gap: 14px;
+}
+
+body[data-page="marketing-v3"] .bento-cell > * {
+  min-width: 0;
+  grid-column: 1;
 }
 
 body[data-page="marketing-v3"] .bento-cell .bento-icon {

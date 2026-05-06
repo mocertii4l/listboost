@@ -2923,17 +2923,56 @@ input[readonly] {
   position: relative;
   display: grid;
   gap: var(--space-4);
+  width: min(1040px, 100%);
+  max-height: calc(100dvh - var(--space-8));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.paywall-backdrop {
+  place-items: start center;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-block: max(var(--space-4), env(safe-area-inset-top)) max(var(--space-4), env(safe-area-inset-bottom));
+}
+
+.paywall-pricing-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-3);
+  padding-top: 0;
+}
+
+.paywall-pricing-grid .pricing-card {
+  min-height: 0;
+  padding: var(--space-4);
+  gap: var(--space-3);
+}
+
+.paywall-pricing-grid .pricing-price strong {
+  font-size: clamp(28px, 3vw, 40px);
+}
+
+.paywall-pricing-grid .pricing-compare {
+  gap: var(--space-2);
+}
+
+.paywall-pricing-grid .pricing-compare li {
+  font-size: 13px;
+  line-height: 1.4;
 }
 
 .paywall-close {
-  position: absolute;
-  top: var(--space-3);
-  right: var(--space-3);
+  position: sticky;
+  top: 0;
+  justify-self: end;
+  z-index: 1;
   width: 44px;
   min-height: 44px;
   padding: var(--space-2);
   color: var(--text-muted);
-  background: transparent;
+  background: color-mix(in srgb, var(--card) 88%, transparent);
+  backdrop-filter: blur(10px);
 }
 
 .paywall-proof {
@@ -2941,22 +2980,83 @@ input[readonly] {
   font-weight: 600;
 }
 
+@media (max-width: 760px) {
+  .paywall-backdrop {
+    place-items: end center;
+    padding: var(--space-3);
+    padding-bottom: max(var(--space-3), env(safe-area-inset-bottom));
+  }
+
+  .paywall-modal {
+    width: 100%;
+    max-height: calc(100dvh - var(--space-6));
+    padding: var(--space-4);
+    border-radius: var(--radius-xl) var(--radius-xl) var(--radius-lg) var(--radius-lg);
+  }
+
+  .paywall-modal h2 {
+    font-size: clamp(28px, 8vw, 36px);
+    line-height: 1.08;
+  }
+
+  .paywall-pricing-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .paywall-pricing-grid .pricing-card {
+    padding: var(--space-4);
+  }
+}
+
 /* =================================================================
    Auth, legal and legacy page support
    ================================================================= */
 
 .auth-shell {
-  min-height: 100vh;
+  min-height: 100dvh;
   display: grid;
-  place-items: center;
-  gap: var(--space-6);
-  padding: var(--space-6);
+  grid-template-rows: auto auto auto;
+  align-content: center;
+  justify-items: center;
+  gap: var(--space-4);
+  padding: var(--space-8) var(--space-4);
+  background:
+    radial-gradient(560px 320px at 18% 8%, color-mix(in srgb, var(--primary-soft) 70%, transparent), transparent 70%),
+    var(--bg);
 }
 
 .auth-card {
   width: min(420px, 100%);
   display: grid;
   gap: var(--space-4);
+}
+
+.auth-back {
+  justify-self: center;
+}
+
+.auth-card input[name="token"] {
+  font-family: ui-monospace, "JetBrains Mono", monospace;
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.reset-link-status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: fit-content;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid color-mix(in srgb, var(--success) 28%, var(--border));
+  border-radius: var(--radius-md);
+  color: var(--success);
+  background: color-mix(in srgb, var(--success) 9%, var(--card));
+}
+
+.reset-link-status svg {
+  width: 18px;
+  height: 18px;
 }
 
 .auth-card form button[type="submit"] {

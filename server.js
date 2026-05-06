@@ -328,13 +328,14 @@ function findSubscriptionPlan(planId) {
 function publicSubscriptionForUser(user) {
   const planId = user?.subscription_plan || "free";
   const plan = planForId(planId);
+  const usage = user ? getAccountUsage(user) : null;
   return {
     plan: planId,
     planName: plan.name,
     status: user?.subscription_status || "inactive",
-    monthlyLimit: plan.monthlyLimit,
-    unlimited: plan.monthlyLimit == null,
-    usageThisMonth: Number(user?.usage_this_month || 0),
+    monthlyLimit: usage?.usageLimit ?? plan.monthlyLimit,
+    unlimited: usage?.unlimited ?? (plan.monthlyLimit == null),
+    usageThisMonth: usage?.usageThisMonth ?? Number(user?.usage_this_month || 0),
     billingPeriodEnd: user?.billing_period_end || user?.next_credit_refill || null,
     stripeSubscriptionId: user?.stripe_subscription_id || null
   };
@@ -795,7 +796,46 @@ function getCredits(usage, visitorId) {
   };
 }
 
+function generationCountForUser(userId) {
+  if (!userId) return 0;
+  const row = db.prepare("SELECT COUNT(*) AS count FROM generations WHERE user_id = ?").get(userId);
+  return Number(row?.count || 0);
+}
+
+function repairInvertedUsageIfNeeded(user) {
+  if (!user?.id || user.usage_limit == null) return user;
+  const usedRaw = Number(user.usage_this_month || 0);
+  const limitRaw = Number(user.usage_limit);
+  if (!Number.isFinite(usedRaw) || !Number.isFinite(limitRaw) || limitRaw <= 0 || usedRaw <= limitRaw) {
+    return user;
+  }
+  const current = db.prepare("SELECT * FROM users WHERE id = ?").get(user.id);
+  const currentUsed = Number(current?.usage_this_month || 0);
+  const currentLimit = current?.usage_limit == null ? null : Number(current.usage_limit);
+  if (current && (currentUsed !== usedRaw || currentLimit !== limitRaw)) {
+    return repairInvertedUsageIfNeeded(current);
+  }
+
+  // Older admin tooling adjusted "used" instead of "allowance", which could create
+  // impossible states like 20 / 3 listings used. Treat the larger number as the
+  // intended allowance and keep real usage capped to the prior allowance.
+  const generationCount = generationCountForUser(user.id);
+  const repairedLimit = Math.max(0, Math.round(usedRaw));
+  const repairedUsed = Math.min(Math.max(0, generationCount), Math.max(0, Math.round(limitRaw)), repairedLimit);
+  const now = new Date().toISOString();
+  db.prepare("UPDATE users SET usage_this_month = ?, usage_limit = ?, updated_at = ? WHERE id = ?")
+    .run(repairedUsed, repairedLimit, now, user.id);
+  recordAudit(user.id, "system:usage-repair", repairedLimit - limitRaw, "Repaired inverted usage/allowance values");
+  return {
+    ...user,
+    usage_this_month: repairedUsed,
+    usage_limit: repairedLimit,
+    updated_at: now
+  };
+}
+
 function getAccountUsage(user) {
+  user = repairInvertedUsageIfNeeded(user);
   const planId = user.subscription_plan || "free";
   const plan = planForId(planId);
   const usedRaw = Number(user.usage_this_month || 0);
@@ -2798,6 +2838,7 @@ async function handleAdminPage(req, res) {
     SELECT id, email, subscription_plan, subscription_status, usage_this_month, usage_limit, billing_period_end, email_verified, created_at, updated_at
     FROM users ORDER BY created_at DESC LIMIT 200
   `).all();
+  const displayUsers = users.map(repairInvertedUsageIfNeeded);
   const generations = db.prepare(`
     SELECT id, user_id, title, score, created_at
     FROM generations ORDER BY created_at DESC LIMIT 50
@@ -2818,8 +2859,9 @@ async function handleAdminPage(req, res) {
   `).all();
   const planSummary = planCounts.map((row) => `${escapeHtml(row.plan)}: ${row.count}`).join(", ");
 
-  const userRows = users.map((u) => {
-    const limitDisplay = u.usage_limit == null ? "&infin;" : String(u.usage_limit);
+  const userRows = displayUsers.map((u) => {
+    const usage = getAccountUsage(u);
+    const limitDisplay = usage.unlimited ? "&infin;" : String(usage.usageLimit);
     return `
     <tr data-user-row>
       <td><code>${escapeHtml(u.id.slice(0, 8))}</code></td>
@@ -2827,14 +2869,14 @@ async function handleAdminPage(req, res) {
       <td>${u.email_verified ? "yes" : "no"}</td>
       <td>${escapeHtml(u.subscription_plan || "free")}</td>
       <td>${escapeHtml(u.subscription_status || "inactive")}</td>
-      <td>${u.usage_this_month || 0} / ${limitDisplay}</td>
+      <td>${usage.usageThisMonth || 0} / ${limitDisplay}</td>
       <td>${escapeHtml(u.billing_period_end || "-")}</td>
       <td>
         <form method="post" action="/admin/credits">
           <input type="hidden" name="userId" value="${escapeHtml(u.id)}" />
-          <input type="number" name="delta" required style="width:64px" placeholder="usage delta" />
-          <input type="text" name="reason" required style="width:160px" placeholder="reason" />
-          <button type="submit">Adjust usage</button>
+          <input type="number" name="limit" min="0" required style="width:84px" value="${usage.unlimited ? "" : usage.usageLimit}" placeholder="allowance" />
+          <input type="text" name="reason" required style="width:180px" placeholder="reason" />
+          <button type="submit">Set allowance</button>
         </form>
       </td>
     </tr>
@@ -2889,7 +2931,7 @@ async function handleAdminPage(req, res) {
   </section>
   <h2>Users (latest 200)</h2>
   <div class="table-tools"><label>Search users <input id="userSearch" type="search" placeholder="email" /></label><div id="userPager"></div></div>
-  <table id="usersTable"><thead><tr><th>id</th><th>email</th><th>verified</th><th>plan</th><th>status</th><th>usage</th><th>cycle ends</th><th>adjust usage</th></tr></thead>
+  <table id="usersTable"><thead><tr><th>id</th><th>email</th><th>verified</th><th>plan</th><th>status</th><th>usage</th><th>cycle ends</th><th>monthly allowance</th></tr></thead>
   <tbody>${userRows}</tbody></table>
   <h2>Recent generations (50)</h2>
   <table><thead><tr><th>at</th><th>user</th><th>title</th><th>score</th></tr></thead><tbody>${genRows}</tbody></table>
@@ -2909,7 +2951,7 @@ async function handleAdminPage(req, res) {
     });
     document.querySelectorAll('form[action="/admin/credits"]').forEach((form) => {
       form.addEventListener("submit", (event) => {
-        if (!confirm("Adjust this user's credits?")) event.preventDefault();
+        if (!confirm("Set this user's monthly listing allowance? Used listings stay separate.")) event.preventDefault();
       });
     });
     const rows = Array.from(document.querySelectorAll("[data-user-row]"));
@@ -2931,7 +2973,7 @@ async function handleAdminPage(req, res) {
     if (new URLSearchParams(location.search).get("adjusted")) {
       const toast = document.createElement("div");
       toast.className = "toast";
-      toast.textContent = "Credits adjusted.";
+      toast.textContent = "Allowance updated.";
       document.body.append(toast);
       setTimeout(() => toast.remove(), 3500);
     }
@@ -2954,26 +2996,43 @@ async function handleAdminCreditsAdjust(req, res) {
   }
   const params = new URLSearchParams(raw);
   const userId = params.get("userId") || "";
-  const delta = Number.parseInt(params.get("delta") || "0", 10);
+  const limitParam = String(params.get("limit") || "").trim();
+  const legacyDeltaParam = String(params.get("delta") || "").trim();
   const reason = (params.get("reason") || "").trim().slice(0, 240);
 
-  if (!userId || !Number.isFinite(delta) || delta === 0 || !reason) {
+  if (!userId || !reason || (!limitParam && !legacyDeltaParam)) {
     res.writeHead(400, { "content-type": "text/plain; charset=utf-8" });
-    res.end("Missing userId, non-zero delta, or reason.");
+    res.end("Missing userId, allowance, or reason.");
     return;
   }
 
-  const user = db.prepare("SELECT * FROM users WHERE id = ?").get(userId);
+  const user = repairInvertedUsageIfNeeded(db.prepare("SELECT * FROM users WHERE id = ?").get(userId));
   if (!user) {
     res.writeHead(404, { "content-type": "text/plain; charset=utf-8" });
     res.end("User not found.");
     return;
   }
 
+  const usage = getAccountUsage(user);
+  const currentLimit = usage.unlimited ? Number(planLimitFor(user.subscription_plan) || 0) : Number(usage.usageLimit || 0);
+  let nextLimit;
+  if (limitParam) {
+    nextLimit = Number.parseInt(limitParam, 10);
+  } else {
+    const legacyDelta = Number.parseInt(legacyDeltaParam, 10);
+    nextLimit = currentLimit + legacyDelta;
+  }
+  if (!Number.isFinite(nextLimit) || nextLimit < 0) {
+    res.writeHead(400, { "content-type": "text/plain; charset=utf-8" });
+    res.end("Allowance must be a whole number greater than or equal to 0.");
+    return;
+  }
+
   const now = new Date().toISOString();
-  const next = Math.max(0, Number(user.usage_this_month || 0) + delta);
-  db.prepare("UPDATE users SET usage_this_month = ?, updated_at = ? WHERE id = ?").run(next, now, userId);
-  recordAudit(userId, `admin:${adminEmail}`, delta, reason);
+  nextLimit = Math.round(nextLimit);
+  const nextUsed = Math.min(Number(usage.usageThisMonth || 0), nextLimit);
+  db.prepare("UPDATE users SET usage_this_month = ?, usage_limit = ?, updated_at = ? WHERE id = ?").run(nextUsed, nextLimit, now, userId);
+  recordAudit(userId, `admin:${adminEmail}`, nextLimit - currentLimit, reason);
 
   res.writeHead(303, { location: "/admin?adjusted=1" });
   res.end();

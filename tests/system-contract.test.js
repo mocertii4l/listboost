@@ -9,6 +9,7 @@ const pricingHtml = readFileSync(new URL("../public/pricing.html", import.meta.u
 const authHtml = readFileSync(new URL("../public/auth.html", import.meta.url), "utf8");
 const exampleHtml = readFileSync(new URL("../public/example.html", import.meta.url), "utf8");
 const stylesCss = readFileSync(new URL("../public/styles.css", import.meta.url), "utf8");
+const stylesV3Css = readFileSync(new URL("../public/styles-v3.css", import.meta.url), "utf8");
 const authUtilsJs = readFileSync(new URL("../public/auth-utils.js", import.meta.url), "utf8");
 const indexHtml = readFileSync(new URL("../public/index.html", import.meta.url), "utf8");
 const privacyHtml = readFileSync(new URL("../public/privacy.html", import.meta.url), "utf8");
@@ -117,6 +118,25 @@ test("usage-limit paywall pushes subscription upgrade", () => {
   assert.match(siteJs, /data-subscription-plan/);
   assert.match(siteJs, /Upgrade your plan to continue generating listings/);
   assert.match(stylesCss, /\.paywall-proof/);
+  assert.match(stylesCss, /\.paywall-backdrop[\s\S]*overflow-y: auto/);
+  assert.match(stylesCss, /\.paywall-modal[\s\S]*max-height: calc\(100dvh - var\(--space-8\)\)/);
+  assert.match(stylesCss, /\.paywall-pricing-grid[\s\S]*grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)/);
+});
+
+test("admin allowance changes cannot be mistaken for used listings", () => {
+  assert.match(serverJs, /function repairInvertedUsageIfNeeded/);
+  assert.match(serverJs, /Repaired inverted usage\/allowance values/);
+  assert.match(serverJs, /name="limit"[\s\S]*placeholder="allowance"/);
+  assert.match(serverJs, /Set allowance/);
+  assert.match(serverJs, /UPDATE users SET usage_this_month = \?, usage_limit = \?/);
+  assert.match(siteJs, /function hasManualFreeAllowance/);
+  assert.match(siteJs, /Manual allowance applied/);
+});
+
+test("homepage comparison cards reset the old before-after grid", () => {
+  assert.match(stylesV3Css, /\.comparison-card \{[\s\S]*grid-template-columns: 1fr/);
+  assert.match(stylesV3Css, /\.comparison-card > \* \{[\s\S]*grid-column: 1/);
+  assert.match(stylesV3Css, /\.comparison-card \.badge \{[\s\S]*white-space: normal/);
 });
 
 test("generation success shows usage momentum", () => {

@@ -1364,6 +1364,10 @@ function installForms() {
       api(`/api/reset-password/validate?token=${encodeURIComponent(token)}`)
         .then((data) => {
           if (intro) intro.textContent = `Choose a new password for ${data.email}.`;
+          reset.querySelector(".reset-token-field")?.classList.add("hidden");
+          if (intro && !$("#resetLinkStatus")) {
+            intro.insertAdjacentHTML("afterend", `<p class="field-helper reset-link-status" id="resetLinkStatus">${iconSvg("check")} Secure reset link verified.</p>`);
+          }
           reset.classList.remove("hidden");
         })
         .catch(() => {
@@ -2188,7 +2192,20 @@ async function loadAppHistory(page = 1) {
   }
 }
 
-function planBenefitsFor(planId) {
+function hasManualFreeAllowance(planId, usage = {}) {
+  return planId === "free" && Number(usage.usageLimit || 0) > 3;
+}
+
+function planBenefitsFor(planId, usage = {}) {
+  if (hasManualFreeAllowance(planId, usage)) {
+    return [
+      `${Number(usage.usageLimit || 0)} listings available this cycle`,
+      "Manual support allowance applied",
+      "Notes-to-listing generator",
+      "Title, description, keywords, price guidance, photo checklist, buyer reply",
+      "Subscribe when you are ready for monthly renewals"
+    ];
+  }
   const benefits = {
     free: [
       "3 listings to try ListBoost",
@@ -2229,7 +2246,10 @@ function planBenefitsFor(planId) {
   return benefits[planId] || benefits.free;
 }
 
-function planStrapline(planId) {
+function planStrapline(planId, usage = {}) {
+  if (hasManualFreeAllowance(planId, usage)) {
+    return `Manual allowance applied: ${Number(usage.usageLimit || 0)} listings available this cycle.`;
+  }
   return ({
     free: "Try 3 listings on us, then choose a monthly plan.",
     starter: "Core listing workflow for casual sellers.",
@@ -2267,7 +2287,7 @@ async function loadBilling(me = accountState) {
       node.textContent = titleCasePlan(currentStatus || "Inactive");
       node.dataset.status = currentStatus;
     });
-    $$(".js-billing-plan-strapline").forEach((node) => { node.textContent = planStrapline(currentPlan); });
+    $$(".js-billing-plan-strapline").forEach((node) => { node.textContent = planStrapline(currentPlan, usage); });
     $$(".js-billing-plan-title").forEach((node) => { node.textContent = `${publicPlanName(currentPlan, data.subscription?.planName || titleCasePlan(currentPlan))} plan benefits`; });
     $$(".js-current-plan").forEach((node) => { node.textContent = publicPlanName(currentPlan, data.subscription?.planName || titleCasePlan(currentPlan)); });
     $$(".js-billing-cycle-note").forEach((node) => {
@@ -2287,7 +2307,7 @@ async function loadBilling(me = accountState) {
     }
 
     if (benefits) {
-      benefits.innerHTML = planBenefitsFor(currentPlan).map((item) => `
+      benefits.innerHTML = planBenefitsFor(currentPlan, usage).map((item) => `
         <li>${iconSvg("check-circle")}<span>${escapeHtml(item)}</span></li>
       `).join("");
     }

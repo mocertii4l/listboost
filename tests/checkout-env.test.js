@@ -319,6 +319,38 @@ test("generation increments usage and returns a paywall once the monthly limit i
     assert.match(blocked.body.error, /Upgrade your plan to continue generating listings/);
     assert.equal(blocked.body.usage.remaining, 0);
     assert.equal(blocked.body.usage.usageThisMonth, 3);
+
+    const adminAuth = `Basic ${Buffer.from("admin@listboost.uk:secret").toString("base64")}`;
+    const topUp = await request(port, "/admin/credits", {
+      method: "POST",
+      headers: {
+        authorization: adminAuth,
+        "content-type": "application/x-www-form-urlencoded"
+      },
+      body: new URLSearchParams({
+        userId: signup.body.user.id,
+        limit: "20",
+        reason: "manual support allowance"
+      }).toString()
+    });
+    assert.equal(topUp.response.status, 303);
+    assert.equal(topUp.response.headers.get("location"), "/admin?adjusted=1");
+
+    const afterTopUp = await request(port, "/api/billing", { headers: { cookie } });
+    assert.equal(afterTopUp.response.status, 200);
+    assert.equal(afterTopUp.body.usage.usageThisMonth, 3);
+    assert.equal(afterTopUp.body.usage.usageLimit, 20);
+    assert.equal(afterTopUp.body.usage.remaining, 17);
+
+    const afterAllowance = await request(port, "/api/generate", {
+      method: "POST",
+      headers: { cookie },
+      body: JSON.stringify({ itemDetails: "Black LV style belt, good condition" })
+    });
+    assert.equal(afterAllowance.response.status, 200);
+    assert.equal(afterAllowance.body.usage.usageThisMonth, 4);
+    assert.equal(afterAllowance.body.usage.usageLimit, 20);
+    assert.equal(afterAllowance.body.usage.remaining, 16);
   } finally {
     process.env.OPENAI_API_KEY = oldOpenAi;
     if (oldAnthropic) process.env.ANTHROPIC_API_KEY = oldAnthropic;
