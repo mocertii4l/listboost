@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" role="img" aria-labelledby="title desc">
+  <title id="title">ListBoost mark</title>
+  <desc id="desc">A rounded teal and coral ListBoost L mark with a sparkle dot.</desc>
+  <defs>
+    <linearGradient id="lb-mark-gradient" x1="12" x2="88" y1="8" y2="90" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0AA098"/>
+      <stop offset="0.48" stop-color="#11B6AB"/>
+      <stop offset="1" stop-color="#FF6B6B"/>
+    </linearGradient>
+    <filter id="lb-mark-shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="12" stdDeviation="10" flood-color="#0E7C76" flood-opacity="0.22"/>
+    </filter>
+  </defs>
+  <rect x="10" y="10" width="76" height="76" rx="24" fill="url(#lb-mark-gradient)" filter="url(#lb-mark-shadow)"/>
+  <path d="M33 26v38c0 3.3 2.7 6 6 6h27" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M61 23l2.5 7.2L71 33l-7.5 2.7L61 43l-2.6-7.3L51 33l7.4-2.8L61 23z" fill="#fff" opacity="0.92"/>
+</svg>

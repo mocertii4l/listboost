@@ -1476,6 +1476,7 @@ select[aria-invalid="true"] {
 @media (prefers-reduced-motion: reduce) {
   .hero-mock-pill .hero-mock-dot.is-live,
   .hero-item-pill .hero-item-dot,
+  .progress-strip .progress-dot,
   .success-dot {
     animation: none !important;
   }

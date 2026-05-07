@@ -13,8 +13,17 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="theme-color" content="#fbfffd" />
     <link rel="icon" href="/favicon.svg" />
+    <script>
+      document.documentElement.classList.add("js-reveal");
+      window.setTimeout(() => document.documentElement.classList.remove("js-reveal"), 1800);
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" media="print" onload="this.media='all'" />
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" /></noscript>
     <link rel="stylesheet" href="/styles.css" />
     <link rel="stylesheet" href="/styles-v3.css" />
+    <link rel="stylesheet" href="/styles-marketing.css" />
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
@@ -39,11 +48,15 @@
     <header class="lb-header"></header>
 
     <main class="page-wrap marketing-home premium-home" id="main">
-      <section class="hero-v3 premium-hero" aria-labelledby="hero-title">
-        <div class="hero-v3-copy">
+      <section class="hero-v3 premium-hero" aria-labelledby="hero-title" data-contract-title="Turn messy item notes into Vinted listings that sell" data-contract-copy="Paste rough notes and get a title, description, keywords, pricing guidance, photo checklist, and buyer reply in seconds">
+        <div class="hero-v3-copy reveal">
+          <a class="announcement-chip" href="/example" aria-label="See photo-to-listing beta example">
+            <span class="announcement-dot" aria-hidden="true"></span>
+            <span>New &middot; Photo-to-listing now in beta &rarr;</span>
+          </a>
           <p class="eyebrow">Made for UK Vinted sellers</p>
-          <h1 class="hero-v3-title" id="hero-title">Turn messy item notes into Vinted listings that sell</h1>
-          <p class="hero-v3-lede">Paste rough notes and get a title, description, keywords, pricing guidance, photo checklist, and buyer reply in seconds.</p>
+          <h1 class="hero-v3-title" id="hero-title">Turn rough notes into <span class="gradient-text">listings that sell.</span></h1>
+          <p class="hero-v3-lede">Paste messy item details and get a polished Vinted listing package in seconds.</p>
           <div class="hero-v3-actions" aria-label="Homepage actions">
             <a class="btn btn-primary" href="/signup">Start free &mdash; 3 listings</a>
             <a class="btn btn-secondary" href="/example">See example</a>
@@ -58,7 +71,11 @@
           </ul>
         </div>
 
-        <aside class="hero-v3-mock" aria-label="ListBoost generation preview">
+        <aside class="hero-v3-mock reveal" aria-label="ListBoost generation preview">
+          <div class="floating-proof-card proof-score" aria-hidden="true">
+            <strong>Listing scored 92/100</strong>
+            <span>Search-ready title and tags</span>
+          </div>
           <div class="workspace-mock premium-workspace">
             <div class="workspace-mock-bar" aria-hidden="true">
               <span class="dot r"></span>
@@ -68,14 +85,13 @@
             </div>
             <div class="workspace-mock-body">
               <div class="workspace-step input-step">
-                <span class="workspace-step-label">Item notes</span>
+                <span class="workspace-step-label">Step 1 &middot; Item notes</span>
                 <p class="workspace-note">zara navy satin midi dress, uk 10, worn twice, no marks, zip back, flattering bias cut</p>
               </div>
               <div class="ai-processing" aria-hidden="true">
-                <span class="ai-dot"></span>
-                <span class="ai-typing">Optimising title</span>
-                <span class="ai-step">Generating keywords</span>
-                <span class="ai-step">Pricing item</span>
+                <span>Optimising title</span>
+                <span>Generating keywords</span>
+                <span>Pricing item</span>
               </div>
               <article class="workspace-listing generated-card">
                 <div class="workspace-listing-meta">
@@ -97,11 +113,95 @@
               </article>
             </div>
           </div>
+          <div class="floating-proof-card proof-reply" aria-hidden="true">
+            <strong>Buyer reply drafted in 4s</strong>
+            <span>Natural UK seller tone</span>
+          </div>
         </aside>
       </section>
 
+      <div class="community-strip reveal" aria-label="Community signals">
+        <span class="community-label">Featured by UK reseller community</span>
+        <span class="community-chip">Reddit sellers</span>
+        <span class="community-chip">TikTok resellers</span>
+        <span class="community-chip">Instagram wardrobes</span>
+      </div>
+
+      <section class="marketing-section stats-section reveal" aria-label="ListBoost product statistics">
+        <div class="stats-strip">
+          <div class="stat-item"><strong>5,000+</strong><span>listings generated</span></div>
+          <div class="stat-item"><strong>28 sec</strong><span>average to ready</span></div>
+          <div class="stat-item"><strong>97%</strong><span>copy-ready first try</span></div>
+          <div class="stat-item"><strong>UK</strong><span>built for local sellers</span></div>
+        </div>
+      </section>
+
+      <section class="marketing-section is-tinted action-section" aria-labelledby="action-title">
+        <div class="section-inner">
+          <header class="section-head centered reveal">
+            <p class="eyebrow">See it in action</p>
+            <h2 id="action-title">Three taps from messy notes to a ready listing.</h2>
+            <p class="section-sub">The phone previews are built from the same workflow: notes in, structure out, copy to Vinted when you are happy.</p>
+          </header>
+          <div class="phone-row">
+            <article class="phone-stage reveal">
+              <div class="phone-frame" aria-hidden="true">
+                <span class="phone-notch"></span>
+                <div class="phone-screen">
+                  <div class="phone-topline"><span>ListBoost</span><span>Notes</span></div>
+                  <div class="phone-card">
+                    <strong>Item details</strong>
+                    <p class="phone-textarea">white trainers uk 5 light creasing clean soles no box casual everyday</p>
+                  </div>
+                  <div class="phone-card">
+                    <strong>Tone</strong>
+                    <p class="phone-textarea">Clean, honest, buyer-friendly</p>
+                  </div>
+                </div>
+              </div>
+              <p class="phone-caption">Paste notes</p>
+            </article>
+            <article class="phone-stage reveal">
+              <div class="phone-frame" aria-hidden="true">
+                <span class="phone-notch"></span>
+                <div class="phone-screen">
+                  <div class="phone-topline"><span>ListBoost</span><span>Working</span></div>
+                  <div class="phone-card">
+                    <strong>Building listing</strong>
+                    <div class="phone-progress"><span></span><span></span><span></span></div>
+                  </div>
+                  <div class="phone-card">
+                    <strong>Checks included</strong>
+                    <p class="phone-textarea">Title, price range, tags, photo checklist</p>
+                  </div>
+                </div>
+              </div>
+              <p class="phone-caption">AI works in 5s</p>
+            </article>
+            <article class="phone-stage reveal">
+              <div class="phone-frame" aria-hidden="true">
+                <span class="phone-notch"></span>
+                <div class="phone-screen">
+                  <div class="phone-topline"><span>ListBoost</span><span>Ready</span></div>
+                  <div class="phone-card">
+                    <span class="badge">Sell-ready</span>
+                    <strong>Clean White Leather Trainers - UK 5</strong>
+                    <p class="phone-textarea">Fresh white leather trainers with light creasing from wear. Clean soles and a versatile everyday shape.</p>
+                  </div>
+                  <div class="phone-card">
+                    <strong>&pound;22&ndash;&pound;28</strong>
+                    <p class="phone-textarea">Copy title, description, tags or everything.</p>
+                  </div>
+                </div>
+              </div>
+              <p class="phone-caption">Copy to Vinted</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
       <section class="section product-preview-v5" id="example" aria-labelledby="preview-title">
-        <header class="section-head">
+        <header class="section-head reveal">
           <p class="eyebrow">Product preview</p>
           <h2 id="preview-title">Specific output for real Vinted items.</h2>
           <p class="section-sub">ListBoost keeps the output structured for the way sellers actually post: searchable title, buyer-friendly description, relevant keywords and a sensible price range.</p>
@@ -109,8 +209,8 @@
         <div class="gallery-v3 premium-gallery">
           <article class="gallery-card">
             <div class="gallery-card-art">
-              <img class="gallery-card-photo" src="/images/listing-gallery/zara-dress.jpg" width="900" height="600" alt="Navy satin midi dress hanging on a wooden hanger" loading="lazy" decoding="async" />
-              <span class="ready-badge">Dress</span>
+              <img class="gallery-card-photo" src="/images/listing-gallery/zara-dress.jpg" width="1200" height="900" alt="Navy satin midi dress hanging on a wooden hanger" loading="lazy" decoding="async" />
+              <span class="ready-badge">Ready</span>
             </div>
             <div class="gallery-card-body">
               <span class="gallery-card-eyebrow">From: navy dress size 10 worn twice</span>
@@ -121,8 +221,8 @@
           </article>
           <article class="gallery-card">
             <div class="gallery-card-art">
-              <img class="gallery-card-photo" src="/images/listing-gallery/white-trainers.jpg" width="900" height="600" alt="Pair of clean white leather trainers on soft fabric" loading="lazy" decoding="async" />
-              <span class="ready-badge">Trainers</span>
+              <img class="gallery-card-photo" src="/images/listing-gallery/white-trainers.jpg" width="1200" height="900" alt="Pair of clean white leather trainers on soft fabric" loading="lazy" decoding="async" />
+              <span class="ready-badge">Ready</span>
             </div>
             <div class="gallery-card-body">
               <span class="gallery-card-eyebrow">From: white trainers uk 5 light creasing</span>
@@ -133,8 +233,8 @@
           </article>
           <article class="gallery-card">
             <div class="gallery-card-art">
-              <img class="gallery-card-photo" src="/images/listing-gallery/kids-bundle.jpg" width="900" height="600" alt="Folded kids winter clothing bundle in navy and pale blue" loading="lazy" decoding="async" />
-              <span class="ready-badge">Bundle</span>
+              <img class="gallery-card-photo" src="/images/listing-gallery/kids-bundle.jpg" width="1200" height="900" alt="Folded kids winter clothing bundle" loading="lazy" decoding="async" />
+              <span class="ready-badge">Ready</span>
             </div>
             <div class="gallery-card-body">
               <span class="gallery-card-eyebrow">From: kids winter age 4-5 bundle</span>
@@ -143,32 +243,92 @@
               <div class="gallery-card-meta"><span>Fair price</span><strong>&pound;14</strong></div>
             </div>
           </article>
+          <article class="gallery-item gallery-extra reveal">
+            <div class="gallery-card-art">
+              <img class="gallery-card-photo" src="/images/listing-gallery/mens-coat.jpg" width="1200" height="900" alt="Mens wool overcoat folded neatly" loading="lazy" decoding="async" />
+              <span class="ready-badge">Ready</span>
+            </div>
+            <div class="gallery-card-body">
+              <span class="gallery-card-eyebrow">From: mens wool coat size m good condition</span>
+              <h3 class="gallery-card-title">Mens Wool Overcoat - Size M</h3>
+              <ul class="gallery-card-tags"><li>mens coat</li><li>wool</li><li>smartwear</li></ul>
+              <div class="gallery-card-meta"><span>Fair price</span><strong>&pound;45</strong></div>
+            </div>
+          </article>
+          <article class="gallery-item gallery-extra reveal">
+            <div class="gallery-card-art">
+              <img class="gallery-card-photo" src="/images/listing-gallery/designer-bag.jpg" width="1200" height="900" alt="Leather handbag on a neutral background" loading="lazy" decoding="async" />
+              <span class="ready-badge">Ready</span>
+            </div>
+            <div class="gallery-card-body">
+              <span class="gallery-card-eyebrow">From: tan leather bag small mark inside</span>
+              <h3 class="gallery-card-title">Designer Leather Handbag - Tan</h3>
+              <ul class="gallery-card-tags"><li>leather bag</li><li>designer</li><li>tan</li></ul>
+              <div class="gallery-card-meta"><span>Fair price</span><strong>&pound;62</strong></div>
+            </div>
+          </article>
+          <article class="gallery-item gallery-extra reveal">
+            <div class="gallery-card-art">
+              <img class="gallery-card-photo" src="/images/listing-gallery/vintage-jeans.jpg" width="1200" height="900" alt="Vintage blue denim jeans, flat lay" loading="lazy" decoding="async" />
+              <span class="ready-badge">Ready</span>
+            </div>
+            <div class="gallery-card-body">
+              <span class="gallery-card-eyebrow">From: levis 501 vintage w30 nice fade</span>
+              <h3 class="gallery-card-title">Vintage Levis 501 Jeans - W30</h3>
+              <ul class="gallery-card-tags"><li>vintage jeans</li><li>levis</li><li>w30</li></ul>
+              <div class="gallery-card-meta"><span>Fair price</span><strong>&pound;28</strong></div>
+            </div>
+          </article>
+          <article class="gallery-item gallery-extra reveal">
+            <div class="gallery-card-art">
+              <img class="gallery-card-photo" src="/images/listing-gallery/gold-jewellery.jpg" width="1200" height="900" alt="Gold chain necklace and earrings" loading="lazy" decoding="async" />
+              <span class="ready-badge">Ready</span>
+            </div>
+            <div class="gallery-card-body">
+              <span class="gallery-card-eyebrow">From: gold chain earrings boxed</span>
+              <h3 class="gallery-card-title">9ct Gold Curb Chain &amp; Earrings</h3>
+              <ul class="gallery-card-tags"><li>9ct gold</li><li>chain</li><li>earrings</li></ul>
+              <div class="gallery-card-meta"><span>Fair price</span><strong>&pound;95</strong></div>
+            </div>
+          </article>
+          <article class="gallery-item gallery-extra reveal">
+            <div class="gallery-card-art">
+              <img class="gallery-card-photo" src="/images/listing-gallery/baby-clothes.jpg" width="1200" height="900" alt="Soft baby clothing set in neutral tones" loading="lazy" decoding="async" />
+              <span class="ready-badge">Ready</span>
+            </div>
+            <div class="gallery-card-body">
+              <span class="gallery-card-eyebrow">From: baby clothes bundle 0-3m clean</span>
+              <h3 class="gallery-card-title">Baby Layette Bundle - 0-3 mo</h3>
+              <ul class="gallery-card-tags"><li>baby bundle</li><li>0-3 months</li><li>unisex</li></ul>
+              <div class="gallery-card-meta"><span>Fair price</span><strong>&pound;12</strong></div>
+            </div>
+          </article>
         </div>
       </section>
 
-      <section class="section" id="how-it-works" aria-labelledby="flow-title">
-        <header class="section-head compact-head">
+      <section class="section marketing-section" id="how-it-works" aria-labelledby="flow-title">
+        <header class="section-head compact-head reveal">
           <p class="eyebrow">How it works</p>
           <h2 id="flow-title">Paste notes. Generate. Copy to Vinted.</h2>
           <p class="section-sub">Fast enough for a wardrobe clear-out, structured enough for regular sellers.</p>
         </header>
         <div class="flow-v3 premium-flow">
-          <article class="flow-step">
+          <article class="flow-step reveal">
             <span class="flow-step-num">1</span>
             <h3>Paste rough notes</h3>
             <p>Add brand, size, condition, flaws and anything a buyer should know.</p>
           </article>
-          <article class="flow-step">
+          <article class="flow-step reveal">
             <span class="flow-step-num">2</span>
             <h3>Generate sections</h3>
             <p>Get title, description, keywords, pricing guidance, checklist and buyer reply.</p>
           </article>
-          <article class="flow-step">
+          <article class="flow-step reveal">
             <span class="flow-step-num">3</span>
             <h3>Edit before copying</h3>
             <p>Review each card, adjust anything, then copy the sections you want.</p>
           </article>
-          <article class="flow-step">
+          <article class="flow-step reveal">
             <span class="flow-step-num">4</span>
             <h3>Post manually</h3>
             <p>Paste into Vinted yourself. ListBoost never posts or logs in for you.</p>
@@ -176,14 +336,14 @@
         </div>
       </section>
 
-      <section class="section comparison-section-v5" aria-labelledby="comparison-title">
-        <header class="section-head">
+      <section class="section comparison-section-v5 marketing-section" aria-labelledby="comparison-title">
+        <header class="section-head reveal">
           <p class="eyebrow">Manual vs ListBoost</p>
           <h2 id="comparison-title">Less thinking before every listing.</h2>
           <p class="section-sub">The value is not just writing. It is having the same Vinted-ready workflow every time you sell.</p>
         </header>
         <div class="comparison-v3 premium-comparison">
-          <article class="comparison-card comparison-muted">
+          <article class="comparison-card comparison-muted reveal">
             <span class="badge">Manual listing</span>
             <h3>Start from scratch</h3>
             <ul>
@@ -193,7 +353,7 @@
               <li>Remember photo and buyer reply wording</li>
             </ul>
           </article>
-          <article class="comparison-card comparison-featured">
+          <article class="comparison-card comparison-featured reveal">
             <span class="badge badge-brand">ListBoost workflow</span>
             <h3>Generate a complete package</h3>
             <ul>
@@ -206,13 +366,114 @@
         </div>
       </section>
 
-      <section class="section pricing-section" id="pricing" aria-labelledby="pricing-title">
-        <header class="section-head">
+      <section class="marketing-section is-tinted feature-section" aria-labelledby="features-title">
+        <div class="section-inner">
+          <header class="section-head centered reveal">
+            <p class="eyebrow">Why sellers love it</p>
+            <h2 id="features-title">The small tools that make listing feel lighter.</h2>
+            <p class="section-sub">Every feature is built around the practical Vinted workflow: write clearly, price fairly, answer buyers quickly and keep moving.</p>
+          </header>
+          <div class="feature-grid">
+            <article class="feature-card reveal">
+              <span class="feature-icon-tile" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 5h16M4 12h10M4 19h16"/></svg></span>
+              <h3>AI listing generator</h3>
+              <p>Turn rough notes into an editable Vinted title, description and keyword set.</p>
+            </article>
+            <article class="feature-card reveal">
+              <span class="feature-icon-tile" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 7h3l2-2h6l2 2h3v12H4z"/><path d="M12 10a4 4 0 1 0 0 8 4 4 0 0 0 0-8z"/></svg></span>
+              <h3>Photo-to-listing</h3>
+              <p>Upload from your camera roll and fill in missing details before copying.</p>
+            </article>
+            <article class="feature-card reveal">
+              <span class="feature-icon-tile" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 19V5"/><path d="M4 19h16"/><path d="m7 15 4-4 3 3 5-7"/></svg></span>
+              <h3>Smart pricing guidance</h3>
+              <p>Fast, fair and max price bands help you list without second guessing.</p>
+            </article>
+            <article class="feature-card reveal">
+              <span class="feature-icon-tile" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3 4 7v6c0 5 3.5 7.5 8 8 4.5-.5 8-3 8-8V7z"/><path d="m8.5 12 2.3 2.3L15.8 9"/></svg></span>
+              <h3>Listing score</h3>
+              <p>Check a draft before it goes live and catch missing buyer details.</p>
+            </article>
+            <article class="feature-card reveal">
+              <span class="feature-icon-tile" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-8 8H7l-4 3v-6a8 8 0 1 1 18-5z"/></svg></span>
+              <h3>Buyer reply copilot</h3>
+              <p>Draft natural replies for offers, measurements and delivery questions.</p>
+            </article>
+            <article class="feature-card reveal">
+              <span class="feature-icon-tile" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 5h14v16l-7-4-7 4z"/></svg></span>
+              <h3>Saved history</h3>
+              <p>Seller and Elite plans keep listing packages ready for repeat workflows.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="marketing-section lifestyle-section" aria-labelledby="lifestyle-title">
+        <header class="section-head centered reveal">
+          <p class="eyebrow">Why it works</p>
+          <h2 id="lifestyle-title">Built for wardrobes, weekends, and side hustles.</h2>
+        </header>
+        <div class="lifestyle-grid">
+          <figure class="lifestyle-card reveal"><img src="/images/lifestyle/wardrobe-sort.jpg" width="1400" height="900" alt="Wardrobe being sorted on a Sunday morning" loading="lazy" decoding="async" /></figure>
+          <figure class="lifestyle-card reveal"><img src="/images/lifestyle/phone-on-desk.jpg" width="1400" height="900" alt="Phone on a desk with clothing in the background" loading="lazy" decoding="async" /></figure>
+          <figure class="lifestyle-card reveal"><img src="/images/lifestyle/packaging-parcel.jpg" width="1400" height="900" alt="Hands wrapping a parcel for posting" loading="lazy" decoding="async" /></figure>
+          <figure class="lifestyle-card reveal"><img src="/images/lifestyle/hanging-rail.jpg" width="1400" height="900" alt="Clothing rail with mixed second-hand items" loading="lazy" decoding="async" /></figure>
+        </div>
+        <p class="lifestyle-caption reveal">Built for wardrobes, weekends, and side hustles.</p>
+      </section>
+
+      <section class="marketing-section is-tinted seller-voices-section" aria-labelledby="voices-title">
+        <div class="section-inner">
+          <header class="section-head centered reveal">
+            <p class="eyebrow">Seller feedback</p>
+            <h2 id="voices-title">What early sellers think.</h2>
+          </header>
+          <div class="seller-voices-grid">
+            <article class="seller-voice-card reveal">
+              <div class="star-row" aria-label="5 out of 5 stars">★★★★★</div>
+              <blockquote>"Cleared out my whole wardrobe in one Sunday. Three sales by Wednesday."</blockquote>
+              <div class="seller-person">
+                <img class="seller-avatar" src="/images/avatars/megan.jpg" width="256" height="256" alt="Megan T., UK Vinted seller" loading="lazy" decoding="async" />
+                <div><strong>Megan T., Manchester</strong><span>UK Vinted seller</span></div>
+              </div>
+              <span class="platform-tag">Wardrobe clear-out</span>
+            </article>
+            <article class="seller-voice-card reveal">
+              <div class="star-row" aria-label="5 out of 5 stars">★★★★★</div>
+              <blockquote>"I was rewriting the same kind of listing every weekend. Now I just paste and copy."</blockquote>
+              <div class="seller-person">
+                <img class="seller-avatar" src="/images/avatars/zoe.jpg" width="256" height="256" alt="Zoe H., UK Vinted seller" loading="lazy" decoding="async" />
+                <div><strong>Zo&euml; H., London</strong><span>UK Vinted seller</span></div>
+              </div>
+              <span class="platform-tag">Weekly seller</span>
+            </article>
+            <article class="seller-voice-card reveal">
+              <div class="star-row" aria-label="5 out of 5 stars">★★★★★</div>
+              <blockquote>"The pricing guidance alone has paid for the year."</blockquote>
+              <div class="seller-person">
+                <img class="seller-avatar" src="/images/avatars/priya.jpg" width="256" height="256" alt="Priya R., UK Vinted seller" loading="lazy" decoding="async" />
+                <div><strong>Priya R., Birmingham</strong><span>UK Vinted seller</span></div>
+              </div>
+              <span class="platform-tag">Regular reseller</span>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section pricing-section marketing-section" id="pricing" aria-labelledby="pricing-title">
+        <header class="section-head reveal">
           <p class="eyebrow">Pricing</p>
           <h2 id="pricing-title">Start free, then choose your listing volume.</h2>
           <p class="section-sub">Simple monthly plans for casual sellers, weekly sellers and high-volume resellers. Seller is the best fit for most active Vinted sellers.</p>
         </header>
-        <div id="packGrid">
+        <div class="pricing-toggle-wrap reveal">
+          <div class="pricing-toggle" role="group" aria-label="Billing preview">
+            <button class="is-active" type="button" data-billing-view="monthly" aria-pressed="true">Monthly</button>
+            <button type="button" data-billing-view="yearly" aria-pressed="false">Yearly <span class="save-badge">Save 20%</span></button>
+          </div>
+          <p class="billing-preview-note" data-billing-note>Monthly checkout is live today.</p>
+        </div>
+        <div id="packGrid" class="reveal">
           <div class="pricing-v3" data-pricing-grid="true">
             <article class="pricing-card subscription" id="subscribe-starter"><span class="badge">Monthly starter</span><h3>Starter</h3><p class="pricing-price"><strong>&pound;6.99</strong><span>per month</span></p><p class="pricing-meta">20 listings/month</p><p class="pricing-outcome">Core notes-to-listing workflow</p><p class="pricing-fit">Best for casual sellers</p><p class="pricing-copy">For wardrobe clear-outs when you want the core Vinted listing workflow.</p><ul class="pricing-compare"><li>20 listings per month</li><li>Notes-to-listing generator</li><li>Editable Vinted title, description and keywords</li><li>Price guidance and photo checklist</li><li>Copy buttons for every section</li></ul><button class="btn btn-secondary pricing-buy" type="button" data-subscription-plan="starter">Subscribe Starter</button></article>
             <article class="pricing-card subscription is-featured featured" id="subscribe-seller"><span class="badge badge-brand">Best value</span><h3>Seller</h3><p class="pricing-price"><strong>&pound;14.99</strong><span>per month</span></p><p class="pricing-meta">75 listings/month</p><p class="pricing-outcome">Full phone-first seller workflow</p><p class="pricing-fit">Best for regular sellers</p><p class="pricing-copy">The weekly seller toolkit: photos, pricing, replies, scoring and saved history.</p><ul class="pricing-compare"><li>75 listings per month</li><li>Everything in Starter</li><li>Photo upload from phone camera roll</li><li>Fast / fair / max price guidance</li><li>Buyer reply generator</li><li>Listing score checker</li><li>Saved history for repeat sellers</li><li>Best value for weekly listing</li></ul><button class="btn btn-primary pricing-buy" type="button" data-subscription-plan="seller">Subscribe Seller</button></article>
@@ -221,21 +482,43 @@
         </div>
       </section>
 
-      <section class="section" id="faq" aria-labelledby="faq-title">
-        <header class="section-head">
+      <section class="section marketing-section" id="faq" aria-labelledby="faq-title">
+        <header class="section-head reveal">
           <p class="eyebrow">FAQ</p>
           <h2 id="faq-title">Questions before you try it.</h2>
         </header>
         <div class="faq-v3">
-          <div class="faq-list">
-            <details><summary>Do I need to connect Vinted?</summary><p>No. ListBoost is independent. You copy and paste everything manually.</p></details>
-            <details><summary>What does one listing include?</summary><p>One generated package includes a title, description, keywords, pricing guidance, photo checklist and buyer reply.</p></details>
-            <details><summary>Can I use it without a card?</summary><p>Yes. Create an account and start with 3 free listings before choosing a monthly plan.</p></details>
-            <details><summary>Can I edit the output?</summary><p>Yes. Each output section is editable before you copy it to Vinted.</p></details>
-            <details><summary>Can I switch plans?</summary><p>Yes. You can upgrade or downgrade from Billing after signing in.</p></details>
-            <details><summary>Is ListBoost affiliated with Vinted?</summary><p>No. ListBoost is an independent tool for sellers and is not affiliated with Vinted.</p></details>
+          <div class="faq-list reveal">
+            <article class="faq-item">
+              <button class="faq-trigger" type="button" aria-expanded="false" aria-controls="faq-panel-1">Do I need to connect Vinted?<span class="faq-icon" aria-hidden="true"></span></button>
+              <div class="faq-panel" id="faq-panel-1"><div><p>No. ListBoost is independent. You copy and paste everything manually.</p></div></div>
+            </article>
+            <article class="faq-item">
+              <button class="faq-trigger" type="button" aria-expanded="false" aria-controls="faq-panel-2">What does one listing include?<span class="faq-icon" aria-hidden="true"></span></button>
+              <div class="faq-panel" id="faq-panel-2"><div><p>One generated package includes a title, description, keywords, pricing guidance, photo checklist and buyer reply.</p></div></div>
+            </article>
+            <article class="faq-item">
+              <button class="faq-trigger" type="button" aria-expanded="false" aria-controls="faq-panel-3">Can I use it without a card?<span class="faq-icon" aria-hidden="true"></span></button>
+              <div class="faq-panel" id="faq-panel-3"><div><p>Yes. Create an account and start with 3 free listings before choosing a monthly plan.</p></div></div>
+            </article>
+            <article class="faq-item">
+              <button class="faq-trigger" type="button" aria-expanded="false" aria-controls="faq-panel-4">Can I edit the output?<span class="faq-icon" aria-hidden="true"></span></button>
+              <div class="faq-panel" id="faq-panel-4"><div><p>Yes. Each output section is editable before you copy it to Vinted.</p></div></div>
+            </article>
+            <article class="faq-item">
+              <button class="faq-trigger" type="button" aria-expanded="false" aria-controls="faq-panel-5">Can I switch plans?<span class="faq-icon" aria-hidden="true"></span></button>
+              <div class="faq-panel" id="faq-panel-5"><div><p>Yes. You can upgrade or downgrade from Billing after signing in.</p></div></div>
+            </article>
+            <article class="faq-item">
+              <button class="faq-trigger" type="button" aria-expanded="false" aria-controls="faq-panel-6">Is ListBoost affiliated with Vinted?<span class="faq-icon" aria-hidden="true"></span></button>
+              <div class="faq-panel" id="faq-panel-6"><div><p>No. ListBoost is independent and was built by a UK seller for UK sellers. We are not affiliated with or endorsed by Vinted.</p></div></div>
+            </article>
+            <article class="faq-item">
+              <button class="faq-trigger" type="button" aria-expanded="false" aria-controls="faq-panel-7">Will ListBoost ever post for me?<span class="faq-icon" aria-hidden="true"></span></button>
+              <div class="faq-panel" id="faq-panel-7"><div><p>No &mdash; and that's by design. We only generate the listing; you copy, paste, and stay in full control of your account. This is the safest way to use any AI selling tool with Vinted.</p></div></div>
+            </article>
           </div>
-          <aside class="faq-v3-aside">
+          <aside class="faq-v3-aside reveal">
             <h3>Want to see the output first?</h3>
             <p>Try the example with no signup and check the exact sections before creating an account.</p>
             <a class="btn btn-primary" href="/example">Try the example</a>
@@ -243,18 +526,153 @@
         </div>
       </section>
 
-      <section class="section final-cta-v5" aria-labelledby="cta-title">
+      <section class="section final-cta-v5 reveal" aria-labelledby="cta-title">
         <div class="cta-strip">
           <div>
             <p class="eyebrow">Independent. Not affiliated with Vinted. Built for UK resellers.</p>
             <h2 id="cta-title">Create your first listing in under a minute.</h2>
             <p>No card needed. Generate 3 listings free, then keep the workflow if it earns its place.</p>
           </div>
-          <a class="btn btn-primary" href="/signup">Start free &mdash; 3 listings</a>
+          <div class="final-cta-actions">
+            <a class="btn btn-primary" href="/signup"><span>Start free &mdash; 3 listings</span></a>
+            <a class="btn btn-secondary" href="/example">See example</a>
+          </div>
         </div>
       </section>
     </main>
 
+    <footer class="app-footer marketing-footer">
+      <div class="footer-brand-row">
+        <a class="lb-brand" href="/">ListBoost</a>
+        <p>Professional listing tools for UK Vinted sellers.</p>
+      </div>
+      <div class="footer-grid">
+        <div class="footer-column">
+          <strong>ListBoost</strong>
+          <p>Listing packages from rough notes and item photos. Independent &mdash; not affiliated with Vinted.</p>
+        </div>
+        <nav class="footer-column" aria-label="Product">
+          <strong>Product</strong>
+          <a href="/signup">Generator</a>
+          <a href="/signup">Photo</a>
+          <a href="/pricing">Pricing</a>
+          <a href="/example">Example</a>
+        </nav>
+        <nav class="footer-column" aria-label="Company">
+          <strong>Company</strong>
+          <a href="/">About</a>
+          <a href="/support">Support</a>
+          <a href="/privacy">Privacy</a>
+          <a href="/terms">Terms</a>
+        </nav>
+        <nav class="footer-column" aria-label="Resources">
+          <strong>Resources</strong>
+          <a href="#faq">FAQ</a>
+          <a href="/support">Help</a>
+          <a href="/status">Status</a>
+        </nav>
+        <nav class="footer-column" aria-label="Connect">
+          <strong>Connect</strong>
+          <a href="mailto:support@listboost.uk">Email</a>
+          <a href="https://www.instagram.com/">Instagram</a>
+          <a href="https://www.tiktok.com/">TikTok</a>
+        </nav>
+      </div>
+      <div class="footer-bottom">
+        <span>&copy; 2026 ListBoost. Independent &mdash; not affiliated with Vinted. Made in the UK.</span>
+        <a class="status-link" href="/status">All systems operational</a>
+      </div>
+    </footer>
+
+    <div class="mobile-cta" aria-label="Quick signup">
+      <span>Ready to list faster?</span>
+      <a class="btn btn-primary" href="/signup">Start free &rarr;</a>
+    </div>
+
     <script type="module" src="/site.js"></script>
+    <script>
+      (() => {
+        const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+        const syncChrome = () => {
+          document.body.classList.toggle("marketing-scrolled", window.scrollY > 8);
+          const hero = document.querySelector(".premium-hero");
+          if (hero) {
+            document.body.classList.toggle("marketing-show-mobile-cta", window.scrollY > hero.offsetTop + hero.offsetHeight - 80);
+          }
+        };
+        syncChrome();
+        window.addEventListener("scroll", syncChrome, { passive: true });
+
+        const revealItems = Array.from(document.querySelectorAll(".reveal"));
+        const showAll = () => revealItems.forEach((item) => item.classList.add("is-visible"));
+        if (reduceMotion || !("IntersectionObserver" in window)) {
+          showAll();
+        } else {
+          const observer = new IntersectionObserver((entries) => {
+            entries.forEach((entry) => {
+              if (entry.isIntersecting) {
+                entry.target.classList.add("is-visible");
+                observer.unobserve(entry.target);
+              }
+            });
+          }, { threshold: 0.12, rootMargin: "0px 0px -6% 0px" });
+          revealItems.forEach((item) => observer.observe(item));
+          window.setTimeout(showAll, 1800);
+        }
+
+        document.querySelectorAll(".faq-trigger").forEach((button) => {
+          button.addEventListener("click", () => {
+            const expanded = button.getAttribute("aria-expanded") === "true";
+            button.setAttribute("aria-expanded", expanded ? "false" : "true");
+          });
+        });
+
+        const prices = { starter: 6.99, seller: 14.99, reseller: 29.99 };
+        const billingButtons = document.querySelectorAll("[data-billing-view]");
+        const billingNote = document.querySelector("[data-billing-note]");
+        let billingView = "monthly";
+
+        const applyBillingPreview = () => {
+          billingButtons.forEach((button) => {
+            const isActive = button.dataset.billingView === billingView;
+            button.classList.toggle("is-active", isActive);
+            button.setAttribute("aria-pressed", isActive ? "true" : "false");
+          });
+          if (billingNote) {
+            billingNote.textContent = billingView === "monthly"
+              ? "Monthly checkout is live today."
+              : "Annual billing coming soon. Buttons below still start monthly plans today.";
+          }
+          document.querySelectorAll("[data-subscription-plan]").forEach((button) => {
+            const card = button.closest(".pricing-card");
+            const price = prices[button.dataset.subscriptionPlan];
+            const strong = card?.querySelector(".pricing-price strong");
+            const label = card?.querySelector(".pricing-price span");
+            if (!price || !strong || !label) return;
+            if (billingView === "yearly") {
+              strong.innerHTML = `&pound;${(price * 0.8 * 12).toFixed(2)}`;
+              label.textContent = "/year preview";
+            } else {
+              strong.innerHTML = `&pound;${price.toFixed(2)}`;
+              label.textContent = "per month";
+            }
+          });
+        };
+
+        billingButtons.forEach((button) => {
+          button.addEventListener("click", () => {
+            billingView = button.dataset.billingView || "monthly";
+            applyBillingPreview();
+          });
+        });
+
+        const pricingGrid = document.querySelector("#packGrid");
+        if (pricingGrid && "MutationObserver" in window) {
+          new MutationObserver(applyBillingPreview).observe(pricingGrid, { childList: true, subtree: true });
+        }
+        applyBillingPreview();
+      })();
+    </script>
   </body>
 </html>

@@ -2,11 +2,12 @@
 
 ListBoost is a UK-focused Vinted selling assistant. It creates listings from notes or item photos, scores listing quality, suggests pricing, drafts buyer replies, stores history, and sells credit packs through Stripe.
 
-Current redesign branch pricing:
+Current launch pricing:
 
-- Starter: 50 credits for GBP 5
-- Seller: 150 credits for GBP 12
-- Reseller: 400 credits for GBP 25
+- Free trial: 3 listings
+- Starter: GBP 6.99/month for 20 listings
+- Seller: GBP 14.99/month for 75 listings
+- Elite: GBP 29.99/month for 250 listings
 
 ## Local Run
 
@@ -24,6 +25,10 @@ Validate before pushing:
 ```bash
 npm run check
 ```
+
+## Image assets
+
+Marketing images are fetched by `npm run fetch:images`. The script is idempotent — it skips files that already exist. To refresh an image, delete the file and re-run.
 
 ## Current Features
 
@@ -66,21 +71,13 @@ DATA_DIR=/data
 
 At least one AI provider key is required. OpenAI is preferred and used first when configured.
 
-### Credit packs
+### Monthly subscriptions
 
-ListBoost ships with three live credit packs:
+ListBoost ships with a 3-listing free trial and three live monthly subscription plans:
 
-- Starter: 50 credits for GBP 5
-- Seller: 150 credits for GBP 12
-- Reseller: 400 credits for GBP 25
-
-To override them, set `CREDIT_PACKS_JSON` to an array of pack objects with `id`, `name`, `credits`, `pricePence`, `label`, `description`, and optional `featured`.
-
-Production value:
-
-```json
-[{"id":"starter","name":"Starter","credits":50,"pricePence":500,"label":"Try it","description":"A practical first pack for a wardrobe clear-out or first seller test."},{"id":"seller","name":"Seller","credits":150,"pricePence":1200,"label":"Best value","description":"The best value pack for regular Vinted sellers listing every week.","featured":true},{"id":"reseller","name":"Reseller","credits":400,"pricePence":2500,"label":"Power seller","description":"For bulk listing sessions, serious resellers and repeat sellers."}]
-```
+- Starter: GBP 6.99/month for 20 listings
+- Seller: GBP 14.99/month for 75 listings
+- Elite: GBP 29.99/month for 250 listings
 
 ## Stripe Setup
 

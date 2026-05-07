@@ -463,7 +463,6 @@ function installPublicShell() {
     "/support",
     "/privacy",
     "/terms",
-    "/checkout/success",
     "/checkout/cancel"
   ].includes(location.pathname);
   if (!isPublic) return;
@@ -714,6 +713,7 @@ function installAuthMode() {
   const links = $("#authLinks");
   const nameField = $(".signup-name-field", authForm);
   const nameInput = authForm.elements.name;
+  const passwordInput = authForm.elements.password;
   const providerStatus = $("#authProviderStatus");
   authForm.dataset.mode = isSignup ? "signup" : "login";
   if (heading) heading.textContent = isSignup ? "Create account" : "Sign in";
@@ -723,6 +723,7 @@ function installAuthMode() {
   if (button) button.textContent = isSignup ? "Create account" : "Sign in";
   if (nameField) nameField.classList.toggle("hidden", !isSignup);
   if (nameInput) nameInput.required = isSignup;
+  if (passwordInput) passwordInput.autocomplete = isSignup ? "new-password" : "current-password";
   if (links) {
     links.innerHTML = isSignup
       ? '<a href="/login">Already have an account? Log in</a>'
@@ -1156,7 +1157,7 @@ function billingRouteTemplate() {
           <div class="billing-usage-readout">
             <strong class="js-usage">Loading usage</strong>
           </div>
-          <div class="billing-usage-bar" aria-hidden="true">
+          <div class="billing-usage-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-valuetext="Usage not loaded yet">
             <span class="js-usage-bar"></span>
           </div>
           <p class="muted small">Usage resets at the start of each billing cycle.</p>
@@ -2452,6 +2453,13 @@ async function loadBilling(me = accountState) {
     if (bar) {
       bar.style.width = `${usagePct}%`;
       bar.dataset.full = usage.unlimited ? "true" : (usagePct >= 90 ? "true" : "false");
+    }
+    const usageBar = $(".billing-usage-bar");
+    if (usageBar) {
+      const used = Number(usage.usageThisMonth || 0);
+      const limit = Number(usage.usageLimit || 0);
+      usageBar.setAttribute("aria-valuenow", String(usagePct));
+      usageBar.setAttribute("aria-valuetext", usage.unlimited ? `${used} listings used with unlimited allowance` : `${used} of ${limit} listings used`);
     }
     $$(".js-billing-status-pill").forEach((node) => {
       node.textContent = titleCasePlan(currentStatus || "Inactive");

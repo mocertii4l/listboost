@@ -4,6 +4,8 @@
 
 ListBoost is Vinted-coded without copying Vinted: white-first, teal accent, coral warmth for warnings, friendly practical copy, and compact seller workflows.
 
+The marketing landing surface uses `public/styles-marketing.css`, scoped under `body[data-page="marketing-v3"]`, layered after the shared styles.
+
 ## Tokens
 
 - `--color-bg`: app background
