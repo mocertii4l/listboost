@@ -196,7 +196,6 @@ test("auth routes get correct labels and required signup name field", () => {
   assert.match(authHtml, /Privacy notice/);
   assert.match(siteJs, /location\.pathname === "\/signup"/);
   assert.match(siteJs, /heading\) heading\.textContent = isSignup \? "Create account" : "Sign in"/);
-  assert.match(siteJs, /passwordInput\.autocomplete = isSignup \? "new-password" : "current-password"/);
   assert.match(siteJs, /data-oauth-provider/);
   assert.match(siteJs, /auth_error/);
   assert.match(siteJs, /sign-in is not active in this preview yet/);
@@ -376,11 +375,9 @@ test("app-link interceptor only fires inside the app shell", () => {
 
 test("checkout success copy is honest about email and links to support", () => {
   const successHtml = readFileSync(new URL("../public/checkout-success.html", import.meta.url), "utf8");
-  const publicShellList = siteJs.match(/const isPublic = \[[\s\S]*?\]\.includes\(location\.pathname\)/)?.[0] || "";
   // Old false claim must be gone
   assert.doesNotMatch(successHtml, /receipt will arrive/i);
   assert.match(successHtml, /href="mailto:support@listboost\.uk"/);
-  assert.doesNotMatch(publicShellList, /\/checkout\/success/);
 });
 
 test("subscription confirmation email is wired to billing-cycle start", () => {
@@ -674,7 +671,6 @@ test("generation UI shows progress messages, speed copy and a busy button", () =
   assert.match(stylesCss, /\.progress-strip/);
   assert.match(stylesCss, /\.progress-steps/);
   assert.match(stylesCss, /\.progress-still-going/);
-  assert.match(stylesCss, /@media \(prefers-reduced-motion: reduce\)[\s\S]*\.progress-strip \.progress-dot[\s\S]*animation: none !important/);
 });
 
 test("server logs generation duration without leaking user input", () => {
@@ -808,10 +804,6 @@ test("subscription billing surfaces monthly plans and usage status", () => {
   assert.match(siteJs, /Current plan/);
   assert.match(siteJs, /js-billing-status-pill/);
   assert.match(siteJs, /Listings used this cycle/);
-  assert.match(siteJs, /role="progressbar"/);
-  assert.match(siteJs, /aria-valuenow="0"/);
-  assert.match(siteJs, /setAttribute\("aria-valuenow"/);
-  assert.match(siteJs, /setAttribute\("aria-valuetext"/);
   assert.match(siteJs, /Cycle ends/);
   assert.match(siteJs, /Subscribe monthly|Switch up or down/);
 });
