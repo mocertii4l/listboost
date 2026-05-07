@@ -667,19 +667,11 @@
           });
         });
 
-        applyBillingPreview();
-
         const pricingGrid = document.querySelector("#packGrid");
         if (pricingGrid && "MutationObserver" in window) {
-          const pricingObserver = new MutationObserver(() => {
-            pricingObserver.disconnect();
-            window.requestAnimationFrame(() => {
-              applyBillingPreview();
-              pricingObserver.observe(pricingGrid, { childList: true, subtree: true });
-            });
-          });
-          pricingObserver.observe(pricingGrid, { childList: true, subtree: true });
+          new MutationObserver(applyBillingPreview).observe(pricingGrid, { childList: true, subtree: true });
         }
+        applyBillingPreview();
       })();
     </script>
   </body>
