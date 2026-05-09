@@ -725,15 +725,16 @@ function rateLimit(key, { max, windowMs }) {
   const now = Date.now();
   const entry = rateLimitBuckets.get(key);
   if (!entry || entry.resetAt <= now) {
-    rateLimitBuckets.set(key, { count: 1, resetAt: now + windowMs });
-    return { ok: true, retryAfterSec: 0 };
+    const resetAt = now + windowMs;
+    rateLimitBuckets.set(key, { count: 1, resetAt });
+    return { ok: true, retryAfterSec: 0, remaining: Math.max(0, max - 1), limit: max, resetAt };
   }
   if (entry.count >= max) {
     const retryAfterSec = Math.max(1, Math.ceil((entry.resetAt - now) / 1000));
-    return { ok: false, retryAfterSec };
+    return { ok: false, retryAfterSec, remaining: 0, limit: max, resetAt: entry.resetAt };
   }
   entry.count += 1;
-  return { ok: true, retryAfterSec: 0 };
+  return { ok: true, retryAfterSec: 0, remaining: Math.max(0, max - entry.count), limit: max, resetAt: entry.resetAt };
 }
 
 setInterval(() => {
@@ -748,6 +749,18 @@ function tooManyRequests(res, visitor, retryAfterSec, message) {
     ...visitor.headers,
     "retry-after": String(retryAfterSec)
   });
+}
+
+const DEMO_DAILY_LIMIT = 3;
+const DEMO_DAILY_IP_LIMIT = 30;
+const DEMO_DAILY_WINDOW_MS = 24 * 60 * 60 * 1000;
+
+function demoUsageFromLimit(limit) {
+  return {
+    limit: DEMO_DAILY_LIMIT,
+    remaining: Math.max(0, Number(limit?.remaining || 0)),
+    resetAt: new Date(Number(limit?.resetAt || Date.now() + DEMO_DAILY_WINDOW_MS)).toISOString()
+  };
 }
 
 function recordAudit(userId, actor, delta, reason) {
@@ -1990,9 +2003,35 @@ async function handleGenerate(req, res) {
 async function handleDemoGenerate(req, res) {
   const visitor = getVisitor(req);
   const ip = getClientIp(req);
-  const limit = rateLimit(`demo:${ip}`, { max: 10, windowMs: 60_000 });
-  if (!limit.ok) {
-    tooManyRequests(res, visitor, limit.retryAfterSec, "The demo is busy. Try again in a moment.");
+  const burstLimit = rateLimit(`demo:${ip}`, { max: 10, windowMs: 60_000 });
+  if (!burstLimit.ok) {
+    tooManyRequests(res, visitor, burstLimit.retryAfterSec, "The demo is busy. Try again in a moment.");
+    return;
+  }
+
+  const dailyLimit = rateLimit(`demo-day:${visitor.id}`, { max: DEMO_DAILY_LIMIT, windowMs: DEMO_DAILY_WINDOW_MS });
+  if (!dailyLimit.ok) {
+    json(res, 429, {
+      error: "You've used today's 3 free demo tries. Create a free account to generate your 3 real listings.",
+      retryAfterSec: dailyLimit.retryAfterSec,
+      demoUsage: demoUsageFromLimit(dailyLimit)
+    }, {
+      ...visitor.headers,
+      "retry-after": String(dailyLimit.retryAfterSec)
+    });
+    return;
+  }
+
+  const ipDailyLimit = rateLimit(`demo-day-ip:${ip}`, { max: DEMO_DAILY_IP_LIMIT, windowMs: DEMO_DAILY_WINDOW_MS });
+  if (!ipDailyLimit.ok) {
+    json(res, 429, {
+      error: "The free demo has been used a lot from this connection today. Create a free account to keep going.",
+      retryAfterSec: ipDailyLimit.retryAfterSec,
+      demoUsage: demoUsageFromLimit({ ...dailyLimit, remaining: 0 })
+    }, {
+      ...visitor.headers,
+      "retry-after": String(ipDailyLimit.retryAfterSec)
+    });
     return;
   }
 
@@ -2028,7 +2067,7 @@ async function handleDemoGenerate(req, res) {
     }
     result = polishListingResult(result, input);
 
-    json(res, 200, { ...result, provider, demo: true, input }, visitor.headers);
+    json(res, 200, { ...result, provider, demo: true, input, demoUsage: demoUsageFromLimit(dailyLimit) }, visitor.headers);
   } catch (error) {
     console.error(error);
     json(res, 502, { error: "Could not run the live demo. Try again shortly." }, visitor.headers);

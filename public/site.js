@@ -176,11 +176,30 @@ function listingCardDataFromOutput(data = {}) {
 
 function demoResultTemplate(data = {}, inputText = "") {
   return `
-    <section class="demo-result-set">
+    <section class="demo-result-set premium-result-card">
       ${listingCardTemplate(listingCardDataFromOutput(data), { elevated: true })}
       ${outputTemplate(data, { demo: true, inputText })}
     </section>
   `;
+}
+
+function demoUsageText(usage = {}) {
+  const limit = Number(usage.limit || 3);
+  const remaining = Math.max(0, Number(usage.remaining || 0));
+  if (remaining === 0) return `0 of ${limit} demo tries left today. Create a free account for 3 real listings.`;
+  return `${remaining} of ${limit} demo ${remaining === 1 ? "try" : "tries"} left today.`;
+}
+
+function updateDemoUsageState(usage = {}, locked = false) {
+  const note = $("#demoLimitNote");
+  const demoButton = $("#runDemo");
+  if (note) note.textContent = demoUsageText(usage);
+  if (demoButton) {
+    const noTriesLeft = Math.max(0, Number(usage.remaining || 0)) <= 0;
+    demoButton.disabled = Boolean(locked || noTriesLeft);
+    demoButton.setAttribute("aria-disabled", demoButton.disabled ? "true" : "false");
+    demoButton.dataset.busy = "false";
+  }
 }
 
 function publicPlanName(id, fallbackName = "") {
@@ -826,7 +845,7 @@ function featureTileTemplate(tile) {
   const locked = tile.feature && !canUseFeature(tile.feature);
   const requirement = FEATURE_REQUIREMENTS[tile.feature] || null;
   return `
-    <a class="card card-interactive feature-tile ${locked ? "is-locked" : ""}" href="${locked ? "/app/billing" : tile.href}" ${locked ? `aria-label="${escapeHtml(`${tile.title} requires ${requirement.requiredPlanName}`)}"` : ""}>
+    <a class="card card-interactive feature-tile group ${locked ? "is-locked" : ""}" href="${locked ? "/app/billing" : tile.href}" ${locked ? `aria-label="${escapeHtml(`${tile.title} requires ${requirement.requiredPlanName}`)}"` : ""}>
       <div class="feature-icon">${iconSvg(locked ? "lock" : tile.icon)}</div>
       <h3>${escapeHtml(tile.title)}</h3>
       <p>${escapeHtml(tile.copy)}</p>
@@ -1814,7 +1833,7 @@ function outputTemplate(data = {}, options = {}) {
   const momentumNote = options.momentumCount ? `<p class="momentum-feedback">${escapeHtml(momentumMessage(options.momentumCount))}</p>` : "";
 
   return `
-    <section class="result-set">
+    <section class="result-set premium-result-card">
       <div class="card result-toolbar result-summary">
         <div>
           <span class="badge badge-brand">${iconSvg("check-circle")} Ready</span>
@@ -2019,12 +2038,14 @@ function installCopyFeedback() {
   const flash = (button, label = "Copied!") => {
     const original = button.dataset.idleHtml || button.innerHTML;
     button.dataset.idleHtml = original;
-    button.innerHTML = `<span>${label}</span>`;
+    button.classList.add("is-copy-success");
+    button.innerHTML = `${iconSvg("check")}<span>${label}</span>`;
     button.setAttribute("aria-live", "polite");
     copySuccessCount += 1;
     toast(copySuccessCount >= 3 ? "You're ready to list this item" : "Copied to clipboard", "success");
     setTimeout(() => {
       button.innerHTML = button.dataset.idleHtml || original;
+      button.classList.remove("is-copy-success");
       button.removeAttribute("aria-live");
     }, 1600);
   };
@@ -2297,6 +2318,9 @@ function installAppTools() {
     demo.addEventListener("click", async () => {
       const out = $("#demoOutput");
       const input = $("#demoInput")?.value || "Zara navy satin midi dress, UK 10, worn twice";
+      demo.disabled = true;
+      demo.setAttribute("aria-disabled", "true");
+      demo.dataset.busy = "true";
       out.innerHTML = loadingTemplate("Generating your demo listing...");
       try {
         const data = await api("/api/demo-generate", {
@@ -2304,8 +2328,22 @@ function installAppTools() {
           body: JSON.stringify({ itemDetails: input })
         });
         out.innerHTML = demoResultTemplate(data, input);
+        if (data.demoUsage) {
+          updateDemoUsageState(data.demoUsage);
+        } else {
+          demo.disabled = false;
+          demo.setAttribute("aria-disabled", "false");
+          demo.dataset.busy = "false";
+        }
       } catch (error) {
         out.innerHTML = `<p class="error">${escapeHtml(error.message)}</p>`;
+        if (error.status === 429 && error.demoUsage) {
+          updateDemoUsageState(error.demoUsage, true);
+        } else {
+          demo.disabled = false;
+          demo.setAttribute("aria-disabled", "false");
+          demo.dataset.busy = "false";
+        }
       }
     });
   }

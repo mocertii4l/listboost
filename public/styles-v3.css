@@ -38,6 +38,232 @@ body[data-page="marketing-v3"] {
 }
 
 /* =====================================================================
+   Redesign v1 premium SaaS polish
+   Plain CSS implementation of the requested Tailwind/Framer-style motion.
+   ===================================================================== */
+
+body[data-page="marketing-v3"] {
+  --bg: #fbfbfd;
+  --bg-deep: #fbfbfd;
+  --bg-subtle: #f8fafc;
+  --surface: #ffffff;
+  --surface-2: #f8fafc;
+  --surface-3: #f1f5f9;
+  --border: #e2e8f0;
+  --border-strong: #cbd5e1;
+  --text: #0f172a;
+  --text-muted: #475569;
+  --text-subtle: #64748b;
+  --primary: #0aa098;
+  --primary-hover: #0e7c76;
+  --primary-soft: #e6f7f5;
+  --primary-glow: rgba(10, 160, 152, 0.38);
+  --accent: #ff6b6b;
+  --accent-soft: #fff1f1;
+  color-scheme: light;
+  background:
+    radial-gradient(760px 360px at 16% -12%, rgba(10, 160, 152, 0.12), transparent 66%),
+    radial-gradient(720px 340px at 92% 6%, rgba(255, 107, 107, 0.1), transparent 68%),
+    var(--bg);
+  color: var(--text);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  line-height: 1.6;
+}
+
+body[data-page="marketing-v3"] .premium-home {
+  width: min(100% - 48px, 1180px);
+}
+
+body[data-page="marketing-v3"] .premium-home .section {
+  padding-block: clamp(80px, 9vw, 128px);
+}
+
+body[data-page="marketing-v3"] .lb-header {
+  position: sticky;
+  top: 0;
+  z-index: 80;
+  background: rgba(255, 255, 255, 0.84);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.72);
+  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.03);
+  backdrop-filter: saturate(160%) blur(16px);
+}
+
+body[data-page="marketing-v3"] .hero-proof-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  margin: -4px 0 0;
+  padding: 8px 12px;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--text);
+  box-shadow: 0 14px 34px -26px rgba(15, 23, 42, 0.45);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+body[data-page="marketing-v3"] .hero-proof-badge span {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #22c55e;
+  box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.14);
+}
+
+body[data-page="marketing-v3"] .btn,
+body[data-page="marketing-v3"] .pricing-buy,
+body[data-page="marketing-v3"] .copy-button {
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease, background 180ms ease, color 180ms ease;
+  will-change: transform;
+}
+
+body[data-page="marketing-v3"] .btn:hover:not(:disabled),
+body[data-page="marketing-v3"] .pricing-buy:hover:not(:disabled),
+body[data-page="marketing-v3"] .copy-button:hover:not(:disabled) {
+  transform: scale(1.02);
+}
+
+body[data-page="marketing-v3"] .btn:active:not(:disabled),
+body[data-page="marketing-v3"] .pricing-buy:active:not(:disabled),
+body[data-page="marketing-v3"] .copy-button:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+body[data-page="marketing-v3"] .btn-primary,
+body[data-page="marketing-v3"] .pricing-buy.btn-primary,
+body[data-page="marketing-v3"] .generator-cta {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.2), transparent 38%),
+    linear-gradient(135deg, var(--primary), #11b6ab 52%, var(--accent));
+  border-color: rgba(10, 160, 152, 0.18);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.45) inset,
+    0 14px 30px -12px rgba(10, 160, 152, 0.5);
+}
+
+body[data-page="marketing-v3"] .btn-primary::before,
+body[data-page="marketing-v3"] .pricing-buy.btn-primary::before,
+body[data-page="marketing-v3"] .generator-cta::before {
+  content: "";
+  position: absolute;
+  inset: -40% auto -40% -55%;
+  width: 42%;
+  transform: skewX(-18deg);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent);
+  opacity: 0.78;
+  animation: pro-cta-shimmer 3.6s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+body[data-page="marketing-v3"] .feature-bento-v6 {
+  position: relative;
+}
+
+body[data-page="marketing-v3"] .pro-bento-grid {
+  gap: 16px;
+}
+
+body[data-page="marketing-v3"] .pro-bento-grid .bento-cell {
+  align-content: start;
+  gap: 16px;
+  min-height: 208px;
+  padding: 24px;
+  border: 1px solid rgba(226, 232, 240, 0.78);
+  border-radius: 24px;
+  background:
+    radial-gradient(360px 180px at 100% 0%, rgba(10, 160, 152, 0.08), transparent 72%),
+    rgba(248, 250, 252, 0.56);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.88) inset, 0 22px 56px -42px rgba(15, 23, 42, 0.42);
+}
+
+body[data-page="marketing-v3"] .pro-bento-grid .bento-cell:hover {
+  border-color: rgba(10, 160, 152, 0.32);
+  background:
+    radial-gradient(360px 180px at 100% 0%, rgba(10, 160, 152, 0.13), transparent 72%),
+    #ffffff;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 28px 68px -42px rgba(15, 23, 42, 0.48);
+  transform: translateY(-3px);
+}
+
+body[data-page="marketing-v3"] .pro-bento-grid .bento-icon {
+  position: static;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--primary-soft), #ffffff);
+  color: var(--primary-hover);
+  border: 1px solid rgba(10, 160, 152, 0.2);
+  transition: transform 200ms ease, color 200ms ease, background 200ms ease;
+}
+
+body[data-page="marketing-v3"] .pro-bento-grid .group:hover .bento-icon {
+  transform: translateY(-3px) scale(1.06);
+  color: #ffffff;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+}
+
+body[data-page="marketing-v3"] .pro-bento-grid .bento-mock {
+  background: #ffffff;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  color: var(--text-subtle);
+}
+
+body[data-page="marketing-v3"] .premium-result-card {
+  padding: clamp(14px, 2vw, 20px);
+  border: 1px solid rgba(226, 232, 240, 0.82);
+  border-radius: 28px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(248, 250, 252, 0.76)),
+    #ffffff;
+  box-shadow: 0 28px 80px -48px rgba(15, 23, 42, 0.45);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  body[data-page="marketing-v3"] .hero-v3-copy > * {
+    opacity: 0;
+    animation: pro-stagger-rise 620ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+  }
+
+  body[data-page="marketing-v3"] .hero-v3-copy > *:nth-child(1) { animation-delay: 40ms; }
+  body[data-page="marketing-v3"] .hero-v3-copy > *:nth-child(2) { animation-delay: 110ms; }
+  body[data-page="marketing-v3"] .hero-v3-copy > *:nth-child(3) { animation-delay: 180ms; }
+  body[data-page="marketing-v3"] .hero-v3-copy > *:nth-child(4) { animation-delay: 250ms; }
+  body[data-page="marketing-v3"] .hero-v3-copy > *:nth-child(5) { animation-delay: 320ms; }
+  body[data-page="marketing-v3"] .hero-v3-copy > *:nth-child(6) { animation-delay: 390ms; }
+}
+
+@keyframes pro-stagger-rise {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pro-cta-shimmer {
+  0%, 46% { transform: translateX(0) skewX(-18deg); }
+  100% { transform: translateX(380%) skewX(-18deg); }
+}
+
+@media (max-width: 700px) {
+  body[data-page="marketing-v3"] .premium-home {
+    width: min(100% - 32px, 1180px);
+  }
+
+  body[data-page="marketing-v3"] .premium-home .section {
+    padding-block: 56px;
+  }
+
+  body[data-page="marketing-v3"] .hero-proof-badge {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* =====================================================================
    Homepage premium polish: tighter structure, calmer SaaS rhythm.
    ===================================================================== */
 
@@ -2712,6 +2938,58 @@ body[data-page="marketing-v3"] .final-cta-v5 .btn {
   min-height: 48px;
 }
 
+body[data-page="marketing-v3"] .seller-proof-v5 {
+  padding-block: clamp(48px, 7vw, 84px);
+  border-top: 1px solid rgba(14, 124, 118, 0.1);
+  border-bottom: 1px solid rgba(14, 124, 118, 0.1);
+}
+
+body[data-page="marketing-v3"] .seller-proof-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+body[data-page="marketing-v3"] .seller-proof-card {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  min-width: 0;
+  padding: 22px;
+  border: 1px solid color-mix(in srgb, var(--primary) 16%, var(--border));
+  border-radius: 22px;
+  background:
+    radial-gradient(360px 180px at 100% 0%, rgba(45, 212, 196, 0.12), transparent 70%),
+    rgba(255, 255, 255, 0.86);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.8) inset, 0 18px 42px -34px rgba(15, 23, 42, 0.32);
+}
+
+body[data-page="marketing-v3"] .proof-card-icon {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--primary-soft) 78%, #ffffff);
+  color: var(--primary-hover);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+body[data-page="marketing-v3"] .seller-proof-card h3 {
+  margin: 0;
+  color: var(--text);
+  font-size: 18px;
+}
+
+body[data-page="marketing-v3"] .seller-proof-card p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
 @media (max-width: 900px) {
   body[data-page="marketing-v3"] .premium-hero {
     grid-template-columns: 1fr;
@@ -2816,6 +3094,7 @@ body[data-page="marketing-v3"] .final-cta-v5 .btn {
 
   body[data-page="marketing-v3"] .premium-flow,
   body[data-page="marketing-v3"] .premium-comparison,
+  body[data-page="marketing-v3"] .seller-proof-grid,
   body[data-page="marketing-v3"] .pricing-v3,
   body[data-page="marketing-v3"] .faq-v3 {
     grid-template-columns: 1fr;
@@ -2824,6 +3103,7 @@ body[data-page="marketing-v3"] .final-cta-v5 .btn {
   body[data-page="marketing-v3"] .pricing-card,
   body[data-page="marketing-v3"] .flow-step,
   body[data-page="marketing-v3"] .comparison-card,
+  body[data-page="marketing-v3"] .seller-proof-card,
   body[data-page="marketing-v3"] .faq-v3 details,
   body[data-page="marketing-v3"] .faq-v3-aside,
   body[data-page="marketing-v3"] .cta-strip {
@@ -2840,4 +3120,69 @@ body[data-page="marketing-v3"] .final-cta-v5 .btn {
     width: 100%;
     justify-content: center;
   }
+}
+
+/* Redesign v1 final cascade guard: keep the premium polish above older layers. */
+body[data-page="marketing-v3"] .premium-home .section {
+  padding-block: clamp(80px, 9vw, 128px);
+}
+
+body[data-page="marketing-v3"] .lb-header {
+  background: rgba(255, 255, 255, 0.84);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.72);
+  backdrop-filter: saturate(160%) blur(16px);
+}
+
+body[data-page="marketing-v3"] .pro-bento-grid .bento-cell {
+  border: 1px solid rgba(226, 232, 240, 0.78);
+  background:
+    radial-gradient(360px 180px at 100% 0%, rgba(10, 160, 152, 0.08), transparent 72%),
+    rgba(248, 250, 252, 0.56);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.88) inset, 0 22px 56px -42px rgba(15, 23, 42, 0.42);
+}
+
+body[data-page="marketing-v3"] .pro-bento-grid .bento-cell:hover {
+  border-color: rgba(10, 160, 152, 0.32);
+  transform: translateY(-3px);
+}
+
+body[data-page="marketing-v3"] .pro-bento-grid .group:hover .bento-icon {
+  transform: translateY(-3px) scale(1.06);
+  color: #ffffff;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+}
+
+body[data-page="marketing-v3"] .btn:hover:not(:disabled),
+body[data-page="marketing-v3"] .pricing-buy:hover:not(:disabled),
+body[data-page="marketing-v3"] .copy-button:hover:not(:disabled) {
+  transform: scale(1.02);
+}
+
+body[data-page="marketing-v3"] .btn:active:not(:disabled),
+body[data-page="marketing-v3"] .pricing-buy:active:not(:disabled),
+body[data-page="marketing-v3"] .copy-button:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+body[data-page="marketing-v3"] .btn-primary,
+body[data-page="marketing-v3"] .pricing-buy.btn-primary,
+body[data-page="marketing-v3"] .generator-cta {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.2), transparent 38%),
+    linear-gradient(135deg, var(--primary), #11b6ab 52%, var(--accent));
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.45) inset,
+    0 14px 30px -12px rgba(10, 160, 152, 0.5);
+}
+
+body[data-page="marketing-v3"] .premium-result-card {
+  border: 1px solid rgba(226, 232, 240, 0.82);
+  border-radius: 28px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(248, 250, 252, 0.76)),
+    #ffffff;
+  box-shadow: 0 28px 80px -48px rgba(15, 23, 42, 0.45);
 }

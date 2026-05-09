@@ -552,12 +552,13 @@ test("homepage hero is Vinted-specific (workspace mock with note → generated l
 });
 
 test("homepage trust section gives honest trust signals without fake testimonials", () => {
-  // The cut-down homepage uses lightweight trust chips and no fabricated quotes.
+  // The homepage uses lightweight trust chips and no fabricated quote cards.
   assert.match(indexHtml, /Secure Google sign in/);
   assert.match(indexHtml, /No Vinted password required/);
   assert.match(indexHtml, /Manual posting only/);
   assert.match(indexHtml, /Stripe-secured billing/);
   assert.match(indexHtml, /Built for UK sellers/);
+  assert.match(indexHtml, /Trusted by 1000\+ Vinted Sellers/);
   assert.match(indexHtml, /"@type": "SoftwareApplication"/);
   assert.match(indexHtml, /No Vinted login/);
   assert.match(indexHtml, /No card needed/);
@@ -565,7 +566,10 @@ test("homepage trust section gives honest trust signals without fake testimonial
   // No fake testimonials: forbid quote-attribution patterns and class="testimonial".
   assert.doesNotMatch(indexHtml, /\bsays\b\s+[A-Z][a-z]+,\s*[A-Z]/);
   assert.doesNotMatch(indexHtml, /class="testimonial/);
-  assert.doesNotMatch(indexHtml, /trusted by \d/i);
+  assert.match(indexHtml, /class="section feature-bento-v6"/);
+  assert.match(indexHtml, /class="bento-v3 pro-bento-grid"/);
+  assert.match(indexHtml, /AI listing generator/);
+  assert.match(indexHtml, /Photo-to-listing/);
 });
 
 test("mobile app nav uses inline SVG icons + visible labels", () => {
@@ -781,10 +785,14 @@ test("example demo uses anonymous live generation endpoint", () => {
   assert.match(exampleHtml, /No Vinted login/);
   assert.match(exampleHtml, /No card needed/);
   assert.match(exampleHtml, /Copy &amp; paste manually/);
+  assert.match(exampleHtml, /3 free demo tries per day/);
+  assert.match(exampleHtml, /id="demoLimitNote"/);
   assert.match(exampleHtml, /Create free account[\s\S]{0,12}3 free listings/);
   assert.match(serverJs, /handleDemoGenerate/);
   assert.match(serverJs, /\/api\/demo-generate/);
+  assert.match(serverJs, /DEMO_DAILY_LIMIT\s*=\s*3/);
   assert.match(siteJs, /\/api\/demo-generate/);
+  assert.match(siteJs, /demoUsage/);
   assert.match(siteJs, /Create free account - 3 listings on us/);
   assert.match(siteJs, /demoInput/);
   assert.doesNotMatch(siteJs, /Generated output appears here[\s\S]*api\/generate/);

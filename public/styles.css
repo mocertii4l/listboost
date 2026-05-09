@@ -682,6 +682,13 @@ button:disabled {
   stroke-width: 1.5;
 }
 
+.copy-button.is-copy-success {
+  color: #166534;
+  border-color: color-mix(in srgb, var(--success) 34%, var(--border));
+  background: #ecfdf5;
+  box-shadow: 0 12px 24px -18px rgba(22, 163, 74, 0.45);
+}
+
 /* =================================================================
    Cards, badges, forms, feedback
    ================================================================= */

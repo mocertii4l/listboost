@@ -12,6 +12,10 @@
     <meta property="og:url" content="https://www.listboost.uk/example" />
     <meta name="twitter:card" content="summary_large_image" />
     <link rel="icon" href="/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" media="print" onload="this.media='all'" />
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" /></noscript>
     <link rel="stylesheet" href="/styles.css" />
     <link rel="stylesheet" href="/styles-v3.css" />
   </head>
@@ -25,11 +29,12 @@
         <div class="hero-v3-copy">
           <p class="eyebrow">Live demo</p>
           <h1 class="hero-v3-title" id="demo-title">Watch a rough note become a <span class="accent">sell-ready listing.</span></h1>
-          <p class="hero-v3-lede">Edit the prefilled note, hit Generate, and see exactly the same premium output a paying ListBoost user gets. No account needed for the demo.</p>
+          <p class="hero-v3-lede">Edit the prefilled note, hit Generate, and see exactly the same premium output a paying ListBoost user gets. No account needed, capped at 3 demo tries per day.</p>
           <ul class="hero-v3-trust" aria-label="Demo trust signals">
             <li>No Vinted login</li>
             <li>No card needed</li>
             <li>Copy &amp; paste manually</li>
+            <li>3 tries per day</li>
           </ul>
         </div>
 
@@ -49,10 +54,10 @@
               <div class="workspace-arrow" aria-hidden="true"></div>
               <div class="workspace-step">
                 <span class="workspace-step-label">Step 2 &middot; Generate</span>
-                <button class="btn btn-primary generator-cta" id="runDemo" type="button" style="width:100%; padding:14px 18px; border-radius:12px; font-weight:700; font-size:15px;">
+                <button class="btn btn-primary generator-cta" id="runDemo" type="button" aria-describedby="demoLimitNote" style="width:100%; padding:14px 18px; border-radius:12px; font-weight:700; font-size:15px;">
                   <span>Generate sell-ready listing</span>
                 </button>
-                <p class="muted" style="font-size:12px; margin:0; color: var(--text-subtle);">Most demos finish in a few seconds.</p>
+                <p class="muted demo-limit-note" id="demoLimitNote" aria-live="polite" style="font-size:12px; margin:0; color: var(--text-subtle);">3 free demo tries per day. Create an account for your 3 real listings.</p>
               </div>
             </div>
           </div>
