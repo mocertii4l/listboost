@@ -3,11 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ListBoost - Vinted listings that sell</title>
-    <meta name="description" content="Turn rough item notes into copy-ready Vinted titles, descriptions, keywords, pricing guidance, photo checklists and buyer replies." />
+    <title>ListBoost - Better resale listings for clothes, shoes and accessories</title>
+    <meta name="description" content="ListBoost helps resale marketplace sellers improve photos, titles, descriptions, prices and buyer previews for clothes, shoes, bags and accessories." />
     <link rel="canonical" href="https://www.listboost.uk/" />
-    <meta property="og:title" content="ListBoost - Vinted listings that sell" />
-    <meta property="og:description" content="Paste rough notes and get a structured Vinted listing package in seconds." />
+    <meta property="og:title" content="ListBoost - Better resale listings for clothes, shoes and accessories" />
+    <meta property="og:description" content="Create clearer resale listings with photo checks, stronger copy, price guidance and mobile buyer previews." />
     <meta property="og:image" content="https://www.listboost.uk/og-image.svg" />
     <meta property="og:url" content="https://www.listboost.uk/" />
     <meta name="twitter:card" content="summary_large_image" />
@@ -19,6 +19,7 @@
     <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" /></noscript>
     <link rel="stylesheet" href="/styles.css" />
     <link rel="stylesheet" href="/styles-v3.css" />
+    <link rel="stylesheet" href="/styles-linear.css" />
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
@@ -26,7 +27,7 @@
         "name": "ListBoost",
         "applicationCategory": "BusinessApplication",
         "operatingSystem": "Web",
-        "description": "Listing assistant for UK Vinted sellers that creates copy-ready titles, descriptions, keywords, pricing guidance, photo checklists and buyer replies.",
+        "description": "Listing assistant for UK resale marketplace sellers that creates copy-ready titles, descriptions, keywords, pricing guidance, photo checklists and buyer previews.",
         "url": "https://www.listboost.uk/",
         "offers": {
           "@type": "Offer",
@@ -37,251 +38,279 @@
       }
     </script>
   </head>
-  <body data-page="marketing-v3">
+  <body data-page="marketing-v3" class="linear-premium">
     <a class="skip-link" href="#main">Skip to content</a>
     <div class="toast-region" id="toastRegion" aria-live="polite"></div>
     <header class="lb-header"></header>
 
-    <main class="page-wrap marketing-home premium-home" id="main">
-      <section class="hero-v3 premium-hero" aria-labelledby="hero-title">
-        <div class="hero-v3-copy">
-          <p class="eyebrow">Made for UK Vinted sellers</p>
-          <h1 class="hero-v3-title" id="hero-title">Turn messy item notes into Vinted listings that sell</h1>
-          <p class="hero-v3-lede">Paste rough notes and get a title, description, keywords, pricing guidance, photo checklist, and buyer reply in seconds.</p>
+    <main class="page-wrap marketing-home premium-home crosslist-home" id="main">
+      <section class="hero-v3 premium-hero cross-hero" aria-labelledby="hero-title">
+        <div class="hero-v3-copy cross-hero-copy">
+          <p class="eyebrow">AI listing assistant for resale sellers</p>
+          <h1 class="hero-v3-title" id="hero-title">Create better resale listings in minutes.</h1>
+          <p class="hero-v3-lede">ListBoost helps clothing, shoe and accessory sellers improve photos, titles, descriptions, price guidance and buyer previews - so every listing feels clearer, more searchable and ready to sell.</p>
           <div class="hero-v3-actions" aria-label="Homepage actions">
-            <a class="btn btn-primary" href="/signup">Start free &mdash; 3 listings</a>
-            <a class="btn btn-secondary" href="/example">See example</a>
+            <a class="btn btn-primary" href="/signup">Start boosting listings</a>
+            <a class="btn btn-secondary" href="/example">View examples</a>
           </div>
-          <p class="hero-proof-badge" aria-label="Trust indicator">
-            <span aria-hidden="true"></span>
-            Trusted by 1000+ Vinted Sellers
-          </p>
-          <p class="hero-trust-line">No Vinted login &middot; No card needed &middot; Cancel anytime</p>
-          <ul class="hero-v3-trust" aria-label="Trust signals">
-            <li>Secure Google sign in</li>
-            <li>No Vinted password required</li>
-            <li>Manual posting only</li>
-            <li>Stripe-secured billing</li>
-            <li>Built for UK sellers</li>
+          <p class="hero-trust-line">Start free with 3 listings &middot; No Vinted login required &middot; Manual posting only</p>
+          <ul class="hero-v3-trust cross-trust" aria-label="Trust signals">
+            <li>No marketplace password</li>
+            <li>Copy and post manually</li>
+            <li>Built for clothes, shoes, bags and accessories</li>
           </ul>
         </div>
 
-        <aside class="hero-v3-mock" aria-label="ListBoost generation preview">
-          <div class="workspace-mock premium-workspace">
-            <div class="workspace-mock-bar" aria-hidden="true">
-              <span class="dot r"></span>
-              <span class="dot y"></span>
-              <span class="dot g"></span>
-              <span class="url">listboost.uk/generator</span>
+        <aside class="hero-v3-mock cross-hero-visual" aria-label="ListBoost product preview">
+          <div class="workspace-mock cross-product-mock">
+            <div class="cross-mock-top" aria-hidden="true">
+              <span></span><span></span><span></span>
+              <strong>ListBoost workspace</strong>
             </div>
-            <div class="workspace-mock-body">
-              <div class="workspace-step input-step">
-                <span class="workspace-step-label">Item notes</span>
-                <p class="workspace-note">zara navy satin midi dress, uk 10, worn twice, no marks, zip back, flattering bias cut</p>
-              </div>
-              <div class="ai-processing" aria-hidden="true">
-                <span class="ai-dot"></span>
-                <span class="ai-typing">Optimising title</span>
-                <span class="ai-step">Generating keywords</span>
-                <span class="ai-step">Pricing item</span>
-              </div>
-              <article class="workspace-listing generated-card">
-                <div class="workspace-listing-meta">
-                  <span class="badge">Sell-ready</span>
-                  <span class="price">&pound;14&ndash;&pound;18</span>
-                </div>
-                <h3 class="workspace-listing-title">Zara Navy Satin Midi Dress - UK 10</h3>
-                <p class="workspace-listing-desc">Elegant navy satin midi dress from Zara in a UK 10. Worn twice and in lovely condition, with a flattering bias cut and zip back. Great for dinners, events or smart weekend plans.</p>
-                <ul class="workspace-tags">
-                  <li>zara dress</li>
-                  <li>navy midi</li>
-                  <li>uk 10</li>
-                  <li>occasionwear</li>
-                </ul>
-                <div class="workspace-actions">
-                  <span class="ws-btn">Edit</span>
-                  <span class="ws-btn ws-btn-primary">Copy listing</span>
+            <div class="cross-mock-body">
+              <article class="cross-listing-preview">
+                <img src="/images/homepage/zara-jacket.jpg" width="900" height="1050" alt="Black leather cropped biker jacket hanging on a clothes rail" decoding="async" />
+                <div>
+                  <span class="badge badge-brand">AI-enhanced</span>
+                  <h2>Black leather cropped biker jacket</h2>
+                  <p>Size M &middot; Good vintage condition</p>
+                  <strong>&pound;42</strong>
                 </div>
               </article>
+              <div class="cross-editor-panel">
+                <span class="workspace-step-label">Generated listing</span>
+                <h3>Black leather cropped biker jacket - size M</h3>
+                <p>Quilted black cropped biker jacket with zip front, ribbed cuffs and silver hardware. Good used condition with light wear shown in the photos.</p>
+                <ul class="workspace-tags">
+                  <li>cropped jacket</li>
+                  <li>black biker</li>
+                  <li>size M</li>
+                  <li>quilted detail</li>
+                </ul>
+                <div class="hero-signal-grid" aria-label="Generated listing checks">
+                  <span><strong>91</strong>Listing score</span>
+                  <span><strong>&pound;38&ndash;&pound;46</strong>Price range</span>
+                  <span><strong>5/6</strong>Photo checklist</span>
+                  <span><strong>Ready</strong>Buyer preview</span>
+                </div>
+                <button class="ws-btn ws-btn-primary" type="button">Copy listing</button>
+              </div>
             </div>
           </div>
         </aside>
       </section>
 
-      <section class="section feature-bento-v6" id="features" aria-labelledby="features-title">
-        <header class="section-head">
-          <p class="eyebrow">Features</p>
-          <h2 id="features-title">Everything a Vinted listing needs, arranged for speed.</h2>
-          <p class="section-sub">A clean generator workflow for sellers who want stronger copy without giving up control of their account.</p>
-        </header>
-        <div class="bento-v3 pro-bento-grid">
-          <article class="bento-cell lg group">
-            <span class="bento-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><path d="M14 2v6h6"></path><path d="M16 13H8"></path><path d="M16 17H8"></path><path d="M10 9H8"></path></svg>
-            </span>
-            <h3>AI listing generator</h3>
-            <p>Paste rough notes and get a complete Vinted-ready package: title, description, tags, pricing, photo checklist and reply copy.</p>
-            <div class="bento-mock"><span>Messy notes</span><strong>Zara dress, UK 10, worn twice, no marks</strong></div>
-          </article>
-          <article class="bento-cell md group">
-            <span class="bento-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L8 6H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-3z"></path><circle cx="12" cy="13" r="3"></circle></svg>
-            </span>
-            <h3>Photo-to-listing</h3>
-            <p>Seller plans can upload item photos and turn visual details into structured listing sections.</p>
-          </article>
-          <article class="bento-cell md group">
-            <span class="bento-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 18h12"></path><path d="M8 12h7"></path><path d="M10 18c2-3 2-9 0-12"></path><path d="M10 6h5"></path></svg>
-            </span>
-            <h3>Smart price guidance</h3>
-            <p>Fast, fair and max price bands help you choose between quick sales and stronger margins.</p>
-          </article>
-          <article class="bento-cell md-2 group">
-            <span class="bento-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><path d="m9 11 3 3L22 4"></path></svg>
-            </span>
-            <h3>Listing score checker</h3>
-            <p>Check whether your listing has enough detail, search terms and buyer confidence before posting.</p>
-          </article>
-          <article class="bento-cell md-2 group">
-            <span class="bento-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22z"></path></svg>
-            </span>
-            <h3>Buyer reply copilot</h3>
-            <p>Draft calm, useful replies for offers, questions and sizing messages while keeping your tone human.</p>
-          </article>
+      <section class="workflow-strip" aria-label="ListBoost listing workflow">
+        <span>Upload photos</span>
+        <span>Improve title</span>
+        <span>Build description</span>
+        <span>Price guidance</span>
+        <span>Buyer preview</span>
+        <span>Copy and post manually</span>
+      </section>
+
+      <section class="section cross-value" aria-labelledby="value-title">
+        <div class="section-head">
+          <p class="eyebrow">Why sellers use it</p>
+          <h2 id="value-title">Your listing upgrade before buyers ever see it.</h2>
+          <p class="section-sub">Resale listings lose attention when photos are unclear, titles are vague, condition is missing or prices feel random. ListBoost gives sellers a focused quality check before they post.</p>
+        </div>
+        <div class="value-card-grid">
+          <article><strong>40+</strong><span>listing checks across photos, copy, price and preview</span></article>
+          <article><strong>Manual</strong><span>copy-and-post workflow with no marketplace password required</span></article>
+          <article><strong>Fashion</strong><span>built for clothes, shoes, bags, jewellery and accessories</span></article>
+          <article><strong>Mobile</strong><span>buyer preview for how listings feel on a phone</span></article>
         </div>
       </section>
 
-      <section class="section product-preview-v5" id="example" aria-labelledby="preview-title">
+      <section class="section feature-bento-v6 cross-product" id="product" aria-labelledby="features-title">
         <header class="section-head">
-          <p class="eyebrow">Product preview</p>
-          <h2 id="preview-title">Specific output for real Vinted items.</h2>
-          <p class="section-sub">ListBoost keeps the output structured for the way sellers actually post: searchable title, buyer-friendly description, relevant keywords and a sensible price range.</p>
+          <p class="eyebrow">Product</p>
+          <h2 id="features-title">A listing workspace for real resale sellers.</h2>
+          <p class="section-sub">Photo checks, AI listing copy, pricing guidance and mobile preview in one clean flow.</p>
         </header>
-        <div class="gallery-v3 premium-gallery">
-          <article class="gallery-card">
-            <div class="gallery-card-art">
-              <img class="gallery-card-photo" src="/images/listing-gallery/zara-dress.jpg" width="900" height="600" alt="Navy satin midi dress hanging on a wooden hanger" loading="lazy" decoding="async" />
-              <span class="ready-badge">Dress</span>
+        <div class="feature-story-grid">
+          <article class="feature-story">
+            <div>
+              <p class="eyebrow">AI copy</p>
+              <h3>Write better listings with AI.</h3>
+              <p>Paste rough notes and ListBoost turns them into a searchable title, buyer-friendly description, keywords, condition notes and copy buttons.</p>
+              <div class="rough-to-ready">
+                <div><span>Rough notes</span><p>black jacket size m good condition</p></div>
+                <div><span>ListBoost output</span><p>Black leather biker jacket - size M. Zip front, structured shape, good vintage condition and ready to post.</p></div>
+              </div>
             </div>
-            <div class="gallery-card-body">
-              <span class="gallery-card-eyebrow">From: navy dress size 10 worn twice</span>
-              <h3 class="gallery-card-title">Zara Navy Satin Midi Dress - UK 10</h3>
-              <ul class="gallery-card-tags"><li>zara dress</li><li>navy midi</li><li>occasionwear</li></ul>
-              <div class="gallery-card-meta"><span>Fair price</span><strong>&pound;18</strong></div>
+            <img src="/images/homepage/zara-jacket.jpg" width="800" height="900" alt="Black jacket photo used for AI listing copy" loading="lazy" decoding="async" />
+          </article>
+          <article class="feature-story reverse">
+            <div>
+              <p class="eyebrow">Photo trust</p>
+              <h3>Make photos easier for buyers to trust.</h3>
+              <p>Check cover crop, lighting, missing angles, flaws, labels, shoe soles, size tags and closeups before your buyer has to ask.</p>
+              <ul class="feature-checklist">
+                <li>Cover photo shows full item</li>
+                <li>Flaw photo reminder included</li>
+                <li>Sole or label photo suggested</li>
+                <li>Lighting and crop guidance</li>
+              </ul>
+            </div>
+            <div class="photo-check-grid">
+              <img src="/images/homepage/white-trainers-floor.jpg" width="500" height="500" alt="White trainers photo checked for shoe angle" loading="lazy" decoding="async" />
+              <img src="/images/homepage/leather-bag.jpg" width="500" height="500" alt="Red leather top-handle bag photo checked for material closeup" loading="lazy" decoding="async" />
+              <img src="/images/homepage/adidas-sambas.jpg" width="500" height="500" alt="White Adidas Samba trainers checked for condition and crop" loading="lazy" decoding="async" />
             </div>
           </article>
-          <article class="gallery-card">
-            <div class="gallery-card-art">
-              <img class="gallery-card-photo" src="/images/listing-gallery/white-trainers.jpg" width="900" height="600" alt="Pair of clean white leather trainers on soft fabric" loading="lazy" decoding="async" />
-              <span class="ready-badge">Trainers</span>
+          <article class="feature-story">
+            <div>
+              <p class="eyebrow">Buyer preview</p>
+              <h3>Preview the buyer experience.</h3>
+              <p>See title length, image crop, price range, condition notes and buyer confidence before copying the listing into your marketplace app.</p>
+              <div class="buyer-score-mini"><strong>88</strong><span>buyer confidence score</span></div>
             </div>
-            <div class="gallery-card-body">
-              <span class="gallery-card-eyebrow">From: white trainers uk 5 light creasing</span>
-              <h3 class="gallery-card-title">Clean White Leather Trainers - UK 5</h3>
-              <ul class="gallery-card-tags"><li>white trainers</li><li>uk 5</li><li>casual shoes</li></ul>
-              <div class="gallery-card-meta"><span>Fair price</span><strong>&pound;25</strong></div>
-            </div>
-          </article>
-          <article class="gallery-card">
-            <div class="gallery-card-art">
-              <img class="gallery-card-photo" src="/images/listing-gallery/kids-bundle.jpg" width="900" height="600" alt="Folded kids winter clothing bundle in navy and pale blue" loading="lazy" decoding="async" />
-              <span class="ready-badge">Bundle</span>
-            </div>
-            <div class="gallery-card-body">
-              <span class="gallery-card-eyebrow">From: kids winter age 4-5 bundle</span>
-              <h3 class="gallery-card-title">H&amp;M Kids Winter Bundle - Age 4-5</h3>
-              <ul class="gallery-card-tags"><li>kids bundle</li><li>age 4-5</li><li>winter clothes</li></ul>
-              <div class="gallery-card-meta"><span>Fair price</span><strong>&pound;14</strong></div>
+            <div class="phone-frame cross-phone">
+              <div class="phone-notch" aria-hidden="true"></div>
+              <img class="phone-photo" src="/images/homepage/summer-dress.jpg" width="420" height="600" alt="Phone preview of a floral summer dress listing" loading="lazy" decoding="async" />
+              <h3>Floral summer midi dress</h3>
+              <p>UK 10 &middot; Like new &middot; Lined skirt</p>
+              <strong>&pound;22</strong>
+              <span class="badge">Buyer-ready</span>
             </div>
           </article>
         </div>
       </section>
 
       <section class="section" id="how-it-works" aria-labelledby="flow-title">
-        <header class="section-head compact-head">
-          <p class="eyebrow">How it works</p>
-          <h2 id="flow-title">Paste notes. Generate. Copy to Vinted.</h2>
-          <p class="section-sub">Fast enough for a wardrobe clear-out, structured enough for regular sellers.</p>
-        </header>
-        <div class="flow-v3 premium-flow">
-          <article class="flow-step">
-            <span class="flow-step-num">1</span>
-            <h3>Paste rough notes</h3>
-            <p>Add brand, size, condition, flaws and anything a buyer should know.</p>
-          </article>
-          <article class="flow-step">
-            <span class="flow-step-num">2</span>
-            <h3>Generate sections</h3>
-            <p>Get title, description, keywords, pricing guidance, checklist and buyer reply.</p>
-          </article>
-          <article class="flow-step">
-            <span class="flow-step-num">3</span>
-            <h3>Edit before copying</h3>
-            <p>Review each card, adjust anything, then copy the sections you want.</p>
-          </article>
-          <article class="flow-step">
-            <span class="flow-step-num">4</span>
-            <h3>Post manually</h3>
-            <p>Paste into Vinted yourself. ListBoost never posts or logs in for you.</p>
-          </article>
-        </div>
-      </section>
-
-      <section class="section comparison-section-v5" aria-labelledby="comparison-title">
         <header class="section-head">
-          <p class="eyebrow">Manual vs ListBoost</p>
-          <h2 id="comparison-title">Less thinking before every listing.</h2>
-          <p class="section-sub">The value is not just writing. It is having the same Vinted-ready workflow every time you sell.</p>
+          <p class="eyebrow">How it works</p>
+          <h2 id="flow-title">From camera roll to buyer-ready copy.</h2>
         </header>
-        <div class="comparison-v3 premium-comparison">
-          <article class="comparison-card comparison-muted">
-            <span class="badge">Manual listing</span>
-            <h3>Start from scratch</h3>
-            <ul>
-              <li>Work out the title structure</li>
-              <li>Rewrite the condition details</li>
-              <li>Guess keywords and price range</li>
-              <li>Remember photo and buyer reply wording</li>
-            </ul>
+        <div class="cross-steps">
+          <article>
+            <span class="flow-step-num">1</span>
+            <img src="/images/homepage/wardrobe-rail.jpg" width="620" height="460" alt="Seller wardrobe photos ready to upload" loading="lazy" decoding="async" />
+            <h3>Add your item photos</h3>
+            <p>Upload hanger shots, shoe photos, mirror photos, folded clothes or quick camera-roll pictures.</p>
+            <blockquote>&ldquo;These photos are enough to start - add a label shot before posting.&rdquo;</blockquote>
           </article>
-          <article class="comparison-card comparison-featured">
-            <span class="badge badge-brand">ListBoost workflow</span>
-            <h3>Generate a complete package</h3>
-            <ul>
-              <li>Category-aware title and description</li>
-              <li>Copy-ready keywords and price guidance</li>
-              <li>Photo checklist and buyer reply</li>
-              <li>Saved history for Seller and Elite plans</li>
-            </ul>
+          <article>
+            <span class="flow-step-num">2</span>
+            <img src="/images/listing-gallery/zara-dress.jpg" width="620" height="460" alt="Dress photo becoming a generated listing" loading="lazy" decoding="async" />
+            <h3>Generate a stronger listing</h3>
+            <p>ListBoost creates a better title, description, keywords, condition notes, photo checklist and price guidance.</p>
+            <blockquote>&ldquo;Title, price and buyer details now feel complete.&rdquo;</blockquote>
+          </article>
+          <article>
+            <span class="flow-step-num">3</span>
+            <img src="/images/homepage/nike-trainers.jpg" width="620" height="460" alt="Trainer listing ready to copy and post manually" loading="lazy" decoding="async" />
+            <h3>Preview and copy</h3>
+            <p>Check how the listing feels to buyers, then copy your improved listing and post manually.</p>
+            <blockquote>&ldquo;Ready to copy - no marketplace password needed.&rdquo;</blockquote>
           </article>
         </div>
       </section>
 
-      <section class="section seller-proof-v5" aria-labelledby="proof-title">
-        <header class="section-head compact-head">
-          <p class="eyebrow">Why sellers trust it</p>
-          <h2 id="proof-title">Built to help you list better, not take over your account.</h2>
-          <p class="section-sub">ListBoost keeps the workflow practical and safe: generate the copy, review the details, then post manually when you are ready.</p>
+      <section class="section market-examples" id="examples" aria-labelledby="market-examples-title">
+        <header class="section-head">
+          <p class="eyebrow">Listing examples</p>
+          <h2 id="market-examples-title">Large resale cards that feel buyer-facing.</h2>
+          <p class="section-sub">Original mock listing cards with real item photos, practical seller captions and buyer-facing badges.</p>
         </header>
-        <div class="seller-proof-grid">
-          <article class="seller-proof-card">
-            <span class="proof-card-icon" aria-hidden="true">01</span>
-            <h3>You stay in control</h3>
-            <p>ListBoost never posts to Vinted for you. You edit, copy and paste every listing yourself.</p>
+        <div class="market-grid cross-market-grid">
+          <article class="market-listing-card"><div class="market-card-visual"><img class="market-card-photo" src="/images/homepage/nike-trainers.jpg" width="900" height="700" alt="Grey Nike low-top trainers on a balcony shelf" decoding="async" /><span class="market-photo-badge">Wear shown</span></div><div class="market-card-body"><h3>Grey Nike low-top trainers</h3><p>UK 6 &middot; Used condition</p><strong>&pound;24</strong><span>Grey and black trainers with visible wear on the soles and upper, photographed in natural light.</span><ul><li>Soles visible</li><li>Honest condition</li></ul></div></article>
+          <article class="market-listing-card"><div class="market-card-visual"><img class="market-card-photo" src="/images/homepage/zara-jacket.jpg" width="900" height="700" alt="Black cropped biker jacket hanging on a clothes rail" decoding="async" /><span class="market-photo-badge">Better crop</span></div><div class="market-card-body"><h3>Black cropped biker jacket</h3><p>Size M &middot; Good used</p><strong>&pound;42</strong><span>Quilted black jacket with zip front, ribbed cuffs and silver hardware shown clearly.</span><ul><li>Better title</li><li>Buyer-ready</li></ul></div></article>
+          <article class="market-listing-card"><div class="market-card-visual"><img class="market-card-photo" src="/images/homepage/carhartt-hoodie.jpg" width="900" height="700" alt="Grey pullover hoodie photographed for a resale listing" decoding="async" /><span class="market-photo-badge">Clear fit</span></div><div class="market-card-body"><h3>Grey heavyweight hoodie</h3><p>Large &middot; Good condition</p><strong>&pound;18</strong><span>Plain grey pullover hoodie with front pocket, relaxed fit and light wear noted.</span><ul><li>Condition note</li><li>Search tags</li></ul></div></article>
+          <article class="market-listing-card"><div class="market-card-visual"><img class="market-card-photo" src="/images/homepage/levis-jeans.jpg" width="900" height="700" alt="Blue straight-leg jeans photographed flat for resale" decoding="async" /><span class="market-photo-badge">Measurements</span></div><div class="market-card-body"><h3>Blue straight-leg jeans</h3><p>W30 L32 &middot; Good used</p><strong>&pound;26</strong><span>Mid-blue denim with fading, button fly detail and straight-leg shape.</span><ul><li>Waist listed</li><li>Style notes</li></ul></div></article>
+          <article class="market-listing-card"><div class="market-card-visual"><img class="market-card-photo" src="/images/homepage/north-face-puffer.jpg" width="900" height="700" alt="Silver padded puffer jacket on a white background" decoding="async" /><span class="market-photo-badge">Condition clear</span></div><div class="market-card-body"><h3>Silver padded puffer jacket</h3><p>Small &middot; Light wear</p><strong>&pound;45</strong><span>Shiny padded jacket with zip front, high collar and light wear called out.</span><ul><li>Condition clear</li><li>Price checked</li></ul></div></article>
+          <article class="market-listing-card"><div class="market-card-visual"><img class="market-card-photo" src="/images/homepage/adidas-sambas.jpg" width="900" height="700" alt="White Adidas Samba trainers photographed on white bedding" decoding="async" /><span class="market-photo-badge">Clean closeup</span></div><div class="market-card-body"><h3>White Adidas Samba trainers</h3><p>UK 5 &middot; Excellent</p><strong>&pound;52</strong><span>White and beige low-top trainers photographed from above on bedding, clean uppers visible.</span><ul><li>Clear brand</li><li>Buyer preview</li></ul></div></article>
+          <article class="market-listing-card"><div class="market-card-visual"><img class="market-card-photo" src="/images/homepage/leather-bag.jpg" width="900" height="700" alt="Red leather top-handle bag photographed on a table" decoding="async" /><span class="market-photo-badge">Closeups</span></div><div class="market-card-body"><h3>Red leather top-handle bag</h3><p>One size &middot; Very good</p><strong>&pound;62</strong><span>Structured leather bag with handle, strap and polished clasp details visible.</span><ul><li>Material</li><li>Closeups</li></ul></div></article>
+          <article class="market-listing-card"><div class="market-card-visual"><img class="market-card-photo" src="/images/homepage/summer-dress.jpg" width="900" height="700" alt="Floral summer midi dress photographed outdoors" decoding="async" /><span class="market-photo-badge">Fit detail</span></div><div class="market-card-body"><h3>Floral summer midi dress</h3><p>UK 10 &middot; Like new</p><strong>&pound;22</strong><span>Floaty fit, lined skirt, perfect for holidays or brunch.</span><ul><li>Fit detail</li><li>Season tags</li></ul></div></article>
+          <article class="market-listing-card"><div class="market-card-visual"><img class="market-card-photo" src="/images/homepage/cargo-trousers.jpg" width="900" height="700" alt="Black cargo trousers photographed flat on a white background" decoding="async" /><span class="market-photo-badge">Details clear</span></div><div class="market-card-body"><h3>Black cargo trousers</h3><p>W28 &middot; Very good</p><strong>&pound;24</strong><span>Black cargo trousers with pocket detail, drawcord hems and contrast inner waistband.</span><ul><li>Pockets shown</li><li>Fair price</li></ul></div></article>
+          <article class="market-listing-card"><div class="market-card-visual"><img class="market-card-photo" src="/images/homepage/white-trainers-floor.jpg" width="900" height="700" alt="Clean white leather trainers photographed for resale" decoding="async" /><span class="market-photo-badge">Photo ready</span></div><div class="market-card-body"><h3>Clean white leather trainers</h3><p>UK 5 &middot; Light creasing</p><strong>&pound;25</strong><span>White leather trainers with light creasing and clean sides, ready for a simple buyer listing.</span><ul><li>Clear photos</li><li>Condition note</li></ul></div></article>
+          <article class="market-listing-card"><div class="market-card-visual"><img class="market-card-photo" src="/images/homepage/silver-necklace.jpg" width="900" height="700" alt="Silver chain necklace photographed on a white background" decoding="async" /><span class="market-photo-badge">Closeup</span></div><div class="market-card-body"><h3>Silver chain necklace</h3><p>45 cm &middot; Good condition</p><strong>&pound;18</strong><span>Silver chain necklace with clasp visible and clean product-style detail photo.</span><ul><li>Clear size</li><li>Detail photo</li></ul></div></article>
+          <article class="market-listing-card"><div class="market-card-visual"><img class="market-card-photo" src="/images/homepage/doc-martens-boots.jpg" width="900" height="700" alt="Black leather lace-up boots photographed on a white background" decoding="async" /><span class="market-photo-badge">Condition clear</span></div><div class="market-card-body"><h3>Black leather lace-up boots</h3><p>UK 4 &middot; Worn in</p><strong>&pound;42</strong><span>Black ankle boots with chunky sole, lace-up front and light wear shown.</span><ul><li>Soles mentioned</li><li>Condition clear</li></ul></div></article>
+        </div>
+      </section>
+
+      <section class="section before-after-section cross-before-after" aria-labelledby="comparison-title">
+        <header class="section-head">
+          <p class="eyebrow">Before / after</p>
+          <h2 id="comparison-title">The same jacket, a much clearer listing.</h2>
+          <p class="section-sub">ListBoost turns a vague listing into a buyer-ready one with stronger copy, price guidance and photo prompts.</p>
+        </header>
+        <div class="before-after-grid-v2">
+          <article class="comparison-card before-card">
+            <span class="badge">Before</span>
+            <figure class="bad-photo"><img src="/images/homepage/zara-jacket.jpg" width="900" height="620" alt="Dark cropped black jacket photo before ListBoost improvement" loading="lazy" decoding="async" /><figcaption>Dark crop, no detail shots</figcaption></figure>
+            <h3>black jacket</h3>
+            <p>good condition</p>
+            <ul><li>Missing size, material and fit</li><li>No wear, hardware or care details</li><li>Random price</li><li>Low buyer confidence</li></ul>
+            <div class="after-score low"><strong>42</strong><span>listing score</span></div>
           </article>
-          <article class="seller-proof-card">
-            <span class="proof-card-icon" aria-hidden="true">02</span>
-            <h3>No Vinted password</h3>
-            <p>The product does not need your Vinted login, so your selling account stays separate.</p>
+          <article class="comparison-card comparison-featured after-card">
+            <span class="badge badge-brand">After ListBoost</span>
+            <figure class="after-photo"><img src="/images/homepage/zara-jacket.jpg" width="900" height="620" alt="Improved black leather biker jacket listing photo" loading="lazy" decoding="async" /><figcaption>Cover crop, condition notes and missing-angle prompt</figcaption></figure>
+            <h3>Black leather biker jacket - size M</h3>
+            <p>Black leather biker jacket in a size M. Zip front, structured shoulders, visible hardware and classic biker shape. Good vintage condition with light wear shown in the photos.</p>
+            <div class="after-score"><strong>91</strong><span>listing score</span></div>
+            <div class="after-preview-row"><img src="/images/homepage/zara-jacket.jpg" width="320" height="240" alt="Buyer preview thumbnail for improved black leather jacket listing" loading="lazy" decoding="async" /><div><span class="badge">Buyer preview</span><strong>&pound;38&ndash;&pound;46 suggested range</strong><p>Copy-ready title, description, tags and checklist.</p></div></div>
+            <div class="workspace-actions"><span class="ws-btn">Copy title</span><span class="ws-btn ws-btn-primary">Copy listing</span></div>
           </article>
-          <article class="seller-proof-card">
-            <span class="proof-card-icon" aria-hidden="true">03</span>
-            <h3>Clear upgrade path</h3>
-            <p>Start with 3 free listings, then choose a monthly plan only if the workflow earns its place.</p>
-          </article>
+        </div>
+      </section>
+
+      <section class="section device-showcase cross-devices" aria-labelledby="devices-title">
+        <header class="section-head">
+          <p class="eyebrow">Product mockups</p>
+          <h2 id="devices-title">A desktop editor and mobile buyer preview that feel real.</h2>
+          <p class="section-sub">A practical product surface for editing listings, checking photos, reviewing price guidance and copying improved output.</p>
+        </header>
+        <div class="device-stage">
+          <div class="browser-frame" aria-label="ListBoost desktop dashboard mockup">
+            <div class="browser-top"><span></span><span></span><span></span><strong>listboost.uk/workspace</strong></div>
+            <div class="browser-body cross-browser-body">
+              <aside><strong>Workspace</strong><p class="is-active">Drafts</p><p>Photo checks</p><p>Pricing</p><p>History</p></aside>
+              <main>
+                <div class="upload-lane">
+                  <img src="/images/homepage/nike-trainers.jpg" width="220" height="220" alt="Trainer upload thumbnail" loading="lazy" decoding="async" />
+                  <img src="/images/homepage/leather-bag.jpg" width="220" height="220" alt="Bag upload thumbnail" loading="lazy" decoding="async" />
+                  <img src="/images/homepage/adidas-sambas.jpg" width="220" height="220" alt="White Adidas trainer upload thumbnail" loading="lazy" decoding="async" />
+                </div>
+                <div class="dash-row"><span>Title improved</span><strong>Red Nike running trainers - UK 6</strong></div>
+                <div class="dash-row"><span>Photo angle missing</span><strong>Add sole photo</strong></div>
+                <div class="dash-row"><span>Price checked</span><strong>&pound;28&ndash;&pound;34</strong></div>
+                <div class="dash-row"><span>Status</span><strong>Ready to copy</strong></div>
+              </main>
+            </div>
+          </div>
+          <div class="phone-frame" aria-label="Mobile buyer preview mockup">
+            <div class="phone-notch" aria-hidden="true"></div>
+            <img class="phone-photo" src="/images/homepage/leather-bag.jpg" width="420" height="600" alt="Mobile buyer preview of a red leather top-handle bag listing" loading="lazy" decoding="async" />
+            <h3>Red leather top-handle bag</h3>
+            <p>One size &middot; Very good &middot; closeups shown</p>
+            <strong>&pound;62</strong>
+            <span class="badge">Ready to copy</span>
+          </div>
+          <div class="cross-device-floats" aria-hidden="true"><span>Title improved</span><span>Photo angle missing</span><span>Price checked</span><span>Ready to copy</span></div>
+        </div>
+      </section>
+
+      <section class="section dashboard-preview-section" aria-labelledby="dashboard-title">
+        <header class="section-head">
+          <p class="eyebrow">Seller dashboard</p>
+          <h2 id="dashboard-title">A believable home base for listing prep.</h2>
+          <p class="section-sub">Scores, recent drafts, photo checks, buyer previews and price recommendations all live in one clean workspace.</p>
+        </header>
+        <div class="dashboard-shell" aria-label="ListBoost seller dashboard preview">
+          <aside class="dashboard-sidebar"><strong>ListBoost</strong><span class="is-active">Overview</span><span>Drafts</span><span>Photo checks</span><span>Pricing</span><span>History</span></aside>
+          <div class="dashboard-main">
+            <div class="dashboard-hero-row"><article><span>Average listing score</span><strong>88</strong><p>after checklist</p></article><article><span>Need improvement</span><strong>5</strong><p>mostly photos</p></article><article><span>Ready to copy</span><strong>14</strong><p>titles and prices checked</p></article></div>
+            <div class="dashboard-grid">
+              <article class="dashboard-panel"><h3>Photo quality checks</h3><div class="progress-mock"><strong>Cover photo</strong><span></span><p>Full item visible</p></div><div class="progress-mock"><strong>Label / sole photo</strong><span></span><p>Add before posting</p></div><div class="progress-mock"><strong>Lighting</strong><span></span><p>Natural light preferred</p></div></article>
+              <article class="dashboard-panel"><h3>Buyer preview</h3><div class="mini-buyer-card"><img src="/images/homepage/adidas-sambas.jpg" width="420" height="320" alt="Buyer preview for tan Nike low-top trainers" loading="lazy" decoding="async" /><strong>Tan Nike low-top trainers</strong><p>&pound;54 &middot; UK 5 &middot; clean soles pictured</p></div></article>
+              <article class="dashboard-panel"><h3>Suggested titles</h3><div class="dash-row"><span>Before</span><strong>trainers</strong></div><div class="dash-row"><span>After</span><strong>Red Nike running trainers - UK 6</strong></div><div class="dash-row"><span>After</span><strong>Distressed blue straight jeans - W30 L32</strong></div></article>
+              <article class="dashboard-panel"><h3>Recent boosted listings</h3><div class="recent-listing-row"><img src="/images/homepage/nike-trainers.jpg" width="80" height="72" alt="Red Nike trainer listing thumbnail" loading="lazy" decoding="async" /><div><strong>Red Nike trainers</strong><p>&pound;32 - ready</p></div></div><div class="recent-listing-row"><img src="/images/homepage/summer-dress.jpg" width="80" height="72" alt="Summer dress listing thumbnail" loading="lazy" decoding="async" /><div><strong>Summer dress</strong><p>&pound;22 - copied</p></div></div><div class="recent-listing-row"><img src="/images/homepage/cargo-trousers.jpg" width="80" height="72" alt="Black cargo trouser listing thumbnail" loading="lazy" decoding="async" /><div><strong>Black cargo trousers</strong><p>Needs label photo</p></div></div></article>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -289,13 +318,13 @@
         <header class="section-head">
           <p class="eyebrow">Pricing</p>
           <h2 id="pricing-title">Start free, then choose your listing volume.</h2>
-          <p class="section-sub">Simple monthly plans for casual sellers, weekly sellers and high-volume resellers. Seller is the best fit for most active Vinted sellers.</p>
+          <p class="section-sub">Simple monthly plans for casual sellers, weekly sellers and high-volume resellers. Seller is the best fit for most active resale marketplace sellers.</p>
         </header>
         <div id="packGrid">
           <div class="pricing-v3" data-pricing-grid="true">
-            <article class="pricing-card subscription" id="subscribe-starter"><span class="badge">Monthly starter</span><h3>Starter</h3><p class="pricing-price"><strong>&pound;6.99</strong><span>per month</span></p><p class="pricing-meta">20 listings/month</p><p class="pricing-outcome">Core notes-to-listing workflow</p><p class="pricing-fit">Best for casual sellers</p><p class="pricing-copy">For wardrobe clear-outs when you want the core Vinted listing workflow.</p><ul class="pricing-compare"><li>20 listings per month</li><li>Notes-to-listing generator</li><li>Editable Vinted title, description and keywords</li><li>Price guidance and photo checklist</li><li>Copy buttons for every section</li></ul><button class="btn btn-secondary pricing-buy" type="button" data-subscription-plan="starter">Subscribe Starter</button></article>
+            <article class="pricing-card subscription" id="subscribe-starter"><span class="badge">Monthly starter</span><h3>Starter</h3><p class="pricing-price"><strong>&pound;6.99</strong><span>per month</span></p><p class="pricing-meta">20 listings/month</p><p class="pricing-outcome">Core notes-to-listing workflow</p><p class="pricing-fit">Best for casual sellers</p><p class="pricing-copy">For wardrobe clear-outs when you want the core resale listing workflow.</p><ul class="pricing-compare"><li>20 listings per month</li><li>Notes-to-listing generator</li><li>Editable resale title, description and keywords</li><li>Price guidance and photo checklist</li><li>Copy buttons for every section</li></ul><button class="btn btn-secondary pricing-buy" type="button" data-subscription-plan="starter">Subscribe Starter</button></article>
             <article class="pricing-card subscription is-featured featured" id="subscribe-seller"><span class="badge badge-brand">Best value</span><h3>Seller</h3><p class="pricing-price"><strong>&pound;14.99</strong><span>per month</span></p><p class="pricing-meta">75 listings/month</p><p class="pricing-outcome">Full phone-first seller workflow</p><p class="pricing-fit">Best for regular sellers</p><p class="pricing-copy">The weekly seller toolkit: photos, pricing, replies, scoring and saved history.</p><ul class="pricing-compare"><li>75 listings per month</li><li>Everything in Starter</li><li>Photo upload from phone camera roll</li><li>Fast / fair / max price guidance</li><li>Buyer reply generator</li><li>Listing score checker</li><li>Saved history for repeat sellers</li><li>Best value for weekly listing</li></ul><button class="btn btn-primary pricing-buy" type="button" data-subscription-plan="seller">Subscribe Seller</button></article>
-            <article class="pricing-card subscription" id="subscribe-reseller"><span class="badge">Elite tools</span><h3>Elite</h3><p class="pricing-price"><strong>&pound;29.99</strong><span>per month</span></p><p class="pricing-meta">250 listings/month</p><p class="pricing-outcome">Reseller workflow with priority help</p><p class="pricing-fit">Best for daily sellers</p><p class="pricing-copy">For serious resellers who list in batches and want the fastest workflow.</p><ul class="pricing-compare"><li>250 listings per month</li><li>Everything in Seller</li><li>Batch-friendly reseller workflow</li><li>Advanced photo checklist</li><li>Detailed pricing confidence notes</li><li>Listing history</li><li>Priority support</li><li>Early access to reseller tools</li></ul><button class="btn btn-secondary pricing-buy" type="button" data-subscription-plan="reseller">Subscribe Elite</button></article>
+            <article class="pricing-card subscription" id="subscribe-reseller"><span class="badge">Elite tools</span><h3>Elite</h3><p class="pricing-price"><strong>&pound;29.99</strong><span>per month</span></p><p class="pricing-meta">250 listings/month</p><p class="pricing-outcome">Reseller workflow with priority help</p><p class="pricing-fit">Best for daily sellers</p><p class="pricing-copy">For serious resellers who list in batches and want the fastest workflow.</p><ul class="pricing-compare"><li>250 listings per month</li><li>Everything in Seller</li><li>Batch-friendly reseller workflow</li><li>Advanced photo checklist</li><li>Detailed pricing confidence notes</li><li>Listing history</li><li>Priority support</li><li>Early access to reseller tools</li><li>Best for daily sellers</li></ul><button class="btn btn-secondary pricing-buy" type="button" data-subscription-plan="reseller">Subscribe Elite</button></article>
           </div>
         </div>
       </section>
@@ -303,33 +332,45 @@
       <section class="section" id="faq" aria-labelledby="faq-title">
         <header class="section-head">
           <p class="eyebrow">FAQ</p>
-          <h2 id="faq-title">Questions before you try it.</h2>
+          <h2 id="faq-title">Real answers before you use ListBoost.</h2>
         </header>
         <div class="faq-v3">
           <div class="faq-list">
-            <details><summary>Do I need to connect Vinted?</summary><p>No. ListBoost is independent. You copy and paste everything manually.</p></details>
-            <details><summary>What does one listing include?</summary><p>One generated package includes a title, description, keywords, pricing guidance, photo checklist and buyer reply.</p></details>
-            <details><summary>Can I use it without a card?</summary><p>Yes. Create an account and start with 3 free listings before choosing a monthly plan.</p></details>
-            <details><summary>Can I edit the output?</summary><p>Yes. Each output section is editable before you copy it to Vinted.</p></details>
-            <details><summary>Can I switch plans?</summary><p>Yes. You can upgrade or downgrade from Billing after signing in.</p></details>
-            <details><summary>Is ListBoost affiliated with Vinted?</summary><p>No. ListBoost is an independent tool for sellers and is not affiliated with Vinted.</p></details>
+            <details><summary>Is ListBoost officially connected to Vinted or any marketplace?</summary><p>No. ListBoost is independent and manual-copy only. It is not endorsed by Vinted, does not use marketplace logos or screenshots, and does not connect to marketplace accounts.</p></details>
+            <details><summary>Do I need to give ListBoost my Vinted password?</summary><p>No. ListBoost never needs your marketplace password. You stay in control by reviewing the output, copying it, and posting it yourself.</p></details>
+            <details><summary>Will ListBoost post items for me?</summary><p>No. It prepares the listing content for you, including the title, description, keywords, photo checklist, price guidance and buyer preview. You choose what to use and post manually.</p></details>
+            <details><summary>What can I create for free?</summary><p>You can start with 3 free listings. You can also use the example page before signing up to see the type of output ListBoost creates.</p></details>
+            <details><summary>Can I use my own messy notes and photos?</summary><p>Yes. ListBoost is built for rough seller notes and normal camera-roll photos. It helps turn them into clearer listing copy and reminds you when important shots are missing, such as labels, soles, flaws or close-ups.</p></details>
+            <details><summary>Does ListBoost guarantee more sales?</summary><p>No. No listing tool can guarantee sales. ListBoost helps make listings clearer, more searchable and easier for buyers to trust, but results still depend on the item, price, demand, photos, shipping and marketplace activity.</p></details>
+            <details><summary>How does price guidance work?</summary><p>ListBoost suggests a practical price range from the item details, condition and selling context you provide. It is guidance, not a valuation or guarantee, and you always choose the final price.</p></details>
+            <details><summary>What happens to my listing history?</summary><p>Signed-in users can keep generated listings in their history so they can copy, edit and reuse their work later. Avoid adding sensitive personal information to listing notes.</p></details>
+            <details><summary>Can I use it beyond clothes?</summary><p>It works best for clothes, shoes, bags, jewellery, accessories and bundles. Other second-hand items can still work when you provide enough useful detail.</p></details>
+            <details><summary>Can I cancel or change plan?</summary><p>Yes. Paid plans are monthly and can be managed from billing after you sign in. Checkout and subscription billing are handled securely through Stripe.</p></details>
           </div>
           <aside class="faq-v3-aside">
-            <h3>Want to see the output first?</h3>
-            <p>Try the example with no signup and check the exact sections before creating an account.</p>
+            <h3>Still unsure? Try one item first.</h3>
+            <p>Use the example page or start with 3 free listings. No marketplace login, no automatic posting.</p>
             <a class="btn btn-primary" href="/example">Try the example</a>
           </aside>
         </div>
       </section>
 
       <section class="section final-cta-v5" aria-labelledby="cta-title">
-        <div class="cta-strip">
+        <div class="cta-strip final-resale-cta">
           <div>
-            <p class="eyebrow">Independent. Not affiliated with Vinted. Built for UK resellers.</p>
-            <h2 id="cta-title">Create your first listing in under a minute.</h2>
-            <p>No card needed. Generate 3 listings free, then keep the workflow if it earns its place.</p>
+            <p class="eyebrow">Independent resale listing workspace</p>
+            <h2 id="cta-title">Ready to make every listing buyer-ready?</h2>
+            <p>Improve your photos, title, description, price guidance and mobile preview before you post.</p>
+            <div class="final-cta-actions">
+              <a class="btn btn-primary" href="/signup">Start boosting listings</a>
+              <a class="btn btn-secondary" href="/example">View examples</a>
+            </div>
           </div>
-          <a class="btn btn-primary" href="/signup">Start free &mdash; 3 listings</a>
+          <div class="cta-image-stack" aria-label="Example resale items prepared with ListBoost">
+            <img src="/images/homepage/adidas-sambas.jpg" width="360" height="300" alt="Tan trainer listing photo prepared for resale" loading="lazy" decoding="async" />
+            <img src="/images/homepage/leather-bag.jpg" width="360" height="300" alt="Red leather top-handle bag listing photo prepared for resale" loading="lazy" decoding="async" />
+            <img src="/images/homepage/silver-necklace.jpg" width="360" height="300" alt="Jewellery listing photo prepared for resale" loading="lazy" decoding="async" />
+          </div>
         </div>
       </section>
     </main>

@@ -37,6 +37,11 @@ test("static product photos are served with browser image mime types", () => {
   assert.match(serverJs, /\.gif": "image\/gif"/);
 });
 
+test("SEO text files are served with crawler-friendly mime types", () => {
+  assert.match(serverJs, /\.txt": "text\/plain; charset=utf-8"/);
+  assert.match(serverJs, /\.xml": "application\/xml; charset=utf-8"/);
+});
+
 test("new app surfaces include required modules", () => {
   for (const path of ["/app/notes", "/app/photo", "/app/score", "/app/replies", "/app/history", "/app/billing", "/app/account"]) {
     assert.match(serverJs, new RegExp(path.replace(/\//g, "\\/")));
@@ -171,8 +176,8 @@ test("password toggles and public header states are wired", () => {
   assert.match(authUtilsJs, /Hide password/);
   assert.match(siteJs, /togglePasswordVisibility/);
   assert.match(siteJs, /Log in/);
-  assert.match(siteJs, /aria-label="Start free with 3 listings"/);
-  assert.match(siteJs, />Start free</);
+  assert.match(siteJs, /aria-label="Start boosting listings"/);
+  assert.match(siteJs, />Start boosting listings</);
   assert.match(siteJs, /js-email/);
   assert.match(siteJs, /Sign out/);
   assert.match(siteJs, /js-public-logout/);
@@ -319,22 +324,33 @@ test("public CTAs have valid hrefs and pricing has subscribe buttons", () => {
   }
 });
 
-test("homepage shows honest product-gallery example cards (Zara, white trainers, Kids bundle)", () => {
-  assert.match(indexHtml, /class="gallery-v3 premium-gallery"/);
-  assert.match(indexHtml, /class="gallery-card/);
-  assert.match(indexHtml, /class="gallery-card-photo"/);
-  assert.match(indexHtml, /\/images\/listing-gallery\/zara-dress\.jpg/);
-  assert.match(indexHtml, /\/images\/listing-gallery\/white-trainers\.jpg/);
-  assert.match(indexHtml, /\/images\/listing-gallery\/kids-bundle\.jpg/);
-  assert.match(indexHtml, /Zara Navy Satin Midi Dress/);
-  assert.match(indexHtml, /Clean White Leather Trainers/);
+test("homepage shows honest image-based resale listing cards", () => {
+  assert.match(indexHtml, /class="market-grid cross-market-grid"/);
+  assert.match(indexHtml, /class="market-listing-card"/);
+  assert.match(indexHtml, /class="market-card-photo"/);
+  for (const image of [
+    "nike-trainers.jpg",
+    "zara-jacket.jpg",
+    "carhartt-hoodie.jpg",
+    "levis-jeans.jpg",
+    "north-face-puffer.jpg",
+    "adidas-sambas.jpg",
+    "leather-bag.jpg",
+    "summer-dress.jpg",
+    "cargo-trousers.jpg",
+    "white-trainers-floor.jpg",
+    "silver-necklace.jpg",
+    "doc-martens-boots.jpg"
+  ]) {
+    assert.match(indexHtml, new RegExp(`/images/homepage/${image}`));
+  }
+  assert.match(indexHtml, /Red Nike running trainers/);
+  assert.match(indexHtml, /Black leather biker jacket/);
+  assert.match(indexHtml, /Black leather lace-up boots/);
   assert.doesNotMatch(indexHtml, /Nike Air Force 1|af1/i);
-  assert.match(indexHtml, /Kids Winter Bundle/);
-  assert.match(indexHtml, /class="gallery-card-tags/);
-  assert.match(indexHtml, /Specific output for real Vinted items/);
-  // The cut-down homepage keeps the strongest 3 product cards.
-  const cards = (indexHtml.match(/class="gallery-card"/g) || []).length;
-  assert.equal(cards, 3, `expected exactly 3 focused gallery cards, found ${cards}`);
+  assert.match(indexHtml, /Original mock listing cards with real item photos/);
+  const cards = (indexHtml.match(/class="market-listing-card"/g) || []).length;
+  assert.equal(cards, 12, `expected exactly 12 image-based listing cards, found ${cards}`);
 });
 
 test("app generator empty states scaffold the upcoming output", () => {
@@ -494,7 +510,7 @@ test("pricing surfaces use the single PRICING_CATALOGUE source of truth", () => 
 test("static pricing HTML cannot drift from the catalogue copy", () => {
   // Each plan's exact bullet list as rendered in static HTML must match the catalogue.
   const catalogue = {
-    starter: ["20 listings per month", "Notes-to-listing generator", "Editable Vinted title, description and keywords", "Price guidance and photo checklist", "Copy buttons for every section"],
+    starter: ["20 listings per month", "Notes-to-listing generator", "Editable resale title, description and keywords", "Price guidance and photo checklist", "Copy buttons for every section"],
     seller: ["75 listings per month", "Everything in Starter", "Photo upload from phone camera roll", "Fast / fair / max price guidance", "Buyer reply generator", "Listing score checker", "Saved history for repeat sellers", "Best value for weekly listing"],
     reseller: ["250 listings per month", "Everything in Seller", "Batch-friendly reseller workflow", "Advanced photo checklist", "Detailed pricing confidence notes", "Listing history", "Priority support", "Early access to reseller tools", "Best for daily sellers"]
   };
@@ -537,39 +553,40 @@ test("paywall modal can be dismissed with Escape and renders from the catalogue"
   assert.doesNotMatch(siteJs, /paywall-pack is-featured is-dominant/);
 });
 
-test("homepage hero is Vinted-specific (workspace mock with note → generated listing)", () => {
-  // V3 hero uses a workspace mockup with a real-looking listing card.
-  assert.match(indexHtml, /class="hero-v3 premium-hero"/);
-  assert.match(indexHtml, /class="workspace-mock premium-workspace"/);
-  assert.match(indexHtml, /class="workspace-note"/);
-  assert.match(indexHtml, /class="workspace-listing generated-card"/);
-  assert.match(indexHtml, /Zara Navy Satin Midi Dress/);
+test("homepage hero is reseller-focused with a product workspace mock", () => {
+  // V3 hero uses a Crosslist-inspired, ListBoost-original workspace mockup.
+  assert.match(indexHtml, /class="hero-v3 premium-hero cross-hero"/);
+  assert.match(indexHtml, /class="workspace-mock cross-product-mock"/);
+  assert.match(indexHtml, /class="cross-listing-preview"/);
+  assert.match(indexHtml, /class="cross-editor-panel"/);
+  assert.match(indexHtml, /Black leather biker jacket/);
   assert.match(indexHtml, /class="workspace-tags"/);
-  assert.match(indexHtml, /class="ai-processing"/);
-  assert.match(indexHtml, /Optimising title/);
+  assert.match(indexHtml, /Listing score/);
+  assert.match(indexHtml, /Price range/);
+  assert.match(indexHtml, /Photo checklist/);
+  assert.match(indexHtml, /Buyer preview/);
+  assert.match(indexHtml, /No Vinted login required/);
+  assert.match(indexHtml, /Manual posting only/);
   // Marketing-v3 dark page mode must be active on the homepage.
   assert.match(indexHtml, /<body data-page="marketing-v3"/);
 });
 
 test("homepage trust section gives honest trust signals without fake testimonials", () => {
   // The homepage uses lightweight trust chips and no fabricated quote cards.
-  assert.match(indexHtml, /Secure Google sign in/);
-  assert.match(indexHtml, /No Vinted password required/);
+  assert.match(indexHtml, /No marketplace password/);
   assert.match(indexHtml, /Manual posting only/);
-  assert.match(indexHtml, /Stripe-secured billing/);
-  assert.match(indexHtml, /Built for UK sellers/);
-  assert.match(indexHtml, /Trusted by 1000\+ Vinted Sellers/);
+  assert.match(indexHtml, /Copy and post manually/);
+  assert.match(indexHtml, /Built for clothes, shoes, bags and accessories/);
+  assert.match(indexHtml, /Start free with 3 listings/);
+  assert.doesNotMatch(indexHtml, /Trusted by\s+1000\+\s+Vinted\s+Sellers/);
   assert.match(indexHtml, /"@type": "SoftwareApplication"/);
-  assert.match(indexHtml, /No Vinted login/);
-  assert.match(indexHtml, /No card needed/);
-  assert.match(indexHtml, /Cancel anytime/);
   // No fake testimonials: forbid quote-attribution patterns and class="testimonial".
   assert.doesNotMatch(indexHtml, /\bsays\b\s+[A-Z][a-z]+,\s*[A-Z]/);
   assert.doesNotMatch(indexHtml, /class="testimonial/);
-  assert.match(indexHtml, /class="section feature-bento-v6"/);
-  assert.match(indexHtml, /class="bento-v3 pro-bento-grid"/);
-  assert.match(indexHtml, /AI listing generator/);
-  assert.match(indexHtml, /Photo-to-listing/);
+  assert.match(indexHtml, /class="section feature-bento-v6 cross-product"/);
+  assert.match(indexHtml, /class="workflow-strip"/);
+  assert.match(indexHtml, /Write better listings with AI/);
+  assert.match(indexHtml, /Make photos easier for buyers to trust/);
 });
 
 test("mobile app nav uses inline SVG icons + visible labels", () => {
@@ -603,13 +620,13 @@ test("public UI never shows old launch prices, old limits, or unlimited claims",
   assert.doesNotMatch(siteJs, /"Unlimited listings"/);
 });
 
-test("public marketing explains ListBoost's focused Vinted workflow without naming other AI tools", () => {
-  assert.match(indexHtml, /Manual vs ListBoost/);
-  assert.match(indexHtml, /The value is not just writing/);
-  assert.match(indexHtml, /Generate a complete package/);
-  assert.match(indexHtml, /Category-aware title and description/);
-  assert.match(indexHtml, /Copy-ready keywords and price guidance/);
-  assert.match(indexHtml, /Saved history for Seller and Elite plans/);
+test("public marketing explains ListBoost's focused resale workflow without naming other AI tools", () => {
+  assert.match(indexHtml, /Your listing upgrade before buyers ever see it/);
+  assert.match(indexHtml, /From camera roll to buyer-ready copy/);
+  assert.match(indexHtml, /Write better listings with AI/);
+  assert.match(indexHtml, /Preview the buyer experience/);
+  assert.match(indexHtml, /copy and post manually/i);
+  assert.match(indexHtml, /Saved history for repeat sellers/);
   assert.match(siteJs, /Category-aware wording/);
   assert.match(siteJs, /Fast \/ fair \/ max prices/);
   assert.match(siteJs, /Copy-ready sections/);
@@ -654,7 +671,7 @@ test("plan id 'reseller' stays stable internally even though display says Elite"
 
 test("billing route benefits list matches the per-plan public spec", () => {
   // Starter — 20/month + core notes workflow features
-  assert.match(siteJs, /starter:\s*\[\s*"20 listings per month"[\s\S]*?"Notes-to-listing generator"[\s\S]*?"Editable Vinted title, description and keywords"[\s\S]*?"Price guidance and photo checklist"[\s\S]*?"Copy buttons for every section"/);
+  assert.match(siteJs, /starter:\s*\[\s*"20 listings per month"[\s\S]*?"Notes-to-listing generator"[\s\S]*?"Editable resale title, description and keywords"[\s\S]*?"Price guidance and photo checklist"[\s\S]*?"Copy buttons for every section"/);
   // Seller — 75/month + 6 spec features
   assert.match(siteJs, /seller:\s*\[\s*"75 listings per month"[\s\S]*?"Everything in Starter"[\s\S]*?"Photo upload from phone camera roll"[\s\S]*?"Fast \/ fair \/ max price guidance"[\s\S]*?"Buyer reply generator"[\s\S]*?"Listing score checker"[\s\S]*?"Saved history for repeat sellers"/);
   // Elite — 250/month + priority support; no unavailable template or unlimited claim
@@ -751,7 +768,7 @@ test("pricing page renders Starter / Seller / Elite subscription tiers with laun
   const starterBlock = pricingHtml.match(/id="subscribe-starter"[\s\S]*?<\/article>/)[0];
   assert.match(starterBlock, /20 listings per month/);
   assert.match(starterBlock, /Notes-to-listing generator/);
-  assert.match(starterBlock, /Editable Vinted title, description and keywords/);
+  assert.match(starterBlock, /Editable resale title, description and keywords/);
   assert.match(starterBlock, /Price guidance and photo checklist/);
   assert.match(starterBlock, /Copy buttons for every section/);
 

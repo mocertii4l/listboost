@@ -52,20 +52,21 @@ test("account bootstrap exposes subscription plans and environment metadata", ()
 });
 
 test("homepage renders premium marketing structure", () => {
-  // Premium homepage uses the tighter conversion-first hero.
-  assert.match(indexHtml, /Turn messy item notes into Vinted listings that sell/);
-  assert.match(indexHtml, /Paste rough notes and get a title, description, keywords, pricing guidance, photo checklist, and buyer reply in seconds/);
+  // Premium homepage uses the Crosslist-inspired, seller-first hero.
+  assert.match(indexHtml, /Create better resale listings in minutes/);
+  assert.match(indexHtml, /AI listing assistant for resale sellers/);
+  assert.match(indexHtml, /buyer previews - so every listing feels clearer/);
   // Primary CTA copy.
-  assert.match(indexHtml, /Start free &mdash; 3 listings/);
-  assert.match(indexHtml, /See example/);
-  assert.match(indexHtml, /No Vinted login &middot; No card needed &middot; Cancel anytime/);
-  // Hero uses a workspace mockup with restrained AI motion states.
+  assert.match(indexHtml, /Start boosting listings/);
+  assert.match(indexHtml, /View examples/);
+  assert.match(indexHtml, /Start free with 3 listings &middot; No Vinted login required &middot; Manual posting only/);
+  // Hero uses a polished product workspace mockup.
   assert.match(indexHtml, /class="workspace-mock/);
-  assert.match(indexHtml, /class="hero-v3 premium-hero"/);
-  assert.match(indexHtml, /class="ai-processing"/);
-  assert.match(indexHtml, /Optimising title/);
-  assert.match(indexHtml, /class="section product-preview-v5"/);
-  assert.match(indexHtml, /Manual vs ListBoost/);
+  assert.match(indexHtml, /class="hero-v3 premium-hero cross-hero"/);
+  assert.match(indexHtml, /class="cross-mock-body"/);
+  assert.match(indexHtml, /class="workflow-strip"/);
+  assert.match(indexHtml, /class="section feature-bento-v6 cross-product"/);
+  assert.match(indexHtml, /The same jacket, a much clearer listing/);
   assert.doesNotMatch(indexHtml, /class="section standards-v3"/);
   assert.doesNotMatch(indexHtml, /class="section moat-v3"/);
   assert.doesNotMatch(indexHtml, /class="bento-v3"/);
@@ -73,6 +74,7 @@ test("homepage renders premium marketing structure", () => {
   assert.match(indexHtml, /<body data-page="marketing-v3"/);
   // Section anchors are still present.
   assert.match(indexHtml, /id="how-it-works"/);
+  assert.match(indexHtml, /id="examples"/);
   assert.match(indexHtml, /id="pricing"/);
   assert.match(indexHtml, /id="faq"/);
   assert.match(siteJs, /public-footer/);

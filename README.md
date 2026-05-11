@@ -1,12 +1,12 @@
-# ListBoost for Vinted
+# ListBoost
 
-ListBoost is a UK-focused Vinted selling assistant. It creates listings from notes or item photos, scores listing quality, suggests pricing, drafts buyer replies, stores history, and sells credit packs through Stripe.
+ListBoost is a UK-focused resale listing assistant for clothes, shoes, bags and accessories. It creates listings from notes or item photos, scores listing quality, suggests pricing, drafts buyer replies, stores history, and sells monthly subscriptions through Stripe.
 
-Current redesign branch pricing:
+Current launch pricing:
 
-- Starter: 50 credits for GBP 5
-- Seller: 150 credits for GBP 12
-- Reseller: 400 credits for GBP 25
+- Starter: GBP 6.99/month for 20 listings
+- Seller: GBP 14.99/month for 75 listings
+- Elite: GBP 29.99/month for 250 listings
 
 ## Local Run
 
@@ -29,8 +29,8 @@ npm run check
 
 - Email/password accounts with HTTP-only sessions
 - Email verification gate
-- Account credit balances
-- Stripe Checkout credit packs
+- Monthly subscription usage allowances
+- Stripe Checkout subscriptions and billing portal
 - Stripe webhook endpoint
 - Notes-to-listing generation
 - Photo-to-listing generation with safety rules
@@ -40,7 +40,7 @@ npm run check
 - Vinted message templates
 - Saved listing history with copy, regenerate, and delete actions
 - Privacy and terms pages
-- Admin page for viewing users/payments and adjusting credits
+- Admin page for viewing users/subscriptions and adjusting allowances
 - `/health` launch-readiness endpoint
 
 ## Production Environment
@@ -55,6 +55,9 @@ OPENAI_MODEL=gpt-4.1-mini
 OPENAI_VISION_MODEL=gpt-4.1-mini
 STRIPE_SECRET_KEY=sk_live_...
 STRIPE_WEBHOOK_SECRET=whsec_...
+STRIPE_PRICE_STARTER_MONTHLY=price_...
+STRIPE_PRICE_SELLER_MONTHLY=price_...
+STRIPE_PRICE_RESELLER_MONTHLY=price_...
 RESEND_API_KEY=re_...
 EMAIL_FROM=ListBoost <verify@listboost.uk>
 SUPPORT_EMAIL=support@listboost.uk
@@ -66,20 +69,28 @@ DATA_DIR=/data
 
 At least one AI provider key is required. OpenAI is preferred and used first when configured.
 
-### Credit packs
+### Subscription plans
 
-ListBoost ships with three live credit packs:
+ListBoost ships with three monthly plans:
 
-- Starter: 50 credits for GBP 5
-- Seller: 150 credits for GBP 12
-- Reseller: 400 credits for GBP 25
+- Starter: 20 listings/month for GBP 6.99
+- Seller: 75 listings/month for GBP 14.99
+- Elite: 250 listings/month for GBP 29.99
 
-To override them, set `CREDIT_PACKS_JSON` to an array of pack objects with `id`, `name`, `credits`, `pricePence`, `label`, `description`, and optional `featured`.
+Create matching recurring Stripe Prices and set:
 
-Production value:
+```env
+STRIPE_PRICE_STARTER_MONTHLY=price_...
+STRIPE_PRICE_SELLER_MONTHLY=price_...
+STRIPE_PRICE_RESELLER_MONTHLY=price_...
+```
+
+To override plan copy or limits, set `SUBSCRIPTION_PLANS_JSON` to an array of plan objects with `id`, `name`, `monthlyLimit`, `pricePence`, `label`, `description`, `priceEnv`, and optional `featured`.
+
+Default production value:
 
 ```json
-[{"id":"starter","name":"Starter","credits":50,"pricePence":500,"label":"Try it","description":"A practical first pack for a wardrobe clear-out or first seller test."},{"id":"seller","name":"Seller","credits":150,"pricePence":1200,"label":"Best value","description":"The best value pack for regular Vinted sellers listing every week.","featured":true},{"id":"reseller","name":"Reseller","credits":400,"pricePence":2500,"label":"Power seller","description":"For bulk listing sessions, serious resellers and repeat sellers."}]
+[{"id":"starter","name":"Starter","monthlyLimit":20,"pricePence":699,"label":"Monthly starter","description":"For casual sellers who need the core notes-to-listing generator.","priceEnv":"STRIPE_PRICE_STARTER_MONTHLY"},{"id":"seller","name":"Seller","monthlyLimit":75,"pricePence":1499,"label":"Best value","description":"For regular sellers who want photos, buyer replies, price guidance and listing scores.","featured":true,"priceEnv":"STRIPE_PRICE_SELLER_MONTHLY"},{"id":"reseller","name":"Elite","monthlyLimit":250,"pricePence":2999,"label":"Elite tools","description":"For serious resellers running larger volumes with priority support.","priceEnv":"STRIPE_PRICE_RESELLER_MONTHLY"}]
 ```
 
 ## Stripe Setup
@@ -96,6 +107,9 @@ https://listboost.uk/api/stripe-webhook
 
 ```text
 checkout.session.completed
+invoice.paid
+customer.subscription.updated
+customer.subscription.deleted
 ```
 
 5. Copy the signing secret into:
@@ -104,7 +118,7 @@ checkout.session.completed
 STRIPE_WEBHOOK_SECRET=whsec_...
 ```
 
-Credits are granted by the webhook. The checkout success page only shows pending/confirmed state.
+Subscription activation, renewals, cancellations and plan changes are synced by the webhook. The checkout success page only shows pending/confirmed state.
 
 ## Email Setup
 
@@ -142,7 +156,7 @@ In production, this returns `503` until required launch configuration is present
 
 ## Database
 
-The app uses SQLite via `better-sqlite3`. The DB lives at `<DATA_DIR>/listboost.db`. By default `DATA_DIR` resolves to `./data`. On Railway you must set `DATA_DIR` to the mount path of a persistent volume (see the deploy section below) — without a volume the DB is wiped on every redeploy.
+The app uses SQLite via `better-sqlite3`. The DB lives at `<DATA_DIR>/listboost.db`. By default `DATA_DIR` resolves to `./data`. On Railway you must set `DATA_DIR` to the mount path of a persistent volume (see the deploy section below) - without a volume the DB is wiped on every redeploy.
 
 For a bigger launch, move to hosted Postgres/Supabase and replace the SQLite queries.
 
@@ -179,7 +193,7 @@ git push -u origin main
 2. Set **Mount path** to `/data`. Pick at least 1 GB.
 3. Set the env var `DATA_DIR=/data` so the app writes `listboost.db` onto the volume.
 
-Without this, every redeploy creates a fresh empty database and all signups/credits are lost.
+Without this, every redeploy creates a fresh empty database and all signups, subscriptions and listing history are lost.
 
 ### 4. Set environment variables
 
@@ -194,13 +208,14 @@ OPENAI_MODEL=gpt-4.1-mini
 OPENAI_VISION_MODEL=gpt-4.1-mini
 STRIPE_SECRET_KEY=sk_live_...
 STRIPE_WEBHOOK_SECRET=whsec_...
+STRIPE_PRICE_STARTER_MONTHLY=price_...
+STRIPE_PRICE_SELLER_MONTHLY=price_...
+STRIPE_PRICE_RESELLER_MONTHLY=price_...
 RESEND_API_KEY=re_...
 EMAIL_FROM=ListBoost <verify@listboost.uk>
 SUPPORT_EMAIL=support@listboost.uk
 REQUIRE_EMAIL_VERIFICATION=true
-FREE_CREDITS=5
-CREDIT_PACK_SIZE=50
-CREDIT_PACK_PRICE_PENCE=500
+FREE_CREDITS=3
 ADMIN_EMAIL=you@listboost.uk
 ADMIN_PASSWORD=a-long-random-password
 ```
@@ -226,19 +241,19 @@ After the domain is live, in the Stripe Dashboard add the webhook endpoint:
 https://listboost.uk/api/stripe-webhook
 ```
 
-Subscribe to `checkout.session.completed`, copy the signing secret into `STRIPE_WEBHOOK_SECRET`, and redeploy.
+Subscribe to `checkout.session.completed`, `invoice.paid`, `customer.subscription.updated`, and `customer.subscription.deleted`, copy the signing secret into `STRIPE_WEBHOOK_SECRET`, and redeploy.
 
 ### 7. Final checks
 
 - `GET https://listboost.uk/health` returns `200` with `productionReady: true`.
 - Sign up, receive verification email from Resend.
 - Run a notes generation and a photo generation.
-- Buy a credit pack with a real card; confirm the webhook grants credits and the row appears in `/admin`.
+- Buy a subscription with a real card; confirm the webhook activates the plan, resets the monthly allowance and the row appears in `/admin`.
 
 ## Launch Checklist
 
 - Push to GitHub.
-- Run `npm run check`.
+- Run `npm run build` and `npm run check`.
 - Deploy on Railway with a persistent volume mounted at `/data` and `DATA_DIR=/data`.
 - Set `APP_URL=https://listboost.uk`.
 - Add live OpenAI key.
@@ -246,4 +261,4 @@ Subscribe to `checkout.session.completed`, copy the signing secret into `STRIPE_
 - Add Resend key with verified `listboost.uk` sender domain.
 - Set admin credentials.
 - Visit `/health` and confirm `productionReady: true` and `missing: []`.
-- Test signup, email verification, notes generation, photo generation, checkout, webhook credit grant, and history.
+- Test signup, email verification, notes generation, photo generation, subscription checkout, webhook activation, billing portal, cancellation handling, and history.

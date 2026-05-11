@@ -81,6 +81,7 @@ function iconSvg(name) {
     history: '<path d="M3 12a9 9 0 1 0 3-6.7"></path><path d="M3 3v6h6"></path><path d="M12 7v5l4 2"></path>',
     image: '<rect width="18" height="18" x="3" y="3" rx="2"></rect><circle cx="9" cy="9" r="2"></circle><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"></path>',
     "image-up": '<rect width="18" height="18" x="3" y="3" rx="2"></rect><circle cx="9" cy="9" r="2"></circle><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"></path><path d="M12 12v6"></path><path d="m9 15 3-3 3 3"></path>',
+    "layout-dashboard": '<rect width="7" height="9" x="3" y="3" rx="1"></rect><rect width="7" height="5" x="14" y="3" rx="1"></rect><rect width="7" height="9" x="14" y="12" rx="1"></rect><rect width="7" height="5" x="3" y="16" rx="1"></rect>',
     "list-check": '<path d="m3 17 2 2 4-4"></path><path d="M13 6h8"></path><path d="M13 12h8"></path><path d="M13 18h8"></path><path d="m3 7 2 2 4-4"></path>',
     "log-out": '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><path d="M16 17l5-5-5-5"></path><path d="M21 12H9"></path>',
     lock: '<rect width="18" height="11" x="3" y="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path>',
@@ -88,16 +89,16 @@ function iconSvg(name) {
     menu: '<path d="M4 6h16"></path><path d="M4 12h16"></path><path d="M4 18h16"></path>',
     "message-circle": '<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22z"></path>',
     moon: '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>',
+    "pen-tool": '<path d="m12 19 7-7 3 3-7 7-3-3Z"></path><path d="m18 13-1.5-7.5L2 2l3.5 14.5L13 18"></path><path d="m2 2 7.6 7.6"></path><circle cx="11" cy="11" r="2"></circle>',
+    "pound-sterling": '<path d="M18 7c0-2.2-1.8-4-4-4s-4 1.8-4 4c0 3-2 4-2 8"></path><path d="M6 21h12"></path><path d="M6 13h10"></path>',
     repeat: '<path d="m17 2 4 4-4 4"></path><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><path d="m7 22-4-4 4-4"></path><path d="M21 13v2a4 4 0 0 1-4 4H3"></path>',
     save: '<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"></path><path d="M17 21v-8H7v8"></path><path d="M7 3v5h8"></path>',
-    search: '<circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path>',
-    shield: '<path d="M20 13c0 5-3.5 7.5-7.7 8.9a1 1 0 0 1-.6 0C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.2-2.4a1.4 1.4 0 0 1 1.6 0C14.5 3.8 17 5 19 5a1 1 0 0 1 1 1z"></path><path d="m9 12 2 2 4-4"></path>',
+    smartphone: '<rect width="14" height="20" x="5" y="2" rx="2"></rect><path d="M12 18h.01"></path>',
     sparkles: '<path d="M9.9 10.8 8 17l-1.9-6.2L0 9l6.1-1.8L8 1l1.9 6.2L16 9z"></path><path d="M19 17.5 18 21l-1-3.5-3.5-1 3.5-1 1-3.5 1 3.5 3.5 1z"></path>',
     sun: '<circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path>',
     tag: '<path d="M12.6 2H4a2 2 0 0 0-2 2v8.6a2 2 0 0 0 .6 1.4l7.4 7.4a2 2 0 0 0 2.8 0l8.6-8.6a2 2 0 0 0 0-2.8L14 2.6A2 2 0 0 0 12.6 2Z"></path><circle cx="7.5" cy="7.5" r=".5"></circle>',
     user: '<path d="M20 21a8 8 0 0 0-16 0"></path><circle cx="12" cy="7" r="4"></circle>',
     "user-cog": '<circle cx="18" cy="15" r="3"></circle><path d="m19.5 12.4.3-.7"></path><path d="m16.2 18.3.3-.7"></path><path d="m20.4 16.5.7.3"></path><path d="m14.9 13.2.7.3"></path><path d="M20 21a8 8 0 0 0-16 0"></path><circle cx="12" cy="7" r="4"></circle>',
-    upload: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="m17 8-5-5-5 5"></path><path d="M12 3v12"></path>',
     wallet: '<path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3v3a1 1 0 0 1-1 1H5a2 2 0 0 1-2-2V5"></path><path d="M18 12h.01"></path>',
     x: '<path d="M18 6 6 18"></path><path d="m6 6 12 12"></path>'
   };
@@ -222,12 +223,12 @@ const PRICING_CATALOGUE = [
     pricePence: 699,
     label: "Monthly starter",
     fit: "Best for casual sellers",
-    copy: "For wardrobe clear-outs when you want the core Vinted listing workflow.",
+    copy: "For wardrobe clear-outs when you want the core resale listing workflow.",
     outcome: "Core notes-to-listing workflow",
     features: [
       "20 listings per month",
       "Notes-to-listing generator",
-      "Editable Vinted title, description and keywords",
+      "Editable resale title, description and keywords",
       "Price guidance and photo checklist",
       "Copy buttons for every section"
     ]
@@ -292,7 +293,7 @@ function pricingCardTemplate(opts = {}) {
   const pricePence = opts.pricePence != null ? opts.pricePence : plan.pricePence;
   const featured = Boolean(opts.featured ?? plan.featured);
   const label = opts.label || plan.label || "Monthly";
-  const description = opts.description || plan.copy || "Monthly subscription with included Vinted listing tools.";
+  const description = opts.description || plan.copy || "Monthly subscription with included resale listing tools.";
   const fit = plan.fit || "";
   const outcome = opts.outcome || plan.outcome || "";
   const features = pricingFeaturesFor(id);
@@ -456,18 +457,22 @@ function hydrateIconPlaceholders(root = document) {
 function publicHeaderTemplate() {
   // Public marketing stays anonymous in layout, but the actions reflect session state.
   // Signed in: a single primary "Open app" + a quiet "Sign out".
-  // Signed out: "Log in" + primary "Start free".
+  // Signed out: "Log in" + primary "Start boosting listings".
   return `
     <a class="lb-brand" href="/"><img src="/logo.svg" alt="" />ListBoost</a>
     <button class="nav-toggle btn btn-ghost btn-icon" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="publicNav">${iconSvg("menu")}</button>
     <nav id="publicNav" class="public-nav" aria-label="Primary">
+      <a href="/#product">Product</a>
       <a href="/#how-it-works">How it works</a>
-      <a href="/example">Example</a>
-      <a href="/pricing">Pricing</a>
+      <a href="/#examples">Examples</a>
+      <a href="/#pricing">Pricing</a>
+      <a href="/#faq">FAQ</a>
     </nav>
     <div class="nav-actions">
+      <button class="btn btn-ghost theme-toggle marketing-theme-toggle" type="button" aria-label="Switch colour theme" aria-pressed="false">${iconSvg("moon")}<span>Dark</span></button>
+      <a class="btn btn-secondary nav-example" href="/example">See examples</a>
       <a class="btn btn-ghost nav-login js-public-login" href="/login">Log in</a>
-      <a class="btn btn-primary nav-start js-public-start" href="/signup" aria-label="Start free with 3 listings">Start free</a>
+      <a class="btn btn-primary nav-start js-public-start" href="/signup" aria-label="Start boosting listings"><span class="nav-start-short">Start</span><span class="nav-start-long">Start boosting listings</span></a>
       <a class="btn btn-primary js-public-app hidden" href="/app">${iconSvg("user")}<span>Open app</span></a>
       <button class="btn btn-ghost js-public-logout hidden" type="button" data-logout>${iconSvg("log-out")}<span>Sign out</span></button>
     </div>
@@ -507,7 +512,7 @@ function installPublicShell() {
         <div class="footer-inner">
           <div class="footer-brand-column">
             <a class="lb-brand" href="/"><img src="/logo.svg" alt="" />ListBoost</a>
-            <p>Professional listing tools for UK Vinted sellers. Independent - not affiliated with Vinted.</p>
+            <p>Professional listing tools for UK resale marketplace sellers. Independent - not affiliated with Vinted.</p>
           </div>
           <nav class="footer-links" aria-label="Product links">
             <strong>Product</strong>
@@ -532,16 +537,32 @@ function installPublicShell() {
   }
   const toggle = $(".nav-toggle", header);
   const nav = $("#publicNav", header);
+  const setPublicNavOpen = (open) => {
+    if (!toggle || !nav) return;
+    toggle.setAttribute("aria-expanded", open ? "true" : "false");
+    toggle.setAttribute("aria-label", open ? "Close menu" : "Open menu");
+    nav.classList.toggle("is-open", open);
+  };
   toggle?.addEventListener("click", () => {
     const open = toggle.getAttribute("aria-expanded") === "true";
-    toggle.setAttribute("aria-expanded", open ? "false" : "true");
-    nav?.classList.toggle("is-open", !open);
+    setPublicNavOpen(!open);
+  });
+  toggle?.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape") return;
+    setPublicNavOpen(false);
   });
   $$(".public-nav a", header).forEach((link) => {
     link.addEventListener("click", () => {
-      toggle?.setAttribute("aria-expanded", "false");
-      nav?.classList.remove("is-open");
+      setPublicNavOpen(false);
     });
+  });
+  nav?.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape") return;
+    setPublicNavOpen(false);
+    toggle?.focus();
+  });
+  document.addEventListener("click", (event) => {
+    if (!header.contains(event.target)) setPublicNavOpen(false);
   });
 }
 
@@ -685,8 +706,23 @@ function renderSubscriptionPlansGrid() {
   `;
 }
 
+function installLinearSpotlight() {
+  if (!document.body.matches('[data-page="marketing-v3"].linear-premium')) return;
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+  let frame = 0;
+  document.addEventListener("pointermove", (event) => {
+    if (reduceMotion.matches) return;
+    cancelAnimationFrame(frame);
+    frame = requestAnimationFrame(() => {
+      document.body.style.setProperty("--linear-x", `${event.clientX}px`);
+      document.body.style.setProperty("--linear-y", `${event.clientY}px`);
+    });
+  }, { passive: true });
+}
+
 async function bootstrap() {
   installPublicShell();
+  installLinearSpotlight();
   hydrateListingCardPlaceholders();
   hydrateIconPlaceholders();
   renderAppRoute();
@@ -2425,7 +2461,7 @@ function planBenefitsFor(planId, usage = {}) {
     starter: [
       "20 listings per month",
       "Notes-to-listing generator",
-      "Editable Vinted title, description and keywords",
+      "Editable resale title, description and keywords",
       "Price guidance and photo checklist",
       "Copy buttons for every section"
     ],
