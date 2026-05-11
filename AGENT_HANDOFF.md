@@ -66,14 +66,19 @@ All homepage JPGs are below the 250 KB target.
 - `npm run check` - passed, 98 tests.
 - Temporary smoke server on `PORT=3001` - `/`, `/pricing`, key homepage images, `/robots.txt`, `/sitemap.xml` all returned 200 with expected MIME types and compressed image byte sizes.
 - `Stop-Process` for temporary smoke server - stopped; port 3001 no longer listened.
+- `git commit -m "feat(home): premium homepage polish, Tailwind build, demo cap, compressed images"` - created commit `7376600`.
+- `npx update-browserslist-db@latest` - completed but produced no package/lockfile diff; no Browserslist commit was created.
+- `npm ls caniuse-lite` - reports no installed top-level/dependency entry in this repo.
+- `npm run build` after the Browserslist update - passed, but the same Browserslist freshness warning still appears.
 
 ### Commit Hashes Created
 
-- Pending at edit time. Exact hashes should be read from `git log --oneline -2` after the two requested commits are created.
+- `7376600` - `feat(home): premium homepage polish, Tailwind build, demo cap, compressed images`
+- Browserslist update commit: not created because `npx update-browserslist-db@latest` left no git diff to commit.
 
 ### Remaining Blockers
 
-- Browserslist/caniuse-lite refresh still needs the separate maintenance commit.
+- Browserslist/caniuse-lite warning still appears after `npx update-browserslist-db@latest`; the command reports success but leaves no package/lockfile change. Claude should decide whether to add an explicit Browserslist/caniuse-lite dependency, ignore the warning, or handle it in CI config.
 - Production-only blockers remain: Railway env, `/data` volume, Stripe live prices/webhook, Resend domain, DNS/TLS, and real checkout/webhook smoke.
 - Full browser visual QA still needs Claude/browser pass; this pass used HTTP smoke plus contract tests.
 
