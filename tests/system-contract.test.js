@@ -330,27 +330,21 @@ test("homepage shows honest image-based resale listing cards", () => {
   assert.match(indexHtml, /class="market-card-photo"/);
   for (const image of [
     "nike-trainers.jpg",
-    "zara-jacket.jpg",
-    "carhartt-hoodie.jpg",
-    "levis-jeans.jpg",
-    "north-face-puffer.jpg",
-    "adidas-sambas.jpg",
-    "leather-bag.jpg",
-    "summer-dress.jpg",
-    "cargo-trousers.jpg",
     "white-trainers-floor.jpg",
-    "silver-necklace.jpg",
-    "doc-martens-boots.jpg"
+    "tan-nike-af1.jpg",
+    "leather-bag.jpg",
+    "cargo-trousers.jpg",
+    "silver-necklace.jpg"
   ]) {
     assert.match(indexHtml, new RegExp(`/images/homepage/${image}`));
   }
-  assert.match(indexHtml, /Red Nike running trainers/);
+  assert.match(indexHtml, /Worn white Nike trainers/);
   assert.match(indexHtml, /Black leather biker jacket/);
-  assert.match(indexHtml, /Black leather lace-up boots/);
-  assert.doesNotMatch(indexHtml, /Nike Air Force 1|af1/i);
+  assert.match(indexHtml, /Pearl strand necklace/);
+  assert.doesNotMatch(indexHtml, /Adidas Samba|Carhartt|Levi's|Doc Martens|North Face|Ferragamo|Superdry/i);
   assert.match(indexHtml, /Original mock listing cards with real item photos/);
   const cards = (indexHtml.match(/class="market-listing-card"/g) || []).length;
-  assert.equal(cards, 12, `expected exactly 12 image-based listing cards, found ${cards}`);
+  assert.equal(cards, 6, `expected exactly 6 image-based listing cards, found ${cards}`);
 });
 
 test("app generator empty states scaffold the upcoming output", () => {
@@ -621,7 +615,7 @@ test("public UI never shows old launch prices, old limits, or unlimited claims",
 });
 
 test("public marketing explains ListBoost's focused resale workflow without naming other AI tools", () => {
-  assert.match(indexHtml, /Your listing upgrade before buyers ever see it/);
+  assert.match(indexHtml, /A listing workspace for real resale sellers/);
   assert.match(indexHtml, /From camera roll to buyer-ready copy/);
   assert.match(indexHtml, /Write better listings with AI/);
   assert.match(indexHtml, /Preview the buyer experience/);

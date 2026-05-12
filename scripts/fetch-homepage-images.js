@@ -9,13 +9,13 @@ const force = process.argv.includes("--force");
 const manifest = [
   {
     path: "nike-trainers.jpg",
-    url: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=900&q=70",
-    label: "Nike trainers"
+    url: "https://images.unsplash.com/photo-1557401945-20b287ff7b74?auto=format&fit=crop&w=900&q=70",
+    label: "worn white Nike trainers on wet floor"
   },
   {
     path: "white-trainers-floor.jpg",
-    url: "https://images.unsplash.com/photo-1525966222134-fcfa99b8ae77?auto=format&fit=crop&w=900&q=70",
-    label: "white trainers"
+    url: "https://images.unsplash.com/photo-1640391846040-6e9e41388ad4?auto=format&fit=crop&w=900&q=70",
+    label: "white Nike low-top trainers on floor"
   },
   {
     path: "zara-jacket.jpg",
@@ -23,29 +23,29 @@ const manifest = [
     label: "black leather biker jacket"
   },
   {
-    path: "carhartt-hoodie.jpg",
+    path: "grey-hoodie.jpg",
     url: "https://images.unsplash.com/photo-1556821840-3a63f95609a7?auto=format&fit=crop&w=900&q=70",
     label: "grey pullover hoodie"
   },
   {
-    path: "levis-jeans.jpg",
-    url: "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?auto=format&fit=crop&w=900&q=70",
-    label: "jeans"
+    path: "blue-straight-jeans.jpg",
+    url: "https://images.unsplash.com/photo-1593030761757-71fae45fa0e7?auto=format&fit=crop&w=900&q=70",
+    label: "blue straight-leg jeans flat lay"
   },
   {
-    path: "north-face-puffer.jpg",
-    url: "https://images.unsplash.com/photo-1706765779494-2705542ebe74?auto=format&fit=crop&w=900&q=70",
-    label: "white padded puffer jacket"
+    path: "white-puffer.jpg",
+    url: "https://images.unsplash.com/photo-1771074153183-5849e68c5da6?auto=format&fit=crop&w=900&q=70",
+    label: "cream white puffer jacket on hanger"
   },
   {
-    path: "adidas-sambas.jpg",
+    path: "tan-nike-af1.jpg",
     url: "https://images.unsplash.com/photo-1549298916-b41d501d3772?auto=format&fit=crop&w=900&q=70",
     label: "tan Nike low-top trainers"
   },
   {
     path: "leather-bag.jpg",
-    url: "https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=900&q=70",
-    label: "red leather top-handle bag"
+    url: "https://images.unsplash.com/photo-1543930478-3421cd028c0a?auto=format&fit=crop&w=900&q=70",
+    label: "worn brown leather crossbody bag"
   },
   {
     path: "summer-dress.jpg",
@@ -60,12 +60,12 @@ const manifest = [
   {
     path: "silver-necklace.jpg",
     url: "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=900&q=70",
-    label: "silver necklace"
+    label: "boxed pearl strand necklace"
   },
   {
-    path: "doc-martens-boots.jpg",
+    path: "black-lace-up-boots.jpg",
     url: "https://images.unsplash.com/photo-1600429316815-43fe937fdc92?auto=format&fit=crop&w=900&q=70",
-    label: "black boots"
+    label: "black lace-up boots"
   },
   {
     path: "wardrobe-rail.jpg",
